@@ -1,0 +1,142 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ master ]
+  schedule:
+    - cron: '0,30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CACHE_VERSION: v7
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - run: |
+          set -eu
+          git submodule update --init --recursive --force
+          git submodule foreach --recursive '
+            set -eu
+            remote=origin
+            branch=$(git config -f "$toplevel/.gitmodules" "submodule.$name.branch" || true)
+            git fetch --prune "$remote"
+
+            if [ -n "$branch" ]; then
+              target="$remote/$branch"
+            else
+              head=$(git remote show "$remote" | sed -n "s/.*HEAD branch: //p")
+              target="$remote/$head"
+            fi
+
+            git checkout -f
+            git reset --hard "$target"
+            git clean -fdx
+          '
+
+          if git status --porcelain | grep '^ M '; then
+            git add .
+            git commit -m "submodule: sync to upstream"
+            git push origin master
+          fi
+
+      - id: cache-key
+        run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+            ~/go/bin
+            ports
+            portsMaster/.cache
+          key: cache-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ steps.cache-key.outputs.date }}
+          restore-keys: |
+            cache-${{ env.CACHE_VERSION }}-${{ runner.os }}-
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: false
+
+      - name: Install templ
+        run: |
+          set -eu
+
+          GOBIN="$HOME/go/bin"
+          export GOBIN
+          export PATH="$GOBIN:$PATH"
+
+          go install github.com/a-h/templ/cmd/templ@latest
+
+      - name: Fetch/update ports repo
+        run: |
+          set -eu
+
+          if [ -d ports/.git ]; then
+            cd ports
+            git remote set-url origin https://codeberg.org/derivelinux/ports \
+              || git remote set-url origin https://git.sr.ht/~shrub900/ports
+            git fetch --all --prune
+            git reset --hard origin/HEAD
+            git clean -fdx
+            cd ..
+          else
+            git clone https://codeberg.org/derivelinux/ports ports \
+              || git clone https://git.sr.ht/~shrub900/ports ports
+          fi
+
+      - name: Generate site
+        run: |
+          set -eu
+
+          GOBIN="$HOME/go/bin"
+          export PATH="$GOBIN:$PATH"
+
+          wget https://pkg.derivelinux.org/ci_status.json -O ci_status.json || echo "warn: ci_status fetch failed"
+
+          cd portsMaster
+          templ generate
+          go build -o ./portsMaster .
+          ./portsMaster --config ../config.toml
+
+          cp ../favicon.png ./assets
+          cp ../favicon.png .
+
+          ls -FA . .. ./assets
+
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          publish_branch: www
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: Update site
+          disable_nojekyll: true
+
+      - uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+            ~/go/bin
+            ports
+            portsMaster/.cache
+          key: cache-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ steps.cache-key.outputs.date }}

@@ -1,0 +1,3 @@
+[submodule "portsMaster"]
+	path = portsMaster
+	url = https://github.com/nein-ar/portsMaster

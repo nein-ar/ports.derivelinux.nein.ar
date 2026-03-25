@@ -1,0 +1,52 @@
+title = "dérive linux ports"
+description = "the operating situation"
+header_title = "dérive linux ports"
+header_prefix = ""
+subtitle = "the operating situation"
+subtitle_prefix = "# "
+footer_text = "dérive linux ports"
+source_code_url = "https://codeberg.org/derivelinux/ports"
+domain = "ports.derivelinux.nein.ar"
+favicon="favicon.png"
+
+# Paths
+ports_path = "../ports"
+out_dir = "../public"
+cache_dir = "../.cache"
+assets_dir = "./assets"
+
+# Runtime
+port = 8080
+verbose = true
+serve = false
+watch = false
+
+# Assets Configuration
+extra_css = ["derive_red.css", "styles.css"] #extra_css = ["theme_default.css", "styles.css"]
+extra_js = ["search.js", "commits.js", "fortunes.js"]
+fortunes = "fortunes.txt"
+
+[metadata]
+ci_status = "../ci_status.json"
+pkg_root = "https://pkg.derivelinux.org/pkg"
+log_root = "https://pkg.derivelinux.org"
+
+[[nav_links]]
+text = "Home"
+url = "/"
+
+[[nav_links]]
+text = "Categories"
+url = "/categories"
+
+[[nav_links]]
+text = "Recent Commits"
+url = "/commits"
+
+[[nav_links]]
+text = "Search"
+url = "/search"
+
+[[nav_links]]
+text = "Statistics"
+url = "/stats"
