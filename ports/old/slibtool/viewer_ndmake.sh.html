@@ -1,0 +1,60 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/old/slibtool/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>old/slibtool/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=slibtool
+VERSION=git
+RELEASE=1
+SOURCE=&#34;https://dev.midipix.org/cross/slibtool.git&#34;
+
+build() {
+	msg &#34;configuring slibtool...&#34;
+	./configure \
+		--prefix=&#34;$PREFIX&#34; \
+		--all-static \
+		--compiler=clang || die &#34;configure failed&#34;
+
+	msg &#34;building slibtool...&#34;
+	make -j&#34;$NPROC&#34; || die &#34;make failed&#34;
+
+	msg &#34;installing slibtool...&#34;
+	make DESTDIR=&#34;$PKG&#34; install || die &#34;install failed&#34;
+
+	msg &#34;downloading libtool m4 macros...&#34;
+	_libtool_version=&#34;2.5.4&#34;
+	_libtool_url=&#34;https://ftp.gnu.org/gnu/libtool/libtool-${_libtool_version}.tar.gz&#34;
+	_libtool_file=&#34;$DISTDIR/libtool-${_libtool_version}.tar.gz&#34;
+	if [ ! -f &#34;$_libtool_file&#34; ]; then
+		_download_file &#34;$_libtool_file&#34; &#34;$_libtool_url&#34; 0
+	fi
+	_tmpdir=&#34;/tmp/slibtool-libtool-$$&#34;
+	mkdir -p &#34;$_tmpdir&#34;
+	tar -xzf &#34;$_libtool_file&#34; -C &#34;$_tmpdir&#34;
+
+	msg &#34;installing libtool m4 macros...&#34;
+	mkdir -p &#34;$PKG/$PREFIX/share/aclocal&#34;
+	cp &#34;$_tmpdir/libtool-${_libtool_version}/m4/&#34;*.m4 &#34;$PKG/$PREFIX/share/aclocal/&#34;
+	rm -rf &#34;$_tmpdir&#34;
+
+	msg &#34;creating libtool symlink...&#34;
+	ln -sf slibtool &#34;$PKG/$PREFIX/bin/libtool&#34;
+
+	msg &#34;creating libtoolize wrapper...&#34;
+	cat &gt; &#34;$PKG/$PREFIX/bin/libtoolize&#34; &lt;&lt; &#39;EOF&#39;
+#!/bin/sh
+# Wrapper for slibtoolize to filter unsupported GNU libtoolize options
+args=&#34;&#34;
+for arg in &#34;$@&#34;; do
+    case &#34;$arg&#34; in
+        --copy|-c|--force|-f|--install|-i|--quiet|-q)
+            # Skip unsupported options
+            ;;
+        *)
+            args=&#34;$args $arg&#34;
+            ;;
+    esac
+done
+exec slibtoolize $args
+EOF
+	chmod +x &#34;$PKG/$PREFIX/bin/libtoolize&#34;
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

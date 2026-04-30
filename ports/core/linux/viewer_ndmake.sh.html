@@ -1,0 +1,157 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/core/linux/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>core/linux/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=linux
+VERSION=6.18.2
+RELEASE=1
+SOURCE=&#34;https://github.com/xplshn/linox/archive/refs/tags/linox-${VERSION}.tar.gz
+    https://codeberg.org/derivelinux/derive/raw/branch/main/config/kernel.config::noextract
+    byacc-genksyms.patch&#34;
+PREFIX=&#34;&#34;
+
+_host_arch_to_karch() {
+    case &#34;${ARCH:-$(uname -m)}&#34; in
+        x86_64|amd64) printf &#39;%s\n&#39; x86 ;;
+        i?86)         printf &#39;%s\n&#39; x86 ;;
+        aarch64)      printf &#39;%s\n&#39; arm64 ;;
+        arm*)         printf &#39;%s\n&#39; arm ;;
+        riscv64)      printf &#39;%s\n&#39; riscv ;;
+        ppc64*)       printf &#39;%s\n&#39; powerpc ;;
+        s390x)        printf &#39;%s\n&#39; s390 ;;
+        mips*)        printf &#39;%s\n&#39; mips ;;
+        *)            printf &#39;%s\n&#39; &#34;${ARCH:-$(uname -m)}&#34; ;;
+    esac
+}
+
+detect_kernel_compressor() {
+    for c in zstd lz4 lzop xz gzip bzip2 lzma; do
+        if command -v &#34;$c&#34; &gt;/dev/null 2&gt;&amp;1; then
+            printf &#39;%s\n&#39; &#34;$c&#34;
+            return 0
+        fi
+    done
+    return 1
+}
+
+compressor_to_kconfig() {
+    case &#34;$1&#34; in
+        zstd)   printf &#39;%s\n&#39; CONFIG_KERNEL_ZSTD ;;
+        lz4)    printf &#39;%s\n&#39; CONFIG_KERNEL_LZ4 ;;
+        lzop)   printf &#39;%s\n&#39; CONFIG_KERNEL_LZO ;;
+        xz)     printf &#39;%s\n&#39; CONFIG_KERNEL_XZ ;;
+        gzip)   printf &#39;%s\n&#39; CONFIG_KERNEL_GZIP ;;
+        bzip2)  printf &#39;%s\n&#39; CONFIG_KERNEL_BZIP2 ;;
+        lzma)   printf &#39;%s\n&#39; CONFIG_KERNEL_LZMA ;;
+        *)      return 1 ;;
+    esac
+}
+
+build() {
+    msg &#34;building linux kernel (linox)...&#34;
+    SRCDIR=&#34;$SRC/linox-linox-${VERSION}&#34;
+    [ -d &#34;$SRCDIR&#34; ] || die &#34;source dir missing: $SRCDIR&#34;
+    if [ -f &#34;$SRC/kernel.config&#34; ]; then
+        CONFIG_SRC=&#34;$SRC/kernel.config&#34;
+    elif [ -f &#34;$SRC/kernel.config.tar.gz&#34; ]; then
+        CONFIG_SRC=&#34;$SRC/kernel.config.tar.gz&#34;
+    else
+        die &#34;kernel.config missing in $SRC&#34;
+    fi
+
+    cd &#34;$SRCDIR&#34;
+    KARCH=&#34;$(_host_arch_to_karch)&#34;
+
+    # Reflex treats %option full as -Cf, which conflicts with yylineno.
+    sed -i &#39;s/ full ecs/ ecs/&#39; scripts/kconfig/lexer.l
+    # byacc&#39;s header may not declare yylval; ensure it&#39;s available.
+    sed -i &#39;/#include &#34;parse.tab.h&#34;/a\
+#ifndef YYLVAL_IS_DECLARED\
+extern YYSTYPE yylval;\
+#define YYLVAL_IS_DECLARED 1\
+#endif\
+#ifndef YY_FLEX_MAJOR_VERSION\
+int yy_flex_debug;\
+#endif&#39; scripts/genksyms/lex.l
+    # Ensure yy_flex_debug has a global weak definition on fresh trees.
+    if ! grep -q &#39;yy_flex_debug&#39; scripts/genksyms/genksyms.c; then
+        sed -i &#39;1i __attribute__((weak)) int yy_flex_debug;&#39; \
+            scripts/genksyms/genksyms.c
+    else
+        if ! grep -q &#39;__attribute__((weak)) int yy_flex_debug;&#39; scripts/genksyms/genksyms.c; then
+            sed -i &#39;1i __attribute__((weak)) int yy_flex_debug;&#39; \
+                scripts/genksyms/genksyms.c
+        fi
+    fi
+
+    ln -sf &#34;$CONFIG_SRC&#34; .deriveconfig
+    cp .deriveconfig .config
+
+    if ! COMPRESSOR=&#34;$(detect_kernel_compressor)&#34;; then
+        die &#34;no supported kernel compressor found&#34;
+    fi
+
+    gmake \
+        ARCH=&#34;$KARCH&#34; \
+        HOSTCC=&#34;${CC:-cc} -static&#34; \
+        YACC=&#34;${YACC:-yacc}&#34; \
+        LEX=&#34;${LEX:-lex}&#34; \
+        LEXFLAGS= \
+        FLEXFLAGS= \
+        olddefconfig
+
+    KC_SYM=&#34;$(compressor_to_kconfig &#34;$COMPRESSOR&#34;)&#34;
+
+    sed -i \
+        -e &#39;s/^CONFIG_KERNEL_\(GZIP\|BZIP2\|LZMA\|XZ\|LZO\|LZ4\|ZSTD\)=y/# CONFIG_KERNEL_\1 is not set/&#39; \
+        .config
+    printf &#39;%s=y\n&#39; &#34;$KC_SYM&#34; &gt;&gt; .config
+
+    gmake \
+        -j&#34;$NPROC&#34; \
+        ARCH=&#34;$KARCH&#34; \
+        CC=&#34;${CC:-cc}&#34; \
+        HOSTCC=&#34;${CC:-cc} -static&#34; \
+        YACC=&#34;${YACC:-yacc}&#34; \
+        LEX=&#34;${LEX:-lex}&#34; \
+        LEXFLAGS= \
+        FLEXFLAGS=
+
+    gmake \
+        ARCH=&#34;$KARCH&#34; \
+        INSTALL_MOD_PATH=&#34;$PKG$PREFIX&#34; \
+        DEPMOD=/bin/true \
+        modules_install
+
+    if [ &#34;$PREFIX&#34; = &#34;/&#34; ] || [ -z &#34;$PREFIX&#34; ]; then
+        BOOT_DIR=&#34;/boot&#34;
+    else
+        BOOT_DIR=&#34;$PREFIX/boot&#34;
+    fi
+    PKG_BOOT_DIR=&#34;$PKG$BOOT_DIR&#34;
+    mkdir -p &#34;$PKG_BOOT_DIR&#34;
+
+    case &#34;$KARCH&#34; in
+        x86)
+            install -m0644 arch/x86/boot/bzImage \
+                &#34;$PKG_BOOT_DIR/vmlinuz-${VERSION}-linux&#34;
+            ;;
+        arm64)
+            install -m0644 arch/arm64/boot/Image \
+                &#34;$PKG_BOOT_DIR/Image-${VERSION}-linux&#34;
+            ;;
+        arm)
+            install -m0644 arch/arm/boot/zImage \
+                &#34;$PKG_BOOT_DIR/zImage-${VERSION}-linux&#34;
+            ;;
+        *)
+            die &#34;unsupported arch install path&#34;
+            ;;
+    esac
+
+    ln -sfT &#34;$PKG_BOOT_DIR/zImage-${VERSION}-linux&#34; &#34;$PKG_BOOT_DIR/vmlinuz&#34;
+    install -m0644 System.map \
+        &#34;$PKG_BOOT_DIR/System.map-${VERSION}-linux&#34;
+    install -m0644 .config \
+        &#34;$PKG_BOOT_DIR/config-${VERSION}-linux&#34;
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

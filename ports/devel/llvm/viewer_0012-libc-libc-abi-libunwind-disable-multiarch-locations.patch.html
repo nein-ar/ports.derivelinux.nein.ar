@@ -1,0 +1,69 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: 0012-libc-libc-abi-libunwind-disable-multiarch-locations.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/devel/llvm/viewer_0012-libc-libc-abi-libunwind-disable-multiarch-locations.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>devel/llvm/0012-libc-libc-abi-libunwind-disable-multiarch-locations.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat 0012-libc-libc-abi-libunwind-disable-multiarch-locations.patch</pre><pre class="terminal-content">From 2e1760e66725a8afabf9dd3680312a54403c8e53 Mon Sep 17 00:00:00 2001
+From: q66 &lt;q66@chimera-linux.org&gt;
+Date: Fri, 29 Nov 2024 19:42:47 +0100
+Subject: [PATCH 12/29] libc++,libc++abi,libunwind: disable multiarch locations
+
+---
+ libcxx/CMakeLists.txt                 | 2 +-
+ libcxx/test/benchmarks/CMakeLists.txt | 2 +-
+ libcxxabi/CMakeLists.txt              | 2 +-
+ libunwind/CMakeLists.txt              | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/libcxx/CMakeLists.txt b/libcxx/CMakeLists.txt
+index 17cf7c7ed..6eba3b170 100644
+--- a/libcxx/CMakeLists.txt
++++ b/libcxx/CMakeLists.txt
+@@ -414,7 +414,7 @@ set(LIBCXX_INSTALL_MODULES_DIR &#34;share/libc++/v1&#34; CACHE STRING
+ set(LIBCXX_SHARED_OUTPUT_NAME &#34;c++&#34; CACHE STRING &#34;Output name for the shared libc++ runtime library.&#34;)
+ set(LIBCXX_STATIC_OUTPUT_NAME &#34;c++&#34; CACHE STRING &#34;Output name for the static libc++ runtime library.&#34;)
+ 
+-if(LLVM_ENABLE_PER_TARGET_RUNTIME_DIR AND NOT APPLE)
++if(LLVM_ENABLE_PER_TARGET_RUNTIME_DIR AND NOT APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES &#34;Linux&#34;)
+   set(LIBCXX_TARGET_SUBDIR ${LLVM_DEFAULT_TARGET_TRIPLE})
+   if(LIBCXX_LIBDIR_SUBDIR)
+     string(APPEND LIBCXX_TARGET_SUBDIR /${LIBCXX_LIBDIR_SUBDIR})
+diff --git a/libcxx/test/benchmarks/CMakeLists.txt b/libcxx/test/benchmarks/CMakeLists.txt
+index b0fe60062..304d68e10 100644
+--- a/libcxx/test/benchmarks/CMakeLists.txt
++++ b/libcxx/test/benchmarks/CMakeLists.txt
+@@ -11,7 +11,7 @@ set(BENCHMARK_COMPILE_FLAGS
+     -Wl,-rpath,${LIBCXX_LIBRARY_DIR}
+     ${SANITIZER_FLAGS}
+     )
+-if(LLVM_ENABLE_PER_TARGET_RUNTIME_DIR AND NOT APPLE)
++if(LLVM_ENABLE_PER_TARGET_RUNTIME_DIR AND NOT APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES &#34;Linux&#34;)
+   list(APPEND BENCHMARK_COMPILE_FLAGS
+     -isystem &#34;${LIBCXX_GENERATED_INCLUDE_TARGET_DIR}&#34;)
+ endif()
+diff --git a/libcxxabi/CMakeLists.txt b/libcxxabi/CMakeLists.txt
+index 1d03714f5..d69813bd0 100644
+--- a/libcxxabi/CMakeLists.txt
++++ b/libcxxabi/CMakeLists.txt
+@@ -182,7 +182,7 @@ set(CMAKE_MODULE_PATH
+ set(LIBCXXABI_INSTALL_RUNTIME_DIR &#34;${CMAKE_INSTALL_BINDIR}&#34; CACHE STRING
+     &#34;Path where built libc++abi runtime libraries should be installed.&#34;)
+ 
+-if(LLVM_ENABLE_PER_TARGET_RUNTIME_DIR AND NOT APPLE)
++if(LLVM_ENABLE_PER_TARGET_RUNTIME_DIR AND NOT APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES &#34;Linux&#34;)
+   set(LIBCXXABI_TARGET_SUBDIR ${LLVM_DEFAULT_TARGET_TRIPLE})
+   if(LIBCXXABI_LIBDIR_SUBDIR)
+     string(APPEND LIBCXXABI_TARGET_SUBDIR /${LIBCXXABI_LIBDIR_SUBDIR})
+diff --git a/libunwind/CMakeLists.txt b/libunwind/CMakeLists.txt
+index 3c8499fd3..93b078659 100644
+--- a/libunwind/CMakeLists.txt
++++ b/libunwind/CMakeLists.txt
+@@ -140,7 +140,7 @@ set(LIBUNWIND_INSTALL_RUNTIME_DIR &#34;${CMAKE_INSTALL_BINDIR}&#34; CACHE STRING
+ set(LIBUNWIND_SHARED_OUTPUT_NAME &#34;unwind&#34; CACHE STRING &#34;Output name for the shared libunwind runtime library.&#34;)
+ set(LIBUNWIND_STATIC_OUTPUT_NAME &#34;unwind&#34; CACHE STRING &#34;Output name for the static libunwind runtime library.&#34;)
+ 
+-if(LLVM_ENABLE_PER_TARGET_RUNTIME_DIR AND NOT APPLE)
++if(LLVM_ENABLE_PER_TARGET_RUNTIME_DIR AND NOT APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES &#34;Linux&#34;)
+   set(LIBUNWIND_TARGET_SUBDIR ${LLVM_DEFAULT_TARGET_TRIPLE})
+   if(LIBUNWIND_LIBDIR_SUBDIR)
+     string(APPEND LIBUNWIND_TARGET_SUBDIR /${LIBUNWIND_LIBDIR_SUBDIR})
+-- 
+2.49.0
+
+
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

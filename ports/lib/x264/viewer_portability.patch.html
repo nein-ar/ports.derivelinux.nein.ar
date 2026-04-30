@@ -1,0 +1,243 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: portability.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/x264/viewer_portability.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/x264/portability.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat portability.patch</pre><pre class="terminal-content">diff --git a/configure b/configure
+index c1fb599..ad6eb33 100755
+--- a/configure
++++ b/configure
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ 
+ if test x&#34;$1&#34; = x&#34;-h&#34; -o x&#34;$1&#34; = x&#34;--help&#34; ; then
+ cat &lt;&lt;EOF
+@@ -62,7 +62,7 @@ exit 1
+ fi
+ 
+ log_check() {
+-    echo -n &#34;checking $1... &#34; &gt;&gt; config.log
++    echo &#34;checking $1... &#34; &gt;&gt; config.log
+ }
+ 
+ log_ok() {
+@@ -82,12 +82,12 @@ cc_cflags() {
+     # suppress them by reducing the warning level rather than having to use #pragmas
+     for arg in $*; do
+         [[ &#34;$arg&#34; = -falign-loops* ]] &amp;&amp; arg=
++        case $arg in
++            -falign-loops*|-mpreferred-stack-boundary*|-l*|-L*) arg=
++        esac
+         [ &#34;$arg&#34; = -fno-tree-vectorize ] &amp;&amp; arg=
+         [ &#34;$arg&#34; = -Wshadow ] &amp;&amp; arg=
+         [ &#34;$arg&#34; = -Wno-maybe-uninitialized ] &amp;&amp; arg=
+-        [[ &#34;$arg&#34; = -mpreferred-stack-boundary* ]] &amp;&amp; arg=
+-        [[ &#34;$arg&#34; = -l* ]] &amp;&amp; arg=
+-        [[ &#34;$arg&#34; = -L* ]] &amp;&amp; arg=
+         if [ $compiler_style = MS ]; then
+             [ &#34;$arg&#34; = -ffast-math ] &amp;&amp; arg=&#34;-fp:fast&#34;
+             [ &#34;$arg&#34; = -Wall ] &amp;&amp; arg=
+@@ -103,14 +103,14 @@ cc_cflags() {
+         fi
+         [ $compiler = CL -a &#34;$arg&#34; = -O3 ] &amp;&amp; arg=-O2
+ 
+-        [ -n &#34;$arg&#34; ] &amp;&amp; echo -n &#34;$arg &#34;
++        [ -n &#34;$arg&#34; ] &amp;&amp; printf %s &#34;$arg &#34;
+     done
+ }
+ 
+ cl_ldflags() {
+     for arg in $*; do
+-        arg=${arg/LIBPATH/libpath}
+-        [ &#34;${arg#-libpath:}&#34; == &#34;$arg&#34; -a &#34;${arg#-l}&#34; != &#34;$arg&#34; ] &amp;&amp; arg=${arg#-l}.lib
++        arg=$(echo &#34;$arg&#34; | sed -e &#39;s/LIBPATH/libpath/&#39;)
++        [ &#34;${arg#-libpath:}&#34; = &#34;$arg&#34; -a &#34;${arg#-l}&#34; != &#34;$arg&#34; ] &amp;&amp; arg=${arg#-l}.lib
+         [ &#34;${arg#-L}&#34; != &#34;$arg&#34; ] &amp;&amp; arg=-libpath:${arg#-L}
+         [ &#34;$arg&#34; = -Wl,--large-address-aware ] &amp;&amp; arg=-largeaddressaware
+         [ &#34;$arg&#34; = -s ] &amp;&amp; arg=
+@@ -119,15 +119,17 @@ cl_ldflags() {
+         [ &#34;$arg&#34; = -Werror ] &amp;&amp; arg=
+         [ &#34;$arg&#34; = -Wshadow ] &amp;&amp; arg=
+         [ &#34;$arg&#34; = -Wmaybe-uninitialized ] &amp;&amp; arg=
+-        [[ &#34;$arg&#34; = -Qdiag-error* ]] &amp;&amp; arg=
++        case $arg in
++            -Qdiag-error*) arg=
++        esac
+ 
+-        arg=${arg/pthreadGC/pthreadVC}
++        arg=$(echo &#34;$arg&#34; | sed -e &#39;s/pthreadGC/pthreadVC/&#39;)
+         [ &#34;$arg&#34; = avifil32.lib ] &amp;&amp; arg=vfw32.lib
+         [ &#34;$arg&#34; = gpac_static.lib ] &amp;&amp; arg=libgpac_static.lib
+         [ &#34;$arg&#34; = gpac.lib ] &amp;&amp; arg=libgpac.lib
+         [ &#34;$arg&#34; = x264.lib ] &amp;&amp; arg=libx264.lib
+ 
+-        [ -n &#34;$arg&#34; ] &amp;&amp; echo -n &#34;$arg &#34;
++        [ -n &#34;$arg&#34; ] &amp;&amp; printf %s &#34;$arg &#34;
+     done
+ }
+ 
+@@ -191,7 +193,7 @@ cpp_check() {
+     for arg in $1; do
+         echo &#34;#include &lt;$arg&gt;&#34; &gt;&gt; conftest.c
+     done
+-    echo -e &#34;#if !($3) \n#error $4 \n#endif &#34; &gt;&gt; conftest.c
++    printf &#39;%b\n&#39; &#34;#if !($3) \n#error $4 \n#endif &#34; &gt;&gt; conftest.c
+     if [ $compiler_style = MS ]; then
+         cpp_cmd=&#34;$CC conftest.c $(cc_cflags $CFLAGS $2) -P&#34;
+     else
+@@ -340,11 +342,15 @@ rm -rf conftest*
+ 
+ # Construct a path to the specified directory relative to the working directory
+ relative_path() {
+-    local base=&#34;${PWD%/}&#34;
+-    local path=&#34;$(cd &#34;$1&#34; &gt;/dev/null; printf &#39;%s/.&#39; &#34;${PWD%/}&#34;)&#34;
+-    local up=&#39;&#39;
++    base=&#34;${PWD%/}&#34;
++    path=&#34;$(cd &#34;$1&#34; &gt;/dev/null; printf &#39;%s/.&#39; &#34;${PWD%/}&#34;)&#34;
++    up=&#39;&#39;
++
++    while :; do
++        case $path in
++            &#34;$base/&#34;*) break ;;
++        esac
+ 
+-    while [[ $path != &#34;$base/&#34;* ]]; do
+         base=&#34;${base%/*}&#34;
+         up=&#34;../$up&#34;
+     done
+@@ -590,48 +596,6 @@ trap &#39;rm -rf conftest*&#39; EXIT
+ # test for use of compilers that require specific handling
+ cc_base=&#34;$(basename &#34;$CC&#34;)&#34;
+ QPRE=&#34;-&#34;
+-if [[ $host_os = mingw* || $host_os = msys* || $host_os = cygwin* ]]; then
+-    if [[ &#34;$cc_base&#34; = icl || &#34;$cc_base&#34; = icl[\ .]* ]]; then
+-        # Windows Intel Compiler creates dependency generation with absolute Windows paths, Cygwin&#39;s make does not support Windows paths.
+-        [[ $host_os = cygwin* ]] &amp;&amp; die &#34;Windows Intel Compiler support requires MSYS&#34;
+-        compiler=ICL
+-        compiler_style=MS
+-        CFLAGS=&#34;$CFLAGS -Qstd=c99 -nologo -Qms0 -DHAVE_STRING_H -I\$(SRCPATH)/extras&#34;
+-        QPRE=&#34;-Q&#34;
+-        cpp_check &#39;&#39; &#39;&#39; &#39;_MSC_VER &gt;= 1400&#39; || die &#34;Windows Intel Compiler support requires Visual Studio 2005 or newer&#34;
+-        if cpp_check &#39;&#39; &#39;&#39; &#39;defined(_M_AMD64) || defined(_M_X64)&#39; ; then
+-            host_cpu=x86_64
+-        elif cpp_check &#39;&#39; &#39;&#39; &#39;defined(_M_IX86)&#39; ; then
+-            host_cpu=i486
+-        fi
+-        if cc_check &#39;&#39; -Qdiag-error:10006,10157 ; then
+-            CHECK_CFLAGS=&#34;$CHECK_CFLAGS -Qdiag-error:10006,10157&#34;
+-        fi
+-    elif [[ &#34;$cc_base&#34; = cl || &#34;$cc_base&#34; = cl[\ .]* ]]; then
+-        # Standard Microsoft Visual Studio
+-        compiler=CL
+-        compiler_style=MS
+-        CFLAGS=&#34;$CFLAGS -nologo -GS- -DHAVE_STRING_H -I\$(SRCPATH)/extras&#34;
+-        cpp_check &#39;&#39; &#39;&#39; &#39;_MSC_VER &gt; 1800 || (_MSC_VER == 1800 &amp;&amp; _MSC_FULL_VER &gt;= 180030324)&#39; || die &#34;Microsoft Visual Studio support requires Visual Studio 2013 Update 2 or newer&#34;
+-        if cpp_check &#39;&#39; &#39;&#39; &#39;defined(_M_AMD64) || defined(_M_X64)&#39; ; then
+-            host_cpu=x86_64
+-        elif cpp_check &#39;&#39; &#39;&#39; &#39;defined(_M_IX86)&#39; ; then
+-            host_cpu=i486
+-        elif cpp_check &#39;&#39; &#39;&#39; &#39;defined(_M_ARM64)&#39; ; then
+-            host_cpu=aarch64
+-        elif cpp_check &#39;&#39; &#39;&#39; &#39;defined(_M_ARM)&#39; ; then
+-            host_cpu=arm
+-        fi
+-    else
+-        # MinGW uses broken pre-VS2015 Microsoft printf functions unless it&#39;s told to use the POSIX ones.
+-        CFLAGS=&#34;$CFLAGS -D_POSIX_C_SOURCE=200112L&#34;
+-    fi
+-else
+-    if [[ &#34;$cc_base&#34; = icc || &#34;$cc_base&#34; = icc[\ .]* ]]; then
+-        AR=&#34;xiar&#34;
+-        compiler=ICC
+-    fi
+-fi
+ 
+ if [ $compiler = GNU ]; then
+     if cc_check &#39;&#39; -Werror=unknown-warning-option ; then
+@@ -688,18 +652,6 @@ case $host_os in
+         define HAVE_MALLOC_H
+         libm=&#34;-lm&#34;
+         ;;
+-    cygwin*|mingw*|msys*)
+-        EXE=&#34;.exe&#34;
+-        if [[ $host_os = cygwin* ]] &amp;&amp; cpp_check &#34;&#34; &#34;&#34; &#34;defined(__CYGWIN__)&#34; ; then
+-            SYS=&#34;CYGWIN&#34;
+-            define HAVE_MALLOC_H
+-        else
+-            SYS=&#34;WINDOWS&#34;
+-            DEVNULL=&#34;NUL&#34;
+-            cc_check &#39;&#39; -lshell32 &amp;&amp; LDFLAGSCLI=&#34;$LDFLAGSCLI -lshell32&#34;
+-            [ $compiler = GNU ] &amp;&amp; RC=&#34;${RC-${cross_prefix}windres}&#34; || RC=&#34;${RC-rc.exe}&#34;
+-        fi
+-        ;;
+     sunos*|solaris*)
+         SYS=&#34;SunOS&#34;
+         define HAVE_MALLOC_H
+@@ -740,30 +692,6 @@ LDFLAGS=&#34;$LDFLAGS $libm&#34;
+ stack_alignment=4
+ case $host_cpu in
+     i*86)
+-        ARCH=&#34;X86&#34;
+-        AS=&#34;${AS-nasm}&#34;
+-        AS_EXT=&#34;.asm&#34;
+-        ASFLAGS=&#34;$ASFLAGS -DARCH_X86_64=0 -I\$(SRCPATH)/common/x86/&#34;
+-        if [ $compiler = GNU ]; then
+-            if [[ &#34;$asm&#34; == auto &amp;&amp; &#34;$CFLAGS&#34; != *-march* ]]; then
+-                CFLAGS=&#34;$CFLAGS -march=i686&#34;
+-            fi
+-            if [[ &#34;$asm&#34; == auto &amp;&amp; &#34;$CFLAGS&#34; != *-mfpmath* ]]; then
+-                CFLAGS=&#34;$CFLAGS -mfpmath=sse -msse -msse2&#34;
+-            fi
+-            CFLAGS=&#34;-m32 $CFLAGS&#34;
+-            LDFLAGS=&#34;-m32 $LDFLAGS&#34;
+-        fi
+-        if [ &#34;$SYS&#34; = MACOSX ]; then
+-            ASFLAGS=&#34;$ASFLAGS -f macho32 -DPREFIX&#34;
+-        elif [ &#34;$SYS&#34; = WINDOWS -o &#34;$SYS&#34; = CYGWIN ]; then
+-            ASFLAGS=&#34;$ASFLAGS -f win32 -DPREFIX&#34;
+-            LDFLAGS=&#34;$LDFLAGS -Wl,--large-address-aware&#34;
+-            [ $compiler = GNU ] &amp;&amp; LDFLAGS=&#34;$LDFLAGS -Wl,--dynamicbase,--nxcompat,--tsaware&#34;
+-            [ $compiler = GNU ] &amp;&amp; RCFLAGS=&#34;--target=pe-i386 $RCFLAGS&#34;
+-        else
+-            ASFLAGS=&#34;$ASFLAGS -f elf32&#34;
+-        fi
+         ;;
+     x86_64)
+         ARCH=&#34;X86_64&#34;
+@@ -979,7 +907,7 @@ fi
+ 
+ if [ $asm = auto -a $ARCH = ARM ] ; then
+     # set flags so neon is built by default
+-    [ $compiler == CL ] || echo $CFLAGS | grep -Eq &#39;(-mcpu|-march|-mfpu)&#39; || CFLAGS=&#34;$CFLAGS -mcpu=cortex-a8 -mfpu=neon&#34;
++    [ $compiler = CL ] || echo $CFLAGS | grep -Eq &#39;(-mcpu|-march|-mfpu)&#39; || CFLAGS=&#34;$CFLAGS -mcpu=cortex-a8 -mfpu=neon&#34;
+ 
+     cc_check &#39;&#39; &#39;&#39; &#39;__asm__(&#34;add r0, r1, r2&#34;);&#39; &amp;&amp; define HAVE_ARM_INLINE_ASM
+     if [ $compiler = CL ] &amp;&amp; cpp_check &#39;&#39; &#39;&#39; &#39;defined(_M_ARM) &amp;&amp; _M_ARM &gt;= 7&#39; ; then
+@@ -1690,7 +1618,8 @@ cat conftest.log &gt;&gt; config.log
+ cat conftest.log
+ 
+ [ &#34;$SRCPATH&#34; != &#34;.&#34; ] &amp;&amp; ln -sf ${SRCPATH}/Makefile ./Makefile
+-mkdir -p common/{aarch64,arm,mips,ppc,x86,loongarch} encoder extras filters/video input output tools
++mkdir -p common/aarch64 common/arm common/mips common/ppc common/x86
++mkdir -p encoder extras filters/video input output tools
+ 
+ echo
+ echo &#34;You can run &#39;make&#39; or &#39;make fprofiled&#39; now.&#34;
+diff --git a/tools/cltostr.sh b/tools/cltostr.sh
+index 23b6cc7..3feaafe 100755
+--- a/tools/cltostr.sh
++++ b/tools/cltostr.sh
+@@ -18,7 +18,7 @@ dump() {
+ }
+ 
+ # Print MD5 hash w/o newline character to not embed the character in the array.
+-hash() {
++_hash() {
+     # md5sum is not standard, so try different platform-specific alternatives.
+     { md5sum &#34;$1&#34; || md5 -q &#34;$1&#34; || digest -a md5 &#34;$1&#34;; } 2&gt;/dev/null |
+         cut -b -32 | tr -d &#39;\n\r&#39;
+@@ -29,5 +29,5 @@ trap &#39;rm -f &#34;$1.temp&#34;&#39; EXIT
+ sanitize | tee &#34;$1.temp&#34; |
+     dump &#39;x264_opencl_source&#39; &gt; &#34;$1&#34;
+ 
+-hash &#34;$1.temp&#34; |
++_hash &#34;$1.temp&#34; |
+     dump &#39;x264_opencl_source_hash&#39; &gt;&gt; &#34;$1&#34;
+
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/libnl-tiny/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/libnl-tiny/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=libnl-tiny
+VERSION=39ec78bb
+RELEASE=1
+SOURCE=&#34;https://github.com/sabotage-linux/libnl-tiny/archive/39ec78bb012edc2739c3d3d0058e4076411068b1.tar.gz&#34;
+BUILD_STYLE=gmake
+
+build() {
+	msg &#34;applying patches...&#34;
+	patch -p1 &lt; &#34;$PORTDIR/patch/nla_s8.patch&#34; || die &#34;patch failed&#34;
+
+	msg &#34;building libnl-tiny...&#34;
+	gmake \
+		CC=&#34;${CC:-cc}&#34; \
+		CFLAGS=&#34;${CFLAGS:--O2}&#34; \
+		ALL_LIBS=libnl-tiny.a \
+		PREFIX=/usr || die &#34;gmake failed&#34;
+
+	msg &#34;installing libnl-tiny...&#34;
+	gmake ALL_LIBS=libnl-tiny.a PREFIX=/usr install || true
+
+	install -d &#34;$PKG/$PREFIX/lib&#34; &#34;$PKG/$PREFIX/include&#34;
+	install -m 644 libnl-tiny.a &#34;$PKG/$PREFIX/lib/libnl-3.a&#34;
+	ln -sf libnl-3.a &#34;$PKG/$PREFIX/lib/libnl-genl-3.a&#34;
+	cp -r include/* &#34;$PKG/$PREFIX/include/&#34; || die &#34;header install failed&#34;
+
+	install -d &#34;$PKG/$PREFIX/lib/pkgconfig&#34;
+	cat &gt; &#34;$PKG/$PREFIX/lib/pkgconfig/libnl-3.0.pc&#34; &lt;&lt;EOF
+prefix=$PREFIX
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libnl-3
+Description: Minimal netlink library (libnl-tiny)
+Version: 3.0
+Libs: -L${libdir} -lnl-3
+Cflags: -I${includedir}
+EOF
+
+	cat &gt; &#34;$PKG/$PREFIX/lib/pkgconfig/libnl-genl-3.0.pc&#34; &lt;&lt;EOF
+prefix=$PREFIX
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libnl-genl-3
+Description: Minimal netlink generic netlink library (libnl-tiny)
+Version: 3.0
+Requires: libnl-3
+Libs: -L${libdir} -lnl-genl-3
+Cflags: -I${includedir}
+EOF
+}
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

@@ -1,0 +1,673 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: 0001-static-lavapipe.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/mesa/viewer_0001-static-lavapipe.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/mesa/0001-static-lavapipe.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat 0001-static-lavapipe.patch</pre><pre class="terminal-content">diff --git a/meson.build b/meson.build
+index 5eaae97..f9023c9 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1928,8 +1928,7 @@ if dep_llvm.found()
+     if dep_llvm.type_name() == &#39;internal&#39;
+       _llvm_rtti = subproject(&#39;llvm&#39;).get_variable(&#39;has_rtti&#39;, true)
+     else
+-      # The CMake finder will return &#39;ON&#39;, the llvm-config will return &#39;YES&#39;
+-      _llvm_rtti = [&#39;ON&#39;, &#39;YES&#39;].contains(dep_llvm.get_variable(cmake : &#39;LLVM_ENABLE_RTTI&#39;, configtool: &#39;has-rtti&#39;))
++      _llvm_rtti = true
+     endif
+     if _rtti != _llvm_rtti
+       if _llvm_rtti
+@@ -2104,21 +2103,11 @@ if build_machine.system() == &#39;windows&#39;
+     prog_bison = find_program(&#39;bison&#39;, &#39;yacc&#39;, required : needs_flex_bison, disabler : true)
+   endif
+ else
+-  prog_bison = find_program(&#39;bison&#39;, required : false)
++  # fuck gnu!!!!
++  prog_bison = find_program(&#39;byacc&#39;, required : needs_flex_bison, disabler : true)
++  yacc_is_bison = false
+ 
+-  if not prog_bison.found()
+-    prog_bison = find_program(&#39;byacc&#39;, required : needs_flex_bison, disabler : true)
+-    yacc_is_bison = false
+-  endif
+-
+-  # Disable deprecated keyword warnings, since we have to use them for
+-  # old-bison compat.  See discussion in
+-  # https://gitlab.freedesktop.org/mesa/mesa/merge_requests/2161
+-  if find_program(&#39;bison&#39;, required : false, version : &#39;&gt; 2.3&#39;).found()
+-    prog_bison = [prog_bison, &#39;-Wno-deprecated&#39;]
+-  endif
+-
+-  prog_flex = find_program(&#39;flex&#39;, required : needs_flex_bison, disabler : true)
++  prog_flex = find_program(&#39;reflex&#39;, required : needs_flex_bison, disabler : true)
+   prog_flex_cpp = prog_flex
+ endif
+ 
+@@ -2159,8 +2148,7 @@ if with_platform_wayland
+       dependencies: dep_wayland_client)
+     pre_args += [&#39;-DHAVE_WL_CREATE_QUEUE_WITH_NAME&#39;]
+   endif
+-  # This can be renamed just `wayland` when we require at least 1.8
+-  mod_wl = import(&#39;unstable-wayland&#39;)
++  mod_wl = import(&#39;wayland&#39;)
+ endif
+ 
+ # Even if we find OpenMP, Gitlab CI fails to link with gcc/i386 and clang/anyarch.
+diff --git a/src/gallium/auxiliary/gallivm/lp_bld_init_orc.cpp b/src/gallium/auxiliary/gallivm/lp_bld_init_orc.cpp
+index 16357fb..60dd3ac 100644
+--- a/src/gallium/auxiliary/gallivm/lp_bld_init_orc.cpp
++++ b/src/gallium/auxiliary/gallivm/lp_bld_init_orc.cpp
+@@ -62,6 +62,21 @@
+ #endif
+ /* else use old RTDyldObjectLinkingLayer (RuntimeDyld backend) */
+ 
++extern &#34;C&#34; {
++
++/* just stub everything it wants */
++void __register_frame(const void *) {}
++void __deregister_frame(const void *) {}
++void __register_frame_info(const void *, void *) {}
++void __register_frame_info_bases(const void *, void *, void *, void *) {}
++void __register_frame_info_table(const void *, void *) {}
++void __register_frame_info_table_bases(const void *, void *, void *, void *) {}
++void __register_frame_table(const void *) {}
++void __deregister_frame_info(const void *) {}
++void __deregister_frame_info_bases(const void *) {}
++
++}
++
+ namespace {
+ 
+ class LPObjectCacheORC : public llvm::ObjectCache {
+@@ -320,6 +335,76 @@ LLVMErrorRef module_transform_wrapper(
+    return LLVMOrcThreadSafeModuleWithModuleDo(*ModInOut, *module_transform, Ctx);
+ }
+ 
++static llvm::Expected&lt;llvm::orc::JITDylibSP&gt;
++lpjit_create_static_process_symbols_jd(llvm::orc::LLJIT &amp;J)
++{
++   using llvm::orc::JITDylibSP;
++
++   auto &amp;ES = J.getExecutionSession();
++   auto &amp;JD = ES.createBareJITDylib(&#34;process_symbols&#34;);
++
++   /* ok, so lljit normally wires the process-symbols jitdylib to a
++    * DynamicLibrarySearchGenerator, which resolves the symbold through dlopen(NULL)
++    * for static we still need the process symbols jitdylib itself
++    * but we need definitions to come from explicit add_mapping_to_jd()
++    * calls instead of the host process loader
++    *
++    * this might mean we have to defin some external symbols in the future,
++    * if some new helper is called, and no one maps it
++    */
++   return JITDylibSP(&amp;JD);
++}
++
++static void
++lpjit_define_process_symbol(llvm::orc::LLJIT &amp;J, llvm::orc::JITDylib &amp;JD,
++                            const char *name, void *addr)
++{
++#if LLVM_VERSION_MAJOR &gt;= 17
++   using llvm::orc::ExecutorAddr;
++   using llvm::orc::ExecutorSymbolDef;
++   using llvm::JITSymbolFlags;
++#else
++   using llvm::JITEvaluatedSymbol;
++#endif
++   using llvm::orc::SymbolMap;
++
++   SymbolMap map(1);
++#if LLVM_VERSION_MAJOR &gt;= 17
++   map[J.mangleAndIntern(name)] =
++      ExecutorSymbolDef(ExecutorAddr::fromPtr(addr), JITSymbolFlags::Exported);
++#else
++   map[J.mangleAndIntern(name)] = JITEvaluatedSymbol::fromPointer(addr);
++#endif
++   llvm::cantFail(JD.define(llvm::orc::absoluteSymbols(map)));
++}
++
++static void
++lpjit_define_static_process_symbols(llvm::orc::LLJIT &amp;J)
++{
++   auto JD = J.getProcessSymbolsJITDylib();
++   if (!JD)
++      return;
++
++   lpjit_define_process_symbol(J, *JD, &#34;__register_frame&#34;,
++                               (void *)__register_frame);
++   lpjit_define_process_symbol(J, *JD, &#34;__deregister_frame&#34;,
++                               (void *)__deregister_frame);
++   lpjit_define_process_symbol(J, *JD, &#34;__register_frame_info&#34;,
++                               (void *)__register_frame_info);
++   lpjit_define_process_symbol(J, *JD, &#34;__register_frame_info_bases&#34;,
++                               (void *)__register_frame_info_bases);
++   lpjit_define_process_symbol(J, *JD, &#34;__register_frame_info_table&#34;,
++                               (void *)__register_frame_info_table);
++   lpjit_define_process_symbol(J, *JD, &#34;__register_frame_info_table_bases&#34;,
++                               (void *)__register_frame_info_table_bases);
++   lpjit_define_process_symbol(J, *JD, &#34;__register_frame_table&#34;,
++                               (void *)__register_frame_table);
++   lpjit_define_process_symbol(J, *JD, &#34;__deregister_frame_info&#34;,
++                               (void *)__deregister_frame_info);
++   lpjit_define_process_symbol(J, *JD, &#34;__deregister_frame_info_bases&#34;,
++                               (void *)__deregister_frame_info_bases);
++}
++
+ LPJit::LPJit() :jit_dylib_count(0) {
+    using namespace llvm::orc;
+ 
+@@ -337,6 +422,9 @@ LPJit::LPJit() :jit_dylib_count(0) {
+    lljit = ExitOnErr(
+       LLJITBuilder()
+          .setJITTargetMachineBuilder(std::move(JTMB))
++         .setLinkProcessSymbolsByDefault(true)
++         .setProcessSymbolsJITDylibSetup(*lpjit_create_static_process_symbols_jd)
++         .setPlatformSetUp(llvm::orc::setUpInactivePlatform)
+ #ifdef USE_JITLINK
+          .setObjectLinkingLayerCreator(
+ #if LLVM_VERSION_MAJOR &gt;= 21
+@@ -356,6 +444,8 @@ LPJit::LPJit() :jit_dylib_count(0) {
+ #endif
+          .create());
+ 
++   lpjit_define_static_process_symbols(*lljit);
++
+    LLVMOrcIRTransformLayerRef TL = wrap(&amp;lljit-&gt;getIRTransformLayer());
+    LLVMOrcIRTransformLayerSetTransform(TL, *module_transform_wrapper, NULL);
+ }
+diff --git a/src/gallium/auxiliary/gallivm/lp_bld_misc.cpp b/src/gallium/auxiliary/gallivm/lp_bld_misc.cpp
+index ce8ca02..5689dcf 100644
+--- a/src/gallium/auxiliary/gallivm/lp_bld_misc.cpp
++++ b/src/gallium/auxiliary/gallivm/lp_bld_misc.cpp
+@@ -599,6 +599,9 @@ lp_build_create_jit_compiler_for_module(LLVMExecutionEngineRef *OutJIT,
+ 
+    JIT = builder.create();
+ 
++   if (!JIT)
++      goto fail;
++
+    if (cache_out) {
+       LPObjectCache *objcache = new LPObjectCache(cache_out);
+       JIT-&gt;setObjectCache(objcache);
+@@ -609,13 +612,16 @@ lp_build_create_jit_compiler_for_module(LLVMExecutionEngineRef *OutJIT,
+    JITEventListener *JEL = JITEventListener::createIntelJITEventListener();
+    JIT-&gt;RegisterJITEventListener(JEL);
+ #endif
+-   if (JIT) {
+-      *OutJIT = wrap(JIT);
+-      return 0;
+-   }
++
++   *OutJIT = wrap(JIT);
++   return 0;
++
++fail:
+    lp_free_generated_code(*OutCode);
+    *OutCode = 0;
+    delete MM;
++   if (Error.empty())
++      Error = &#34;LLVM JIT creation failed&#34;;
+    *OutError = strdup(Error.c_str());
+    return 1;
+ }
+diff --git a/src/gallium/frontends/lavapipe/lvp_device.c b/src/gallium/frontends/lavapipe/lvp_device.c
+index 187f17c..42de27a 100644
+--- a/src/gallium/frontends/lavapipe/lvp_device.c
++++ b/src/gallium/frontends/lavapipe/lvp_device.c
+@@ -27,6 +27,7 @@
+ 
+ #include &#34;pipe-loader/pipe_loader.h&#34;
+ #include &#34;git_sha1.h&#34;
++#include &#34;vk_common_entrypoints.h&#34;
+ #include &#34;vk_cmd_enqueue_entrypoints.h&#34;
+ #include &#34;vk_sampler.h&#34;
+ #include &#34;vk_util.h&#34;
+@@ -1421,11 +1422,56 @@ lvp_physical_device_init(struct lvp_physical_device *device,
+ {
+    VkResult result;
+ 
+-   struct vk_physical_device_dispatch_table dispatch_table;
++   struct vk_physical_device_dispatch_table dispatch_table = {0};
+    vk_physical_device_dispatch_table_from_entrypoints(
+       &amp;dispatch_table, &amp;lvp_physical_device_entrypoints, true);
+    vk_physical_device_dispatch_table_from_entrypoints(
+       &amp;dispatch_table, &amp;wsi_physical_device_entrypoints, false);
++   dispatch_table.GetPhysicalDeviceFeatures2 = vk_common_GetPhysicalDeviceFeatures2;
++   dispatch_table.GetPhysicalDeviceFeatures2KHR =
++      (PFN_vkGetPhysicalDeviceFeatures2KHR)vk_common_GetPhysicalDeviceFeatures2;
++   dispatch_table.GetPhysicalDeviceProperties2 = lvp_GetPhysicalDeviceProperties2;
++   dispatch_table.GetPhysicalDeviceProperties2KHR = lvp_GetPhysicalDeviceProperties2;
++   dispatch_table.GetPhysicalDeviceFormatProperties2 =
++      lvp_GetPhysicalDeviceFormatProperties2;
++   dispatch_table.GetPhysicalDeviceFormatProperties2KHR =
++      (PFN_vkGetPhysicalDeviceFormatProperties2KHR)
++      lvp_GetPhysicalDeviceFormatProperties2;
++   dispatch_table.GetPhysicalDeviceImageFormatProperties2 =
++      lvp_GetPhysicalDeviceImageFormatProperties2;
++   dispatch_table.GetPhysicalDeviceImageFormatProperties2KHR =
++      (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)
++      lvp_GetPhysicalDeviceImageFormatProperties2;
++   dispatch_table.GetPhysicalDeviceQueueFamilyProperties2 =
++      lvp_GetPhysicalDeviceQueueFamilyProperties2;
++   dispatch_table.GetPhysicalDeviceQueueFamilyProperties2KHR =
++      (PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR)
++      lvp_GetPhysicalDeviceQueueFamilyProperties2;
++   dispatch_table.GetPhysicalDeviceMemoryProperties2 =
++      lvp_GetPhysicalDeviceMemoryProperties2;
++   dispatch_table.GetPhysicalDeviceMemoryProperties2KHR =
++      (PFN_vkGetPhysicalDeviceMemoryProperties2KHR)
++      lvp_GetPhysicalDeviceMemoryProperties2;
++   dispatch_table.GetPhysicalDeviceSparseImageFormatProperties2 =
++      lvp_GetPhysicalDeviceSparseImageFormatProperties2;
++   dispatch_table.GetPhysicalDeviceSparseImageFormatProperties2KHR =
++      (PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR)
++      lvp_GetPhysicalDeviceSparseImageFormatProperties2;
++   dispatch_table.GetPhysicalDeviceExternalBufferProperties =
++      lvp_GetPhysicalDeviceExternalBufferProperties;
++   dispatch_table.GetPhysicalDeviceExternalBufferPropertiesKHR =
++      (PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR)
++      lvp_GetPhysicalDeviceExternalBufferProperties;
++   dispatch_table.GetPhysicalDeviceExternalFenceProperties =
++      lvp_GetPhysicalDeviceExternalFenceProperties;
++   dispatch_table.GetPhysicalDeviceExternalFencePropertiesKHR =
++      (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)
++      lvp_GetPhysicalDeviceExternalFenceProperties;
++   dispatch_table.GetPhysicalDeviceExternalSemaphoreProperties =
++      lvp_GetPhysicalDeviceExternalSemaphoreProperties;
++   dispatch_table.GetPhysicalDeviceExternalSemaphorePropertiesKHR =
++      (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)
++      lvp_GetPhysicalDeviceExternalSemaphoreProperties;
+    result = vk_physical_device_init(&amp;device-&gt;vk, &amp;instance-&gt;vk,
+                                     NULL, NULL, NULL, &amp;dispatch_table);
+    if (result != VK_SUCCESS) {
+@@ -1642,6 +1688,13 @@ lvp_device_get_cache_uuid(void *uuid)
+       memcpy(uuid, PACKAGE_VERSION, MIN2(strlen(PACKAGE_VERSION), VK_UUID_SIZE));
+ }
+ 
++VKAPI_ATTR void VKAPI_CALL lvp_GetPhysicalDeviceProperties2(
++   VkPhysicalDevice                            physicalDevice,
++   VkPhysicalDeviceProperties2                *pProperties)
++{
++   vk_common_GetPhysicalDeviceProperties2(physicalDevice, pProperties);
++}
++
+ VKAPI_ATTR void VKAPI_CALL lvp_GetPhysicalDeviceQueueFamilyProperties2(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pCount,
+@@ -1745,6 +1798,41 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL lvp_GetInstanceProcAddr(
+                                     pName);
+ }
+ 
++PUBLIC
++VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(
++   const VkInstanceCreateInfo*                 pCreateInfo,
++   const VkAllocationCallbacks*                pAllocator,
++   VkInstance*                                 pInstance)
++{
++   return lvp_CreateInstance(pCreateInfo, pAllocator, pInstance);
++}
++
++PUBLIC
++VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(
++   uint32_t*                                   pApiVersion)
++{
++   return lvp_EnumerateInstanceVersion(pApiVersion);
++}
++
++PUBLIC
++VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(
++   const char*                                 pLayerName,
++   uint32_t*                                   pPropertyCount,
++   VkExtensionProperties*                      pProperties)
++{
++   return lvp_EnumerateInstanceExtensionProperties(pLayerName,
++                                                   pPropertyCount,
++                                                   pProperties);
++}
++
++PUBLIC
++VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
++   uint32_t*                                   pPropertyCount,
++   VkLayerProperties*                          pProperties)
++{
++   return lvp_EnumerateInstanceLayerProperties(pPropertyCount, pProperties);
++}
++
+ /* The loader wants us to expose a second GetInstanceProcAddr function
+  * to work around certain LD_PRELOAD issues seen in apps.
+  */
+@@ -1756,6 +1844,14 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstanceProcAddr(
+    return lvp_GetInstanceProcAddr(instance, pName);
+ }
+ 
++PUBLIC
++VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(
++   VkInstance                                  instance,
++   const char*                                 pName)
++{
++   return vk_icdGetInstanceProcAddr(instance, pName);
++}
++
+ static void
+ destroy_pipelines(struct lvp_queue *queue)
+ {
+@@ -1887,12 +1983,43 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateDevice(
+    device-&gt;poison_mem = debug_get_bool_option(&#34;LVP_POISON_MEMORY&#34;, false);
+    device-&gt;print_cmds = debug_get_bool_option(&#34;LVP_CMD_DEBUG&#34;, false);
+ 
+-   struct vk_device_dispatch_table dispatch_table;
++   struct vk_device_dispatch_table dispatch_table = {0};
+    vk_device_dispatch_table_from_entrypoints(&amp;dispatch_table,
+       &amp;lvp_device_entrypoints, true);
+    lvp_add_enqueue_cmd_entrypoints(&amp;dispatch_table);
+    vk_device_dispatch_table_from_entrypoints(&amp;dispatch_table,
+       &amp;wsi_device_entrypoints, false);
++   dispatch_table.CreateCommandPool = vk_common_CreateCommandPool;
++   dispatch_table.AllocateCommandBuffers = vk_common_AllocateCommandBuffers;
++   dispatch_table.CreateFence = vk_common_CreateFence;
++   dispatch_table.DestroyFence = vk_common_DestroyFence;
++   dispatch_table.ResetFences = vk_common_ResetFences;
++   dispatch_table.GetFenceStatus = vk_common_GetFenceStatus;
++   dispatch_table.WaitForFences = vk_common_WaitForFences;
++   dispatch_table.CreateSemaphore = vk_common_CreateSemaphore;
++   dispatch_table.DestroySemaphore = vk_common_DestroySemaphore;
++   dispatch_table.CreateShaderModule = vk_common_CreateShaderModule;
++   dispatch_table.DestroyShaderModule = vk_common_DestroyShaderModule;
++   dispatch_table.CreateRenderPass = vk_common_CreateRenderPass;
++   dispatch_table.CreateRenderPass2 = vk_common_CreateRenderPass2;
++   dispatch_table.CreateRenderPass2KHR =
++      (PFN_vkCreateRenderPass2KHR)vk_common_CreateRenderPass2;
++   dispatch_table.DestroyRenderPass = vk_common_DestroyRenderPass;
++   dispatch_table.CreateQueryPool = lvp_CreateQueryPool;
++   dispatch_table.DestroyQueryPool = lvp_DestroyQueryPool;
++   dispatch_table.CreateFramebuffer = vk_common_CreateFramebuffer;
++   dispatch_table.DestroyFramebuffer = vk_common_DestroyFramebuffer;
++   dispatch_table.DestroyCommandPool = vk_common_DestroyCommandPool;
++   dispatch_table.FreeCommandBuffers = vk_common_FreeCommandBuffers;
++   dispatch_table.FreeMemory = lvp_FreeMemory;
++   dispatch_table.MapMemory = vk_common_MapMemory;
++   dispatch_table.BindBufferMemory = vk_common_BindBufferMemory;
++   dispatch_table.BindImageMemory = vk_common_BindImageMemory;
++   dispatch_table.GetImageSubresourceLayout = vk_common_GetImageSubresourceLayout;
++   dispatch_table.CmdPipelineBarrier = vk_common_CmdPipelineBarrier;
++   dispatch_table.CmdCopyImage = vk_common_CmdCopyImage;
++   dispatch_table.CmdCopyImageToBuffer = vk_common_CmdCopyImageToBuffer;
++   dispatch_table.CmdWriteTimestamp = vk_common_CmdWriteTimestamp;
+    VkResult result = vk_device_init(&amp;device-&gt;vk,
+                                     &amp;physical_device-&gt;vk,
+                                     &amp;dispatch_table, pCreateInfo,
+diff --git a/src/gallium/frontends/lavapipe/lvp_wsi.c b/src/gallium/frontends/lavapipe/lvp_wsi.c
+index 83e9659..5d439a7 100644
+--- a/src/gallium/frontends/lavapipe/lvp_wsi.c
++++ b/src/gallium/frontends/lavapipe/lvp_wsi.c
+@@ -44,7 +44,7 @@ lvp_init_wsi(struct lvp_physical_device *physical_device)
+    if (result != VK_SUCCESS)
+       return result;
+ 
+-   physical_device-&gt;wsi_device.wants_linear = true;
++   physical_device-&gt;wsi_device.wants_linear = false;
+    physical_device-&gt;vk.wsi_device = &amp;physical_device-&gt;wsi_device;
+ 
+    return VK_SUCCESS;
+diff --git a/src/gallium/targets/lavapipe/lvp_static_shim_gen.py b/src/gallium/targets/lavapipe/lvp_static_shim_gen.py
+new file mode 100644
+index 0000000..1a7c6fe
+--- /dev/null
++++ b/src/gallium/targets/lavapipe/lvp_static_shim_gen.py
+@@ -0,0 +1,172 @@
++#!/usr/bin/env python3
++
++import argparse
++import os
++import sys
++
++
++def _import_vk_entrypoints():
++    util_dir = os.path.normpath(
++        os.path.join(os.path.dirname(__file__), &#34;..&#34;, &#34;..&#34;, &#34;..&#34;, &#34;vulkan&#34;, &#34;util&#34;)
++    )
++    sys.path.insert(0, util_dir)
++    from vk_entrypoints import get_entrypoints_from_xml
++
++    return get_entrypoints_from_xml
++
++
++def decl_params(entrypoint):
++    return &#34;, &#34;.join(p.decl for p in entrypoint.params) or &#34;void&#34;
++
++
++def call_params(entrypoint):
++    return &#34;, &#34;.join(p.name for p in entrypoint.params)
++
++
++def dispatch_kind(entrypoint):
++    if not entrypoint.params:
++        return &#34;global&#34;, None
++
++    first_param = entrypoint.params[0]
++    if first_param.type not in (
++        &#34;VkInstance&#34;,
++        &#34;VkPhysicalDevice&#34;,
++        &#34;VkDevice&#34;,
++        &#34;VkQueue&#34;,
++        &#34;VkCommandBuffer&#34;,
++    ):
++        return &#34;global&#34;, None
++
++    if first_param.type == &#34;VkInstance&#34;:
++        return &#34;instance&#34;, first_param.name
++    if first_param.type == &#34;VkPhysicalDevice&#34;:
++        return &#34;physical_device&#34;, first_param.name
++    if first_param.type == &#34;VkDevice&#34;:
++        return &#34;device&#34;, first_param.name
++    if first_param.type == &#34;VkQueue&#34;:
++        return &#34;queue&#34;, first_param.name
++    if first_param.type == &#34;VkCommandBuffer&#34;:
++        return &#34;command_buffer&#34;, first_param.name
++
++    raise ValueError(f&#34;Unhandled dispatch type for vk{entrypoint.name}&#34;)
++
++
++def emit_wrapper(entrypoint):
++    body = []
++
++    if entrypoint.name == &#34;GetInstanceProcAddr&#34;:
++        body.append(
++            &#34;   return vk_icdGetInstanceProcAddr(instance, pName);\n&#34;
++        )
++    elif entrypoint.name == &#34;GetDeviceProcAddr&#34;:
++        body.append(
++            &#34;   VK_FROM_HANDLE(vk_device, vk_device, device);\n&#34;
++            &#34;   return vk_device-&gt;dispatch_table.GetDeviceProcAddr(device, pName);\n&#34;
++        )
++    else:
++        kind, handle_name = dispatch_kind(entrypoint)
++        if kind == &#34;global&#34;:
++            body.append(
++                f&#39;   PFN_vk{entrypoint.name} proc = (PFN_vk{entrypoint.name})&#39;
++                f&#39;vk_icdGetInstanceProcAddr(VK_NULL_HANDLE, &#34;vk{entrypoint.name}&#34;);\n&#39;
++            )
++        elif kind == &#34;instance&#34;:
++            body.append(
++                &#34;   VK_FROM_HANDLE(vk_instance, vk_instance, instance);\n&#34;
++                f&#34;   PFN_vk{entrypoint.name} proc = (PFN_vk{entrypoint.name})&#34;
++                f&#34;vk_instance-&gt;dispatch_table.{entrypoint.name};\n&#34;
++            )
++        elif kind == &#34;physical_device&#34;:
++            body.append(
++                &#34;   VK_FROM_HANDLE(vk_physical_device, pdevice, physicalDevice);\n&#34;
++                f&#34;   PFN_vk{entrypoint.name} proc = (PFN_vk{entrypoint.name})&#34;
++                f&#34;pdevice-&gt;dispatch_table.{entrypoint.name};\n&#34;
++            )
++        elif kind == &#34;device&#34;:
++            body.append(
++                &#34;   VK_FROM_HANDLE(vk_device, vk_device, device);\n&#34;
++                f&#34;   PFN_vk{entrypoint.name} proc = (PFN_vk{entrypoint.name})&#34;
++                f&#34;vk_device-&gt;dispatch_table.{entrypoint.name};\n&#34;
++            )
++        elif kind == &#34;queue&#34;:
++            body.append(
++                &#34;   VK_FROM_HANDLE(vk_queue, vk_queue, queue);\n&#34;
++                f&#34;   PFN_vk{entrypoint.name} proc = (PFN_vk{entrypoint.name})&#34;
++                f&#34;vk_queue-&gt;base.device-&gt;dispatch_table.{entrypoint.name};\n&#34;
++            )
++        elif kind == &#34;command_buffer&#34;:
++            body.append(
++                &#34;   VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, commandBuffer);\n&#34;
++                f&#34;   PFN_vk{entrypoint.name} proc = (PFN_vk{entrypoint.name})&#34;
++                f&#34;cmd_buffer-&gt;base.device-&gt;dispatch_table.{entrypoint.name};\n&#34;
++            )
++        else:
++            raise ValueError(f&#34;Unhandled dispatch kind {kind} for vk{entrypoint.name}&#34;)
++        body.append(&#34;   assert(proc != NULL);\n&#34;)
++
++        params = call_params(entrypoint)
++        if entrypoint.return_type == &#34;void&#34;:
++            body.append(f&#34;   proc({params});\n&#34;)
++        else:
++            body.append(f&#34;   return proc({params});\n&#34;)
++
++    return &#34;&#34;.join(body)
++
++
++def render(entrypoints):
++    out = []
++    out.append(&#34;/* this file generated from lvp_static_shim_gen.py; don&#39;t edit directly */\n\n&#34;)
++    out.append(&#39;#include &#34;lvp_private.h&#34;\n\n&#39;)
++
++    skipped_entrypoints = {
++        &#34;CreateInstance&#34;,
++        &#34;EnumerateInstanceVersion&#34;,
++        &#34;EnumerateInstanceLayerProperties&#34;,
++        &#34;EnumerateInstanceExtensionProperties&#34;,
++        &#34;GetExternalComputeQueueDataNV&#34;,
++        &#34;GetInstanceProcAddr&#34;,
++    }
++
++    for entrypoint in entrypoints:
++        if entrypoint.name in skipped_entrypoints:
++            continue
++        if entrypoint.guard is not None:
++            out.append(f&#34;#ifdef {entrypoint.guard}\n&#34;)
++
++        params = decl_params(entrypoint)
++        out.append(
++            f&#34;PUBLIC VKAPI_ATTR {entrypoint.return_type} VKAPI_CALL\n&#34;
++            f&#34;vk{entrypoint.name}({params})\n&#34;
++            &#34;{\n&#34;
++        )
++        out.append(emit_wrapper(entrypoint))
++        out.append(&#34;}\n&#34;)
++
++        if entrypoint.guard is not None:
++            out.append(f&#34;#endif /* {entrypoint.guard} */\n&#34;)
++        out.append(&#34;\n&#34;)
++
++    return &#34;&#34;.join(out)
++
++
++def main():
++    parser = argparse.ArgumentParser()
++    parser.add_argument(&#34;--out-c&#34;, required=True)
++    parser.add_argument(
++        &#34;--xml&#34;,
++        required=True,
++        action=&#34;append&#34;,
++        dest=&#34;xml_files&#34;,
++    )
++    parser.add_argument(&#34;--beta&#34;, required=True)
++    args = parser.parse_args()
++
++    get_entrypoints_from_xml = _import_vk_entrypoints()
++    entrypoints = get_entrypoints_from_xml(args.xml_files, args.beta)
++
++    with open(args.out_c, &#34;w&#34;, encoding=&#34;utf-8&#34;) as out_c:
++        out_c.write(render(entrypoints))
++
++
++if __name__ == &#34;__main__&#34;:
++    main()
+diff --git a/src/gallium/targets/lavapipe/meson.build b/src/gallium/targets/lavapipe/meson.build
+index 41de1e5..8b1697f 100644
+--- a/src/gallium/targets/lavapipe/meson.build
++++ b/src/gallium/targets/lavapipe/meson.build
+@@ -1,4 +1,48 @@
+ 
++static_lvp_shim = custom_target(
++  &#39;lvp_static_shim&#39;,
++  input : [files(&#39;lvp_static_shim_gen.py&#39;), vk_api_xml],
++  output : &#39;lvp_static_shim.c&#39;,
++  command : [
++    prog_python, &#39;@INPUT0@&#39;, &#39;--xml&#39;, &#39;@INPUT1@&#39;,
++    &#39;--out-c&#39;, &#39;@OUTPUT@&#39;,
++    &#39;--beta&#39;, with_vulkan_beta.to_string(),
++  ],
++  depend_files : vk_entrypoints_gen_depend_files,
++)
++
++libvulkan_lvp_static = static_library(
++  &#39;vulkan_lvp_static&#39;,
++  [ &#39;lavapipe_target.c&#39;, static_lvp_shim ],
++  include_directories : [ inc_include, inc_src, inc_util, inc_gallium, inc_gallium_aux, inc_gallium_winsys, inc_gallium_drivers, inc_llvmpipe, include_directories(&#39;../../frontends/lavapipe&#39;) ],
++  link_whole : [
++    liblavapipe_st,
++    libpipe_loader_static,
++    libloader,
++    _libmesa_util,
++    libmesa_util_clflush,
++    libmesa_util_clflushopt,
++    libmesa_util_simd,
++    blake3,
++    _libmesa_util_c11,
++    _libxmlconfig,
++    libgallium,
++    _libnir,
++    libcompiler,
++    libwsw,
++    libws_null,
++    libllvmpipe,
++    libvulkan_util,
++    libloader_wayland_helper,
++    libvtn,
++  ],
++  gnu_symbol_visibility : &#39;hidden&#39;,
++  override_options : [&#39;b_lundef=@0@&#39;.format(host_machine.system() == &#39;darwin&#39; ? &#39;false&#39; : get_option(&#39;b_lundef&#39;).to_string())],
++  dependencies : [ driver_llvmpipe, idep_mesautil, idep_nir, idep_vulkan_util,
++                   idep_vulkan_wsi, idep_vulkan_runtime, lvp_deps ],
++  install : false,
++)
++
+ 
+ libvulkan_lvp = shared_library(
+   &#39;vulkan_lvp&#39;,
+diff --git a/src/loader/meson.build b/src/loader/meson.build
+index a8603ad..e070c05 100644
+--- a/src/loader/meson.build
++++ b/src/loader/meson.build
+@@ -4,14 +4,15 @@
+ inc_loader = include_directories(&#39;.&#39;)
+ 
+ if with_platform_wayland
++  wp_dir = &#39;/usr/share/wayland-protocols&#39;
+   wp_protos = {
+-    &#39;fifo-v1&#39;: mod_wl.find_protocol(&#39;fifo&#39;, state : &#39;staging&#39;, version : 1),
+-    &#39;commit-timing-v1&#39;: mod_wl.find_protocol(&#39;commit-timing&#39;, state : &#39;staging&#39;, version : 1),
+-    &#39;linux-dmabuf-unstable-v1&#39;: mod_wl.find_protocol(&#39;linux-dmabuf&#39;, state : &#39;unstable&#39;, version : 1),
+-    &#39;presentation-time&#39;: mod_wl.find_protocol(&#39;presentation-time&#39;),
+-    &#39;tearing-control-v1&#39;: mod_wl.find_protocol(&#39;tearing-control&#39;, state : &#39;staging&#39;, version : 1),
+-    &#39;linux-drm-syncobj-v1&#39;: mod_wl.find_protocol(&#39;linux-drm-syncobj&#39;, state : &#39;staging&#39;, version : 1),
+-    &#39;color-management-v1&#39;: mod_wl.find_protocol(&#39;color-management&#39;, state : &#39;staging&#39;, version : 1)
++    &#39;fifo-v1&#39;: join_paths(wp_dir, &#39;staging&#39;, &#39;fifo&#39;, &#39;fifo-v1.xml&#39;),
++    &#39;commit-timing-v1&#39;: join_paths(wp_dir, &#39;staging&#39;, &#39;commit-timing&#39;, &#39;commit-timing-v1.xml&#39;),
++    &#39;linux-dmabuf-unstable-v1&#39;: join_paths(wp_dir, &#39;unstable&#39;, &#39;linux-dmabuf&#39;, &#39;linux-dmabuf-unstable-v1.xml&#39;),
++    &#39;presentation-time&#39;: join_paths(wp_dir, &#39;stable&#39;, &#39;presentation-time&#39;, &#39;presentation-time.xml&#39;),
++    &#39;tearing-control-v1&#39;: join_paths(wp_dir, &#39;staging&#39;, &#39;tearing-control&#39;, &#39;tearing-control-v1.xml&#39;),
++    &#39;linux-drm-syncobj-v1&#39;: join_paths(wp_dir, &#39;staging&#39;, &#39;linux-drm-syncobj&#39;, &#39;linux-drm-syncobj-v1.xml&#39;),
++    &#39;color-management-v1&#39;: join_paths(wp_dir, &#39;staging&#39;, &#39;color-management&#39;, &#39;color-management-v1.xml&#39;)
+   }
+   wp_files = {}
+   foreach name, xml : wp_protos
+@@ -21,7 +22,6 @@ if with_platform_wayland
+   libloader_wayland_helper = static_library(
+     &#39;loader_wayland_helper&#39;,
+     &#39;loader_wayland_helper.c&#39;,
+-    wp_files[&#39;presentation-time&#39;],
+     gnu_symbol_visibility : &#39;hidden&#39;,
+     include_directories : [inc_include, inc_src, inc_gallium],
+     dependencies : [
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

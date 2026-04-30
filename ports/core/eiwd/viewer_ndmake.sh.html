@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/core/eiwd/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>core/eiwd/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=eiwd
+VERSION=git
+RELEASE=1
+SOURCE=&#34;https://github.com/illiliti/eiwd.git
+	eiwd-hell.patch
+	iwd.sv::sv&#34;
+BUILD_STYLE=hell
+BUILD_OPT=&#34;-DCOND_MAINTAINER_MODE=0 -DCOND_EXTERNAL_ELL=0 -DCOND_LIBEDIT=0 \
+	-DCOND_DBUS_POLICY=0 -DCOND_SYSTEMD_SERVICE=0 -DCOND_MANUAL_PAGES=0 \
+	-DCOND_DAEMON=1 -DCOND_OFONO=0 -DCOND_CLIENT=0 -DCOND_MONITOR=0 \
+	-DCOND_WIRED=0 -DCOND_TOOLS=0 -DCOND_HWSIM=0 -DCOND_DBUS=0 \
+	-DCOND_RUN_RST2MAN=0 -DCOND_GCOV=0 \
+	-DDEF_HAVE_EXPLICIT_BZERO=1 -DDEF_HAVE_REALLOCARRAY=1 \
+	-DDEF_DAEMON_STORAGEDIR=\&#34;/var/lib/iwd\&#34; -DDEF_DAEMON_CONFIGDIR=\&#34;/etc/iwd\&#34; \
+	-DDEF_WIRED_STORAGEDIR=\&#34;/var/lib/ead\&#34; -DUNDEF_HAVE_BACKTRACE=1 \
+	-DLIBEXECDIR=/bin -DCHECK_PKG= -DEXTRA_PKG= \
+	-DLDFLAGS=\&#34;$LDFLAGS\&#34;&#34;
+LN_S=&#34;ln -s&#34;
+
+build() {
+	msg &#34;cloning ell...&#34;
+	rm -rf ell/
+	git clone --depth=1 https://git.kernel.org/pub/scm/libs/ell/ell.git ell \
+		|| die &#34;ell clone failed&#34;
+	ln -sf ../ell/ell/test-private.h ell/test-private.h
+	( cd ell &amp;&amp; for f in ell/*; do
+		[ -f &#34;$f&#34; ] || continue
+		ln -sf &#34;$f&#34; &#34;$(basename &#34;$f&#34;)&#34;
+	done )
+
+	msg &#34;generating with demiurge...&#34;
+	has_cmd demiurge &amp;&amp; demiurge . || msg &#34;warning: demiurge not found&#34;
+
+	msg &#34;generating with satan...&#34;
+	satan gen ${BUILD_OPT} -DLN_S=&#34;$LN_S&#34; PREFIX=&#34;$PREFIX&#34; DESTDIR=&#34;$PKG&#34; . \
+		|| die &#34;satan gen failed&#34;
+
+	msg &#34;building eiwd...&#34;
+	if has_cmd samu; then
+		samu || die &#34;samu build failed&#34;
+		DESTDIR=&#34;$PKG&#34; samu install || die &#34;samu install failed&#34;
+	else
+		ninja || die &#34;ninja build failed&#34;
+		DESTDIR=&#34;$PKG&#34; ninja install || die &#34;ninja install failed&#34;
+	fi
+}
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

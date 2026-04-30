@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: fix-msan-with-musl.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/devel/llvm/viewer_fix-msan-with-musl.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>devel/llvm/fix-msan-with-musl.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat fix-msan-with-musl.patch</pre><pre class="terminal-content">From 8904ed80c262e973c0da7758337f586c9854f38a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?S=C3=B6ren=20Tempel?= &lt;soeren+git@soeren-tempel.net&gt;
+Date: Thu, 15 Jun 2023 09:28:57 +0200
+Subject: [PATCH] msan: fix ifdef guard for getrlimit etc interceptors
+
+These interceptors need struct_ustat_sz, struct_rlimit64_sz, and
+struct_statvfs64_sz which are defined in the following file:
+
+	compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.cpp
+
+However, these variables are only defined for GLIBC sanitizers.
+As such, if we attempt to use MSAN on a Linux system that does not
+utilize glibc (e.g. Alpine Linux) then we will get a linker error
+complaining about undefined references to __sanitizer::struct_rlimit64_sz
+and __sanitizer::struct_rlimit64_sz.
+
+This patch fixes this by only defining the interceptors that require
+these constants if SANITIZER_GLIBC is defined. Thereby aligning the
+macro guards of msan_interceptors.cpp with those of
+sanitizer_platform_limits_posix.cpp.
+---
+ compiler-rt/lib/msan/msan_interceptors.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/compiler-rt/lib/msan/msan_interceptors.cpp b/compiler-rt/lib/msan/msan_interceptors.cpp
+index 6f57c33ee..349eff549 100644
+--- a/compiler-rt/lib/msan/msan_interceptors.cpp
++++ b/compiler-rt/lib/msan/msan_interceptors.cpp
+@@ -908,7 +908,7 @@ INTERCEPTOR(int, getrlimit, int resource, void *rlim) {
+   INTERCEPTOR_GETRLIMIT_BODY(getrlimit, resource, rlim);
+ }
+ 
+-#if !SANITIZER_FREEBSD &amp;&amp; !SANITIZER_NETBSD
++#if SANITIZER_GLIBC
+ INTERCEPTOR(int, __getrlimit, int resource, void *rlim) {
+   INTERCEPTOR_GETRLIMIT_BODY(__getrlimit, resource, rlim);
+ }
+
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

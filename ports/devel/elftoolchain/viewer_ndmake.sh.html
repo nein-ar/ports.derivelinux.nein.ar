@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/devel/elftoolchain/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>devel/elftoolchain/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=elftoolchain
+VERSION=git
+RELEASE=1
+SOURCE=&#34;https://github.com/xplshn/elftoolchain.git
+    remove-lsbr.patch
+    busybox.patch&#34;
+PROJECTS=&#34;libelf libelftc libdwarf libpe&#34;
+
+build() {
+    msg &#34;generating common headers...&#34;
+    cd common || die &#34;common directory missing&#34;
+    make || die &#34;common make failed&#34;
+    cd sys || die &#34;common/sys directory missing&#34;
+    make || die &#34;common/sys make failed&#34;
+    cd ../.. || die &#34;failed to cd back&#34;
+
+    msg &#34;building elftoolchain libraries...&#34;
+    export CC=&#34;${CC:-clang}&#34;
+    WRAP_DIR=&#34;$SRC/wrappers&#34;
+    mkdir -p &#34;$WRAP_DIR&#34;
+    cat &gt;&#34;$WRAP_DIR/install&#34; &lt;&lt;&#39;EOF&#39;
+#!/bin/sh
+ARGS=&#34;&#34;
+for arg in &#34;$@&#34;; do
+    [ &#34;$arg&#34; = &#34;-C&#34; ] || ARGS=&#34;$ARGS \&#34;$arg\&#34;&#34;
+done
+eval &#34;exec /usr/bin/install $ARGS&#34;
+EOF
+    chmod +x &#34;$WRAP_DIR/install&#34;
+    export PATH=&#34;$WRAP_DIR:$PATH&#34;
+
+    # Build the libraries
+    for lib in $PROJECTS; do
+        msg &#34;building $lib...&#34;
+        cd &#34;$SRC/$lib&#34; || die &#34;failed to enter $lib directory&#34;
+
+        # Patch queue.h references
+        find . -type f \( -name &#39;*.h&#39; -o -name &#39;*.c&#39; \) -exec sed -i &#39;s|&lt;sys/queue.h&gt;|&lt;bsd/sys/queue.h&gt;|g&#39; {} \;
+
+        make -j&#34;$NPROC&#34; \
+            CC=&#34;$CC&#34; \
+            CFLAGS=&#34;-O2 -D_GNU_SOURCE -I$SRC/common -I$SRC/libelf -I$SRC/libdwarf -I$SRC/libelftc -static&#34; \
+            LDFLAGS=&#34;-static&#34; \
+            WITH_SHARED=no || die &#34;make failed for $lib&#34;
+
+        # Install to pkg
+        make DESTDIR=&#34;$PKG&#34; PREFIX=&#34;$PREFIX&#34; install || die &#34;install failed for $lib&#34;
+
+        cd - &gt;/dev/null || die &#34;failed to cd back&#34;
+    done
+
+    mkdir -p &#34;$PKG$PREFIX/include/sys&#34;
+    if [ -f &#34;$SRC/common/elfdefinitions.h&#34; ]; then
+        install -m 444 &#34;$SRC/common/elfdefinitions.h&#34; \
+            &#34;$PKG$PREFIX/include/elfdefinitions.h&#34;
+    fi
+    if [ -f &#34;$SRC/common/sys/elfdefinitions.h&#34; ]; then
+        install -m 444 &#34;$SRC/common/sys/elfdefinitions.h&#34; \
+            &#34;$PKG$PREFIX/include/sys/elfdefinitions.h&#34;
+    fi
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

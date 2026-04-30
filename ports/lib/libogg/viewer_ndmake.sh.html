@@ -1,0 +1,43 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/libogg/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/libogg/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=libogg
+VERSION=1.3.6
+RELEASE=1
+SOURCE=&#34;https://github.com/xiph/ogg/releases/download/v1.3.6/libogg-1.3.6.tar.gz&#34;
+BUILD_STYLE=hell
+
+build() {
+	msg &#34;generating with demiurge...&#34;
+	demiurge . || die &#34;demiurge failed&#34;
+
+	msg &#34;generating ninja files with hell...&#34;
+	satan gen PREFIX=&#34;$PREFIX&#34; DESTDIR=&#34;$PKG&#34; . || die &#34;satan gen failed&#34;
+
+	msg &#34;fixing config_types.h...&#34;
+	cat &gt; include/ogg/config_types.h &lt;&lt;&#39;EOF&#39; || die &#34;config_types.h patch failed&#34;
+#ifndef __CONFIG_TYPES_H__
+#define __CONFIG_TYPES_H__
+
+#include &lt;stdint.h&gt;
+
+typedef int16_t ogg_int16_t;
+typedef uint16_t ogg_uint16_t;
+typedef int32_t ogg_int32_t;
+typedef uint32_t ogg_uint32_t;
+typedef int64_t ogg_int64_t;
+typedef uint64_t ogg_uint64_t;
+
+#endif
+EOF
+
+	msg &#34;building libogg...&#34;
+	samu || die &#34;samu build failed&#34;
+
+	msg &#34;installing libogg...&#34;
+	samu install || die &#34;samu install failed&#34;
+
+	mkdir -p $PKG$PREFIX/include/ogg
+	cp include/ogg/config_types.h $PKG$PREFIX/include/ogg/
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

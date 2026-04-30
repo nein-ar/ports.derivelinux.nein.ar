@@ -1,0 +1,60 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: readme - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/net/dropbear/viewer_readme.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>net/dropbear/readme</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat readme</pre><pre class="terminal-content">dropbear
+--------
+dropbear is a small ssh server and client. it is the only ssh available for derive. 
+it provides most functionality you  will need, and is much smaller than alternatives
+like openssh.
+
+installation
+------------
+to install dropbear with dtr, run &#39;dtr mi dropbear&#39;.
+
+provides
+--------
+- &#39;dropbear&#39;             an ssh server
+- &#39;dbclient&#39;             an ssh client
+- &#39;dropbearkey&#39;          an ssh private key generator
+- &#39;dropbearconvert&#39;      a tool to convert between dropbear and openssh key formats
+
+usage
+-----
+a manpage is provided for each of the commands listed in the above &#39;provides&#39; section.
+ you will need to install the &#39;mandoc&#39; port to view them.
+
+setting up git
+--------------
+one common use of ssh is for git authentication. this can be done with dropbear. 
+first, generate a key. i will use rsa for this example, but others, such as 
+ed25519, are also available.
+
+	mkdir ~/.ssh
+	dropbearkey -t rsa -f ~/.ssh/id_rsa
+
+this will create the id_rsa file in ~/.ssh; you will need to get the public key
+and input it into the git forge  of your choice, somewhere in the settings/security 
+page, probably. to get the public key, run the following (you only need to copy the
+bit starting ssh-rsa, not the fingerprint part.)
+
+	dropbearkey -y -f ~/.ssh/id_rsa
+
+if you want to use a key you already have, you can use dropbearconvert to convert
+it from openssh&#39;s format to dropbear&#39;s format: 
+	
+	dropbearconvert openssh dropbear ~/files/id_openssh ~/.ssh/id_rsa
+
+once you&#39;ve done that, you will need to create a script somewhere for git to use
+as it&#39;s ssh command, say &#39;~/bin/dropbear.sh&#39;; it should look like this:
+
+	#!/bin/sh
+	dbclient -i ~/.ssh/id_rsa $*
+
+then, to make the script executable and make git use it as the ssh command:
+
+	chmod +x ~/bin/dropbear.sh
+	export GIT_SSH=~/bin/dropbear.sh
+
+you can then test it works by attempting to connect to the git forge of your 
+choice, i will use codeberg as an example here:
+
+	dbclient -i ~/.ssh/id_rsa git@codeberg.org
+
+if that works, you should be able to use git with ssh authentication.</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

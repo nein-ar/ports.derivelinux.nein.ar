@@ -1,0 +1,118 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/mesa/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/mesa/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=mesa
+VERSION=git:ee031d67b48
+RELEASE=1
+SOURCE=&#34;https://gitlab.freedesktop.org/mesa/mesa.git
+    0001-static-lavapipe.patch&#34;
+BUILD_OPT=&#34;
+    -Dplatforms=wayland
+    -Dvulkan-drivers=swrast
+    -Dgallium-drivers=llvmpipe
+    -Dllvm-orcjit=true
+    -Dgallium-rusticl=false
+    -Dopengl=false
+    -Degl=disabled
+    -Dglx=disabled
+    -Dgbm=disabled
+    -Dtools=[]
+    -Dspirv-tools=disabled
+    -Dlibunwind=disabled
+    -Dlmsensors=disabled&#34;
+
+build() {
+    export PATH=&#34;$PREFIX/bin:$PATH&#34;
+    export PKG_CONFIG_LIBDIR=&#34;$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig&#34;
+    export PKG_CONFIG_PATH=&#34;$PKG_CONFIG_LIBDIR&#34;
+    export PKG_CONFIG=&#34;pkg-config --static&#34;
+
+    muon setup \
+        -Dprefix=&#34;$PREFIX&#34; \
+        -Dlibdir=lib \
+        -Ddefault_library=static \
+        -Dprefer_static=true \
+        -Dbuildtype=release \
+        ${BUILD_OPT} \
+        build || die &#34;muon setup failed&#34;
+
+    samu -C build \
+        src/gallium/targets/lavapipe/libvulkan_lvp_static.a \
+        src/gallium/targets/lavapipe/libvulkan_lvp.so ||
+        die &#34;samu build failed&#34;
+
+    root=$(pwd)
+    flat=&#34;$root/build/src/gallium/targets/lavapipe/libvulkan_lvp_static.flat.a&#34;
+    mri=&#34;$root/build/merge-lvp-static.mri&#34;
+
+    cat &gt; &#34;$mri&#34; &lt;&lt;EOI
+CREATE $flat
+ADDMOD $root/build/src/gallium/targets/lavapipe/libvulkan_lvp_static.a.p/lavapipe_target.c.o
+ADDMOD $root/build/src/gallium/targets/lavapipe/libvulkan_lvp_static.a.p/lvp_static_shim.c.o
+EOI
+
+    for lib in \
+        build/src/gallium/frontends/lavapipe/liblavapipe_st.a \
+        build/src/gallium/auxiliary/pipe-loader/libpipe_loader_static.a \
+        build/src/loader/libloader.a \
+        build/src/util/libmesa_util.a \
+        build/src/util/libmesa_util_clflush.a \
+        build/src/util/libmesa_util_clflushopt.a \
+        build/src/util/libmesa_util_simd.a \
+        build/src/util/blake3/libblake3.a \
+        build/src/c11/impl/libmesa_util_c11.a \
+        build/src/util/libxmlconfig.a \
+        build/src/gallium/auxiliary/libgallium.a \
+        build/src/compiler/nir/libnir.a \
+        build/src/compiler/libcompiler.a \
+        build/src/gallium/winsys/sw/wrapper/libwsw.a \
+        build/src/gallium/winsys/sw/null/libws_null.a \
+        build/src/gallium/drivers/llvmpipe/libllvmpipe.a \
+        build/src/vulkan/util/libvulkan_util.a \
+        build/src/loader/libloader_wayland_helper.a \
+        build/src/compiler/spirv/libvtn.a \
+        build/src/vulkan/wsi/libvulkan_wsi.a \
+        build/src/vulkan/runtime/libvulkan_lite_runtime.a \
+        build/src/vulkan/runtime/libvulkan_runtime.a \
+        build/src/vulkan/runtime/libvulkan_instance.a
+    do
+        printf &#39;ADDLIB %s/%s\n&#39; &#34;$root&#34; &#34;$lib&#34; &gt;&gt; &#34;$mri&#34;
+    done
+
+    printf &#39;SAVE\nEND\n&#39; &gt;&gt; &#34;$mri&#34;
+
+    ar -M &lt; &#34;$mri&#34; || die &#34;failed to merge static lavapipe archive&#34;
+    ranlib &#34;$flat&#34; || die &#34;ranlib failed for flat static archive&#34;
+
+    mkdir -p \
+        &#34;$PKG/$PREFIX/lib&#34; \
+        &#34;$PKG/$PREFIX/lib/pkgconfig&#34; \
+        &#34;$PKG/$PREFIX/include/vulkan&#34; \
+        &#34;$PKG/$PREFIX/include/vk_video&#34; \
+        &#34;$PKG/$PREFIX/share/vulkan/registry&#34;
+    install -m 644 &#34;$flat&#34; &#34;$PKG/$PREFIX/lib/libvulkan_lvp_static.a&#34; ||
+        die &#34;failed to install flattened libvulkan_lvp_static.a&#34;
+    install -m 644 include/vulkan/*.h &#34;$PKG/$PREFIX/include/vulkan/&#34; ||
+        die &#34;failed to install Vulkan headers&#34;
+    install -m 644 include/vk_video/*.h &#34;$PKG/$PREFIX/include/vk_video/&#34; ||
+        die &#34;failed to install Vulkan video headers&#34;
+    install -m 644 src/vulkan/registry/vk.xml \
+        &#34;$PKG/$PREFIX/share/vulkan/registry/vk.xml&#34; ||
+        die &#34;failed to install vk.xml&#34;
+
+    cat &gt; &#34;$PKG/$PREFIX/lib/pkgconfig/vulkan.pc&#34; &lt;&lt;EOI
+prefix=$PREFIX
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: vulkan
+Description: mesa lavapipe vulkan, statically linked
+Version: ${VERSION#git:}
+Requires.private: llvm zlib libzstd libdrm expat libdisplay-info wayland-client
+Libs: -L\${libdir} -lvulkan_lvp_static
+Libs.private: -lstdc++ -lm -pthread
+Cflags: -I\${includedir}
+EOI
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

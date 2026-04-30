@@ -1,0 +1,75 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: rowhammer.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/userspace/opendoas/viewer_rowhammer.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>userspace/opendoas/rowhammer.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat rowhammer.patch</pre><pre class="terminal-content">This patch has been taken from OpenBSD upstream, it changes permit bits to make
+them more rowhammer-resistent. A similar patch has also been committed to sudo.
+
+The patch has not made its way into OpenDoas yet, but at the time of writting
+OpenDoas upstream is rather stale (last commit was done 2 years ago).
+
+See:
+
+* https://github.com/openbsd/src/commit/38599afa1d1d1f14a897b01350e8ce94486e1788
+* https://github.com/sudo-project/sudo/commit/7873f8334c8d31031f8cfa83bd97ac6029309e4f
+
+diff --git a/doas.c b/doas.c
+index ac3a42a..93f0836 100644
+--- a/doas.c
++++ b/doas.c
+@@ -148,8 +148,10 @@ permit(uid_t uid, gid_t *groups, int ngroups, const struct rule **lastr,
+ 			*lastr = rules[i];
+ 	}
+ 	if (!*lastr)
++		return -1;
++	if ((*lastr)-&gt;action == PERMIT)
+ 		return 0;
+-	return (*lastr)-&gt;action == PERMIT;
++	return -1;
+ }
+ 
+ static void
+@@ -184,6 +186,7 @@ checkconfig(const char *confpath, int argc, char **argv,
+     uid_t uid, gid_t *groups, int ngroups, uid_t target)
+ {
+ 	const struct rule *rule;
++	int rv;
+ 
+ 	if (setresuid(uid, uid, uid) != 0)
+ 		err(1, &#34;setresuid&#34;);
+@@ -191,9 +194,9 @@ checkconfig(const char *confpath, int argc, char **argv,
+ 	parseconfig(confpath, 0);
+ 	if (!argc)
+ 		exit(0);
+-
+-	if (permit(uid, groups, ngroups, &amp;rule, target, argv[0],
+-	    (const char **)argv + 1)) {
++	rv = permit(uid, groups, ngroups, &amp;rule, target, argv[0],
++ 	    (const char **)argv + 1);
++	if (rv == 0) {
+ 		printf(&#34;permit%s\n&#34;, (rule-&gt;options &amp; NOPASS) ? &#34; nopass&#34; : &#34;&#34;);
+ 		exit(0);
+ 	} else {
+@@ -342,8 +345,9 @@ main(int argc, char **argv)
+ 	}
+ 
+ 	cmd = argv[0];
+-	if (!permit(uid, groups, ngroups, &amp;rule, target, cmd,
+-	    (const char **)argv + 1)) {
++	rv = permit(uid, groups, ngroups, &amp;rule, target, cmd,
++	    (const char **)argv + 1);
++	if (rv != 0) {
+ 		syslog(LOG_AUTHPRIV | LOG_NOTICE,
+ 		    &#34;command not permitted for %s: %s&#34;, mypw-&gt;pw_name, cmdline);
+ 		errc(1, EPERM, NULL);
+diff --git a/doas.h b/doas.h
+index a8aa41b..591816f 100644
+--- a/doas.h
++++ b/doas.h
+@@ -36,7 +36,7 @@ struct passwd;
+ char **prepenv(const struct rule *, const struct passwd *,
+     const struct passwd *);
+ 
+-#define PERMIT	1
++#define PERMIT	-1
+ #define DENY	2
+ 
+ #define NOPASS		0x1
+
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

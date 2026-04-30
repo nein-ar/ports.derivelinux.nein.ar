@@ -1,0 +1,513 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: 0001-wayland-static-link.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/glfw/viewer_0001-wayland-static-link.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/glfw/0001-wayland-static-link.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat 0001-wayland-static-link.patch</pre><pre class="terminal-content">diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 1057a6f..62965ca 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -160,13 +160,19 @@ endif()
+ if (GLFW_BUILD_WAYLAND)
+     include(FindPkgConfig)
+ 
+-    pkg_check_modules(Wayland REQUIRED
++    pkg_check_modules(Wayland REQUIRED IMPORTED_TARGET
+         wayland-client&gt;=0.2.7
+         wayland-cursor&gt;=0.2.7
+         wayland-egl&gt;=0.2.7
+         xkbcommon&gt;=0.5.0)
+ 
+     target_include_directories(glfw PRIVATE ${Wayland_INCLUDE_DIRS})
++    target_link_libraries(glfw PRIVATE PkgConfig::Wayland)
++    list(APPEND glfw_PKG_DEPS
++         &#34;wayland-client&#34;
++         &#34;wayland-cursor&#34;
++         &#34;wayland-egl&#34;
++         &#34;xkbcommon&#34;)
+ 
+     if (NOT CMAKE_SYSTEM_NAME STREQUAL &#34;Linux&#34;)
+         find_package(EpollShim)
+@@ -365,4 +371,3 @@ if (GLFW_INSTALL)
+             ARCHIVE DESTINATION &#34;${CMAKE_INSTALL_LIBDIR}&#34;
+             LIBRARY DESTINATION &#34;${CMAKE_INSTALL_LIBDIR}&#34;)
+ endif()
+-
+diff --git a/src/init.c b/src/init.c
+index 532264e..3bb8c1d 100644
+--- a/src/init.c
++++ b/src/init.c
+@@ -64,7 +64,7 @@ static _GLFWinitconfig _glfwInitHints =
+     },
+     .wl =
+     {
+-        .libdecorMode = GLFW_WAYLAND_PREFER_LIBDECOR
++        .libdecorMode = GLFW_WAYLAND_DISABLE_LIBDECOR
+     },
+ };
+ 
+@@ -525,4 +525,3 @@ GLFWAPI GLFWerrorfun glfwSetErrorCallback(GLFWerrorfun cbfun)
+     _GLFW_SWAP(GLFWerrorfun, _glfwErrorCallback, cbfun);
+     return cbfun;
+ }
+-
+diff --git a/src/wl_init.c b/src/wl_init.c
+index 3aff476..5415c26 100644
+--- a/src/wl_init.c
++++ b/src/wl_init.c
+@@ -91,6 +91,185 @@
+ #include &#34;idle-inhibit-unstable-v1-client-protocol-code.h&#34;
+ #undef types
+ 
++#undef wl_display_flush
++#undef wl_display_cancel_read
++#undef wl_display_dispatch_pending
++#undef wl_display_read_events
++#undef wl_display_disconnect
++#undef wl_display_roundtrip
++#undef wl_display_get_fd
++#undef wl_display_prepare_read
++#undef wl_proxy_marshal
++#undef wl_proxy_add_listener
++#undef wl_proxy_destroy
++#undef wl_proxy_marshal_constructor
++#undef wl_proxy_marshal_constructor_versioned
++#undef wl_proxy_get_user_data
++#undef wl_proxy_set_user_data
++#undef wl_proxy_get_tag
++#undef wl_proxy_set_tag
++#undef wl_proxy_get_version
++#undef wl_proxy_marshal_flags
++#undef wl_cursor_theme_load
++#undef wl_cursor_theme_destroy
++#undef wl_cursor_theme_get_cursor
++#undef wl_cursor_image_get_buffer
++#undef wl_egl_window_create
++#undef wl_egl_window_destroy
++#undef wl_egl_window_resize
++#undef xkb_context_new
++#undef xkb_context_unref
++#undef xkb_keymap_new_from_string
++#undef xkb_keymap_unref
++#undef xkb_keymap_mod_get_index
++#undef xkb_keymap_key_repeats
++#undef xkb_keymap_key_get_syms_by_level
++#undef xkb_state_new
++#undef xkb_state_unref
++#undef xkb_state_key_get_syms
++#undef xkb_state_update_mask
++#undef xkb_state_key_get_layout
++#undef xkb_state_mod_index_is_active
++#undef xkb_compose_table_new_from_locale
++#undef xkb_compose_table_unref
++#undef xkb_compose_state_new
++#undef xkb_compose_state_unref
++#undef xkb_compose_state_feed
++#undef xkb_compose_state_get_status
++#undef xkb_compose_state_get_one_sym
++
++extern struct wl_cursor_theme* wl_cursor_theme_load(const char* name,
++                                                    int size,
++                                                    struct wl_shm* shm);
++extern void wl_cursor_theme_destroy(struct wl_cursor_theme* theme);
++extern struct wl_cursor* wl_cursor_theme_get_cursor(struct wl_cursor_theme* theme,
++                                                    const char* name);
++extern struct wl_buffer* wl_cursor_image_get_buffer(struct wl_cursor_image* image);
++
++extern struct wl_egl_window* wl_egl_window_create(struct wl_surface* surface,
++                                                  int width,
++                                                  int height);
++extern void wl_egl_window_destroy(struct wl_egl_window* egl_window);
++extern void wl_egl_window_resize(struct wl_egl_window* egl_window,
++                                 int width,
++                                 int height,
++                                 int dx,
++                                 int dy);
++
++static void loadWaylandClientFunctions(void)
++{
++    _glfw.wl.client.handle = NULL;
++    _glfw.wl.client.display_flush = wl_display_flush;
++    _glfw.wl.client.display_cancel_read = wl_display_cancel_read;
++    _glfw.wl.client.display_dispatch_pending = wl_display_dispatch_pending;
++    _glfw.wl.client.display_read_events = wl_display_read_events;
++    _glfw.wl.client.display_disconnect = wl_display_disconnect;
++    _glfw.wl.client.display_roundtrip = wl_display_roundtrip;
++    _glfw.wl.client.display_get_fd = wl_display_get_fd;
++    _glfw.wl.client.display_prepare_read = wl_display_prepare_read;
++    _glfw.wl.client.proxy_marshal = wl_proxy_marshal;
++    _glfw.wl.client.proxy_add_listener = wl_proxy_add_listener;
++    _glfw.wl.client.proxy_destroy = wl_proxy_destroy;
++    _glfw.wl.client.proxy_marshal_constructor = wl_proxy_marshal_constructor;
++    _glfw.wl.client.proxy_marshal_constructor_versioned =
++        wl_proxy_marshal_constructor_versioned;
++    _glfw.wl.client.proxy_get_user_data = wl_proxy_get_user_data;
++    _glfw.wl.client.proxy_set_user_data = wl_proxy_set_user_data;
++    _glfw.wl.client.proxy_get_tag = wl_proxy_get_tag;
++    _glfw.wl.client.proxy_set_tag = wl_proxy_set_tag;
++    _glfw.wl.client.proxy_get_version = wl_proxy_get_version;
++    _glfw.wl.client.proxy_marshal_flags = wl_proxy_marshal_flags;
++}
++
++static void loadWaylandCursorFunctions(void)
++{
++    _glfw.wl.cursor.handle = NULL;
++    _glfw.wl.cursor.theme_load = wl_cursor_theme_load;
++    _glfw.wl.cursor.theme_destroy = wl_cursor_theme_destroy;
++    _glfw.wl.cursor.theme_get_cursor = wl_cursor_theme_get_cursor;
++    _glfw.wl.cursor.image_get_buffer = wl_cursor_image_get_buffer;
++}
++
++static void loadWaylandEGLFunctions(void)
++{
++    _glfw.wl.egl.handle = NULL;
++    _glfw.wl.egl.window_create = wl_egl_window_create;
++    _glfw.wl.egl.window_destroy = wl_egl_window_destroy;
++    _glfw.wl.egl.window_resize = wl_egl_window_resize;
++}
++
++static void loadWaylandXKBFunctions(void)
++{
++    _glfw.wl.xkb.handle = NULL;
++    _glfw.wl.xkb.context_new = xkb_context_new;
++    _glfw.wl.xkb.context_unref = xkb_context_unref;
++    _glfw.wl.xkb.keymap_new_from_string = xkb_keymap_new_from_string;
++    _glfw.wl.xkb.keymap_unref = xkb_keymap_unref;
++    _glfw.wl.xkb.keymap_mod_get_index = xkb_keymap_mod_get_index;
++    _glfw.wl.xkb.keymap_key_repeats = xkb_keymap_key_repeats;
++    _glfw.wl.xkb.keymap_key_get_syms_by_level = xkb_keymap_key_get_syms_by_level;
++    _glfw.wl.xkb.state_new = xkb_state_new;
++    _glfw.wl.xkb.state_unref = xkb_state_unref;
++    _glfw.wl.xkb.state_key_get_syms = xkb_state_key_get_syms;
++    _glfw.wl.xkb.state_update_mask = xkb_state_update_mask;
++    _glfw.wl.xkb.state_key_get_layout = xkb_state_key_get_layout;
++    _glfw.wl.xkb.state_mod_index_is_active = xkb_state_mod_index_is_active;
++    _glfw.wl.xkb.compose_table_new_from_locale = xkb_compose_table_new_from_locale;
++    _glfw.wl.xkb.compose_table_unref = xkb_compose_table_unref;
++    _glfw.wl.xkb.compose_state_new = xkb_compose_state_new;
++    _glfw.wl.xkb.compose_state_unref = xkb_compose_state_unref;
++    _glfw.wl.xkb.compose_state_feed = xkb_compose_state_feed;
++    _glfw.wl.xkb.compose_state_get_status = xkb_compose_state_get_status;
++    _glfw.wl.xkb.compose_state_get_one_sym = xkb_compose_state_get_one_sym;
++}
++
++#define wl_display_flush _glfw.wl.client.display_flush
++#define wl_display_cancel_read _glfw.wl.client.display_cancel_read
++#define wl_display_dispatch_pending _glfw.wl.client.display_dispatch_pending
++#define wl_display_read_events _glfw.wl.client.display_read_events
++#define wl_display_disconnect _glfw.wl.client.display_disconnect
++#define wl_display_roundtrip _glfw.wl.client.display_roundtrip
++#define wl_display_get_fd _glfw.wl.client.display_get_fd
++#define wl_display_prepare_read _glfw.wl.client.display_prepare_read
++#define wl_proxy_marshal _glfw.wl.client.proxy_marshal
++#define wl_proxy_add_listener _glfw.wl.client.proxy_add_listener
++#define wl_proxy_destroy _glfw.wl.client.proxy_destroy
++#define wl_proxy_marshal_constructor _glfw.wl.client.proxy_marshal_constructor
++#define wl_proxy_marshal_constructor_versioned _glfw.wl.client.proxy_marshal_constructor_versioned
++#define wl_proxy_get_user_data _glfw.wl.client.proxy_get_user_data
++#define wl_proxy_set_user_data _glfw.wl.client.proxy_set_user_data
++#define wl_proxy_get_tag _glfw.wl.client.proxy_get_tag
++#define wl_proxy_set_tag _glfw.wl.client.proxy_set_tag
++#define wl_proxy_get_version _glfw.wl.client.proxy_get_version
++#define wl_proxy_marshal_flags _glfw.wl.client.proxy_marshal_flags
++#define wl_cursor_theme_load _glfw.wl.cursor.theme_load
++#define wl_cursor_theme_destroy _glfw.wl.cursor.theme_destroy
++#define wl_cursor_theme_get_cursor _glfw.wl.cursor.theme_get_cursor
++#define wl_cursor_image_get_buffer _glfw.wl.cursor.image_get_buffer
++#define wl_egl_window_create _glfw.wl.egl.window_create
++#define wl_egl_window_destroy _glfw.wl.egl.window_destroy
++#define wl_egl_window_resize _glfw.wl.egl.window_resize
++#define xkb_context_new _glfw.wl.xkb.context_new
++#define xkb_context_unref _glfw.wl.xkb.context_unref
++#define xkb_keymap_new_from_string _glfw.wl.xkb.keymap_new_from_string
++#define xkb_keymap_unref _glfw.wl.xkb.keymap_unref
++#define xkb_keymap_mod_get_index _glfw.wl.xkb.keymap_mod_get_index
++#define xkb_keymap_key_repeats _glfw.wl.xkb.keymap_key_repeats
++#define xkb_keymap_key_get_syms_by_level _glfw.wl.xkb.keymap_key_get_syms_by_level
++#define xkb_state_new _glfw.wl.xkb.state_new
++#define xkb_state_unref _glfw.wl.xkb.state_unref
++#define xkb_state_key_get_syms _glfw.wl.xkb.state_key_get_syms
++#define xkb_state_update_mask _glfw.wl.xkb.state_update_mask
++#define xkb_state_key_get_layout _glfw.wl.xkb.state_key_get_layout
++#define xkb_state_mod_index_is_active _glfw.wl.xkb.state_mod_index_is_active
++#define xkb_compose_table_new_from_locale _glfw.wl.xkb.compose_table_new_from_locale
++#define xkb_compose_table_unref _glfw.wl.xkb.compose_table_unref
++#define xkb_compose_state_new _glfw.wl.xkb.compose_state_new
++#define xkb_compose_state_unref _glfw.wl.xkb.compose_state_unref
++#define xkb_compose_state_feed _glfw.wl.xkb.compose_state_feed
++#define xkb_compose_state_get_status _glfw.wl.xkb.compose_state_get_status
++#define xkb_compose_state_get_one_sym _glfw.wl.xkb.compose_state_get_one_sym
++
+ static void wmBaseHandlePing(void* userData,
+                              struct xdg_wm_base* wmBase,
+                              uint32_t serial)
+@@ -511,44 +690,17 @@ GLFWbool _glfwConnectWayland(int platformID, _GLFWplatform* platform)
+         .createWindowSurface = _glfwCreateWindowSurfaceWayland
+     };
+ 
+-    void* module = _glfwPlatformLoadModule(&#34;libwayland-client.so.0&#34;);
+-    if (!module)
+-    {
+-        if (platformID == GLFW_PLATFORM_WAYLAND)
+-        {
+-            _glfwInputError(GLFW_PLATFORM_ERROR,
+-                            &#34;Wayland: Failed to load libwayland-client&#34;);
+-        }
+-
+-        return GLFW_FALSE;
+-    }
+-
+-    PFN_wl_display_connect wl_display_connect = (PFN_wl_display_connect)
+-        _glfwPlatformGetModuleSymbol(module, &#34;wl_display_connect&#34;);
+-    if (!wl_display_connect)
+-    {
+-        if (platformID == GLFW_PLATFORM_WAYLAND)
+-        {
+-            _glfwInputError(GLFW_PLATFORM_ERROR,
+-                            &#34;Wayland: Failed to load libwayland-client entry point&#34;);
+-        }
+-
+-        _glfwPlatformFreeModule(module);
+-        return GLFW_FALSE;
+-    }
+-
+     struct wl_display* display = wl_display_connect(NULL);
+     if (!display)
+     {
+         if (platformID == GLFW_PLATFORM_WAYLAND)
+             _glfwInputError(GLFW_PLATFORM_ERROR, &#34;Wayland: Failed to connect to display&#34;);
+ 
+-        _glfwPlatformFreeModule(module);
+         return GLFW_FALSE;
+     }
+ 
+     _glfw.wl.display = display;
+-    _glfw.wl.client.handle = module;
++    _glfw.wl.client.handle = NULL;
+ 
+     *platform = wayland;
+     return GLFW_TRUE;
+@@ -562,44 +714,7 @@ int _glfwInitWayland(void)
+ 
+     _glfw.wl.tag = glfwGetVersionString();
+ 
+-    _glfw.wl.client.display_flush = (PFN_wl_display_flush)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_display_flush&#34;);
+-    _glfw.wl.client.display_cancel_read = (PFN_wl_display_cancel_read)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_display_cancel_read&#34;);
+-    _glfw.wl.client.display_dispatch_pending = (PFN_wl_display_dispatch_pending)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_display_dispatch_pending&#34;);
+-    _glfw.wl.client.display_read_events = (PFN_wl_display_read_events)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_display_read_events&#34;);
+-    _glfw.wl.client.display_disconnect = (PFN_wl_display_disconnect)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_display_disconnect&#34;);
+-    _glfw.wl.client.display_roundtrip = (PFN_wl_display_roundtrip)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_display_roundtrip&#34;);
+-    _glfw.wl.client.display_get_fd = (PFN_wl_display_get_fd)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_display_get_fd&#34;);
+-    _glfw.wl.client.display_prepare_read = (PFN_wl_display_prepare_read)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_display_prepare_read&#34;);
+-    _glfw.wl.client.proxy_marshal = (PFN_wl_proxy_marshal)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_proxy_marshal&#34;);
+-    _glfw.wl.client.proxy_add_listener = (PFN_wl_proxy_add_listener)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_proxy_add_listener&#34;);
+-    _glfw.wl.client.proxy_destroy = (PFN_wl_proxy_destroy)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_proxy_destroy&#34;);
+-    _glfw.wl.client.proxy_marshal_constructor = (PFN_wl_proxy_marshal_constructor)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_proxy_marshal_constructor&#34;);
+-    _glfw.wl.client.proxy_marshal_constructor_versioned = (PFN_wl_proxy_marshal_constructor_versioned)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_proxy_marshal_constructor_versioned&#34;);
+-    _glfw.wl.client.proxy_get_user_data = (PFN_wl_proxy_get_user_data)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_proxy_get_user_data&#34;);
+-    _glfw.wl.client.proxy_set_user_data = (PFN_wl_proxy_set_user_data)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_proxy_set_user_data&#34;);
+-    _glfw.wl.client.proxy_get_tag = (PFN_wl_proxy_get_tag)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_proxy_get_tag&#34;);
+-    _glfw.wl.client.proxy_set_tag = (PFN_wl_proxy_set_tag)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_proxy_set_tag&#34;);
+-    _glfw.wl.client.proxy_get_version = (PFN_wl_proxy_get_version)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_proxy_get_version&#34;);
+-    _glfw.wl.client.proxy_marshal_flags = (PFN_wl_proxy_marshal_flags)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.client.handle, &#34;wl_proxy_marshal_flags&#34;);
++    loadWaylandClientFunctions();
+ 
+     if (!_glfw.wl.client.display_flush ||
+         !_glfw.wl.client.display_cancel_read ||
+@@ -620,90 +735,13 @@ int _glfwInitWayland(void)
+         !_glfw.wl.client.proxy_set_tag)
+     {
+         _glfwInputError(GLFW_PLATFORM_ERROR,
+-                        &#34;Wayland: Failed to load libwayland-client entry point&#34;);
+-        return GLFW_FALSE;
+-    }
+-
+-    _glfw.wl.cursor.handle = _glfwPlatformLoadModule(&#34;libwayland-cursor.so.0&#34;);
+-    if (!_glfw.wl.cursor.handle)
+-    {
+-        _glfwInputError(GLFW_PLATFORM_ERROR,
+-                        &#34;Wayland: Failed to load libwayland-cursor&#34;);
++                        &#34;Wayland: Failed to resolve required linked libwayland-client entry points&#34;);
+         return GLFW_FALSE;
+     }
+ 
+-    _glfw.wl.cursor.theme_load = (PFN_wl_cursor_theme_load)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.cursor.handle, &#34;wl_cursor_theme_load&#34;);
+-    _glfw.wl.cursor.theme_destroy = (PFN_wl_cursor_theme_destroy)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.cursor.handle, &#34;wl_cursor_theme_destroy&#34;);
+-    _glfw.wl.cursor.theme_get_cursor = (PFN_wl_cursor_theme_get_cursor)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.cursor.handle, &#34;wl_cursor_theme_get_cursor&#34;);
+-    _glfw.wl.cursor.image_get_buffer = (PFN_wl_cursor_image_get_buffer)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.cursor.handle, &#34;wl_cursor_image_get_buffer&#34;);
+-
+-    _glfw.wl.egl.handle = _glfwPlatformLoadModule(&#34;libwayland-egl.so.1&#34;);
+-    if (!_glfw.wl.egl.handle)
+-    {
+-        _glfwInputError(GLFW_PLATFORM_ERROR,
+-                        &#34;Wayland: Failed to load libwayland-egl&#34;);
+-        return GLFW_FALSE;
+-    }
+-
+-    _glfw.wl.egl.window_create = (PFN_wl_egl_window_create)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.egl.handle, &#34;wl_egl_window_create&#34;);
+-    _glfw.wl.egl.window_destroy = (PFN_wl_egl_window_destroy)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.egl.handle, &#34;wl_egl_window_destroy&#34;);
+-    _glfw.wl.egl.window_resize = (PFN_wl_egl_window_resize)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.egl.handle, &#34;wl_egl_window_resize&#34;);
+-
+-    _glfw.wl.xkb.handle = _glfwPlatformLoadModule(&#34;libxkbcommon.so.0&#34;);
+-    if (!_glfw.wl.xkb.handle)
+-    {
+-        _glfwInputError(GLFW_PLATFORM_ERROR,
+-                        &#34;Wayland: Failed to load libxkbcommon&#34;);
+-        return GLFW_FALSE;
+-    }
+-
+-    _glfw.wl.xkb.context_new = (PFN_xkb_context_new)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_context_new&#34;);
+-    _glfw.wl.xkb.context_unref = (PFN_xkb_context_unref)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_context_unref&#34;);
+-    _glfw.wl.xkb.keymap_new_from_string = (PFN_xkb_keymap_new_from_string)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_keymap_new_from_string&#34;);
+-    _glfw.wl.xkb.keymap_unref = (PFN_xkb_keymap_unref)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_keymap_unref&#34;);
+-    _glfw.wl.xkb.keymap_mod_get_index = (PFN_xkb_keymap_mod_get_index)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_keymap_mod_get_index&#34;);
+-    _glfw.wl.xkb.keymap_key_repeats = (PFN_xkb_keymap_key_repeats)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_keymap_key_repeats&#34;);
+-    _glfw.wl.xkb.keymap_key_get_syms_by_level = (PFN_xkb_keymap_key_get_syms_by_level)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_keymap_key_get_syms_by_level&#34;);
+-    _glfw.wl.xkb.state_new = (PFN_xkb_state_new)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_state_new&#34;);
+-    _glfw.wl.xkb.state_unref = (PFN_xkb_state_unref)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_state_unref&#34;);
+-    _glfw.wl.xkb.state_key_get_syms = (PFN_xkb_state_key_get_syms)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_state_key_get_syms&#34;);
+-    _glfw.wl.xkb.state_update_mask = (PFN_xkb_state_update_mask)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_state_update_mask&#34;);
+-    _glfw.wl.xkb.state_key_get_layout = (PFN_xkb_state_key_get_layout)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_state_key_get_layout&#34;);
+-    _glfw.wl.xkb.state_mod_index_is_active = (PFN_xkb_state_mod_index_is_active)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_state_mod_index_is_active&#34;);
+-    _glfw.wl.xkb.compose_table_new_from_locale = (PFN_xkb_compose_table_new_from_locale)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_compose_table_new_from_locale&#34;);
+-    _glfw.wl.xkb.compose_table_unref = (PFN_xkb_compose_table_unref)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_compose_table_unref&#34;);
+-    _glfw.wl.xkb.compose_state_new = (PFN_xkb_compose_state_new)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_compose_state_new&#34;);
+-    _glfw.wl.xkb.compose_state_unref = (PFN_xkb_compose_state_unref)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_compose_state_unref&#34;);
+-    _glfw.wl.xkb.compose_state_feed = (PFN_xkb_compose_state_feed)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_compose_state_feed&#34;);
+-    _glfw.wl.xkb.compose_state_get_status = (PFN_xkb_compose_state_get_status)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_compose_state_get_status&#34;);
+-    _glfw.wl.xkb.compose_state_get_one_sym = (PFN_xkb_compose_state_get_one_sym)
+-        _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, &#34;xkb_compose_state_get_one_sym&#34;);
++    loadWaylandCursorFunctions();
++    loadWaylandEGLFunctions();
++    loadWaylandXKBFunctions();
+ 
+     if (!_glfw.wl.xkb.context_new ||
+         !_glfw.wl.xkb.context_unref ||
+@@ -727,12 +765,11 @@ int _glfwInitWayland(void)
+         !_glfw.wl.xkb.compose_state_get_one_sym)
+     {
+         _glfwInputError(GLFW_PLATFORM_ERROR,
+-                        &#34;Wayland: Failed to load all entry points from libxkbcommon&#34;);
++                        &#34;Wayland: Failed to resolve required linked libxkbcommon entry points&#34;);
+         return GLFW_FALSE;
+     }
+ 
+-    if (_glfw.hints.init.wl.libdecorMode == GLFW_WAYLAND_PREFER_LIBDECOR)
+-        _glfw.wl.libdecor.handle = _glfwPlatformLoadModule(&#34;libdecor-0.so.0&#34;);
++    _glfw.wl.libdecor.handle = NULL;
+ 
+     if (_glfw.wl.libdecor.handle)
+     {
+@@ -1000,4 +1037,3 @@ void _glfwTerminateWayland(void)
+ }
+ 
+ #endif // _GLFW_WAYLAND
+-
+diff --git a/src/wl_window.c b/src/wl_window.c
+index 5b491ff..771e7e7 100644
+--- a/src/wl_window.c
++++ b/src/wl_window.c
+@@ -1680,35 +1680,35 @@ static void keyboardHandleKeymap(void* userData,
+         return;
+     }
+ 
+-    // Look up the preferred locale, falling back to &#34;C&#34; as default.
++    // locale no
+     locale = getenv(&#34;LC_ALL&#34;);
+     if (!locale)
+         locale = getenv(&#34;LC_CTYPE&#34;);
+     if (!locale)
+         locale = getenv(&#34;LANG&#34;);
+-    if (!locale)
+-        locale = &#34;C&#34;;
+-
+-    composeTable =
+-        xkb_compose_table_new_from_locale(_glfw.wl.xkb.context, locale,
+-                                          XKB_COMPOSE_COMPILE_NO_FLAGS);
+-    if (composeTable)
+-    {
+-        composeState =
+-            xkb_compose_state_new(composeTable, XKB_COMPOSE_STATE_NO_FLAGS);
+-        xkb_compose_table_unref(composeTable);
+-        if (composeState)
+-            _glfw.wl.xkb.composeState = composeState;
+-        else
+-            _glfwInputError(GLFW_PLATFORM_ERROR,
+-                            &#34;Wayland: Failed to create XKB compose state&#34;);
+-    }
+-    else
+-    {
+-        _glfwInputError(GLFW_PLATFORM_ERROR,
+-                        &#34;Wayland: Failed to create XKB compose table&#34;);
++    composeTable = NULL;
++    composeState = NULL;
++
++    if (locale &amp;&amp;
++        locale[0] != &#39;\0&#39; &amp;&amp;
++        strcmp(locale, &#34;C&#34;) != 0 &amp;&amp;
++        strcmp(locale, &#34;POSIX&#34;) != 0)
++    {
++        composeTable =
++            xkb_compose_table_new_from_locale(_glfw.wl.xkb.context, locale,
++                                              XKB_COMPOSE_COMPILE_NO_FLAGS);
++        if (composeTable)
++        {
++            composeState =
++                xkb_compose_state_new(composeTable, XKB_COMPOSE_STATE_NO_FLAGS);
++            xkb_compose_table_unref(composeTable);
++        }
+     }
+ 
++    if (_glfw.wl.xkb.composeState)
++        xkb_compose_state_unref(_glfw.wl.xkb.composeState);
++    _glfw.wl.xkb.composeState = composeState;
++
+     xkb_keymap_unref(_glfw.wl.xkb.keymap);
+     xkb_state_unref(_glfw.wl.xkb.state);
+     _glfw.wl.xkb.keymap = keymap;
+@@ -3305,4 +3305,3 @@ GLFWAPI struct wl_surface* glfwGetWaylandWindow(GLFWwindow* handle)
+ }
+ 
+ #endif // _GLFW_WAYLAND
+-
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: remove-lsbr.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/devel/elftoolchain/viewer_remove-lsbr.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>devel/elftoolchain/remove-lsbr.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat remove-lsbr.patch</pre><pre class="terminal-content">--- a/mk/os.Linux.mk
++++ b/mk/os.Linux.mk
+@@ -2,12 +2,15 @@
+ #
+ # Build recipes for GNU/Linux based operating systems.
+ 
+-OS_DISTRIBUTION         != lsb_release -s -i || echo unknown
+-OS_DISTRIBUTION_VERSION != lsb_release -s -r || echo unknown
++# use /etc/os-release instead of lsb_release to avoid external dependency
++OS_DISTRIBUTION         != if [ -f /etc/os-release ]; then \
++	. /etc/os-release &amp;&amp; echo &#34;$$NAME&#34;; else echo &#34;Linux&#34;; fi
++OS_DISTRIBUTION_VERSION != if [ -f /etc/os-release ]; then \
++	. /etc/os-release &amp;&amp; echo &#34;$$VERSION_ID&#34;; else echo &#34;unknown&#34;; fi
+ 
+-.if ${OS_DISTRIBUTION} == &#34;unknown&#34; || \
+-    ${OS_DISTRIBUTION_VERSION} == &#34;unknown&#34;
+-.error ERROR: Unknown host OS distribution.
++# allow unknown version evrything will still build fine
++.if ${OS_DISTRIBUTION} == &#34;&#34;
++OS_DISTRIBUTION = Linux
+ .endif
+ 
+ MKDOC?=		yes	# Build documentation.
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

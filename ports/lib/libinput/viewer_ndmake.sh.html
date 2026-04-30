@@ -1,0 +1,47 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/libinput/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/libinput/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=libinput
+VERSION=git
+RELEASE=1
+SOURCE=&#34;https://github.com/oasislinux/libinput.git&#34;
+
+build() {
+	msg &#34;patching for static library...&#34;
+	sed -i &#34;s/shared_library(&#39;input&#39;,/static_library(&#39;input&#39;,/&#34; meson.build || die &#34;patch failed&#34;
+	sed -i &#39;/version : libinput_so_version,/d&#39; meson.build || die &#34;patch failed&#34;
+
+	msg &#34;configuring with muon...&#34;
+	export PKG_CONFIG=&#34;pkg-config --static&#34;
+	muon setup \
+		-Dprefix=&#34;$PREFIX&#34; \
+		-Dbuildtype=release \
+		-Ddefault_library=static \
+		-Dlibwacom=false \
+		-Dudev=false \
+		-Ddebug-gui=false \
+		-Dtests=false \
+		-Ddocumentation=false \
+		-Dtools=false \
+		build || die &#34;muon setup failed&#34;
+
+	msg &#34;building libinput...&#34;
+	samu -C build || die &#34;samu failed&#34;
+
+	msg &#34;installing libinput...&#34;
+	muon -C build install -d &#34;$PKG&#34; || die &#34;muon install failed&#34;
+
+	msg &#34;installing library and headers...&#34;
+	mkdir -p &#34;$PKG/$PREFIX/lib&#34; &#34;$PKG/$PREFIX/include&#34;
+	cp build/libinput.a &#34;$PKG/$PREFIX/lib/&#34; || die &#34;failed to install libinput.a&#34;
+	cp build/libquirks.a &#34;$PKG/$PREFIX/lib/&#34; || die &#34;failed to install libquirks.a&#34;
+	cp build/liblibinput-util.a &#34;$PKG/$PREFIX/lib/&#34; || die &#34;failed to install liblibinput-util.a&#34;
+	cp build/libfilter.a &#34;$PKG/$PREFIX/lib/&#34; || die &#34;failed to install libfilter.a&#34;
+	cp src/libinput.h &#34;$PKG/$PREFIX/include/&#34; || die &#34;failed to install libinput.h&#34;
+
+	msg &#34;installing pkg-config file...&#34;
+	mkdir -p &#34;$PKG/$PREFIX/lib/pkgconfig&#34;
+	cp build/.muon/libinput.pc &#34;$PKG/$PREFIX/lib/pkgconfig/&#34; || die &#34;failed to install libinput.pc&#34;
+	sed -i &#39;s/-linput/-linput -lquirks -llibinput-util -lfilter/&#39; &#34;$PKG/$PREFIX/lib/pkgconfig/libinput.pc&#34;
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

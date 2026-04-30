@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/xkeyboard-config/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/xkeyboard-config/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=xkeyboard-config
+VERSION=2.43
+RELEASE=1
+SOURCE=&#34;https://www.x.org/releases/individual/data/xkeyboard-config/xkeyboard-config-2.43.tar.xz&#34;
+
+build() {
+	dest=&#34;$PKG$PREFIX/share/X11/xkb&#34;
+
+	msg &#34;installing xkb data only&#34;
+	mkdir -p &#34;$dest&#34; &#34;$dest/rules&#34;
+
+	cp -a compat geometry keycodes symbols types &#34;$dest&#34;/
+
+	install -m 644 rules/README rules/xkb.dtd rules/xfree98 &#34;$dest/rules/&#34;
+
+	build_rules() {
+		ruleset=&#34;$1&#34;
+		out=&#34;$dest/rules/$ruleset&#34;
+		: &gt; &#34;$out&#34;
+		for part in \
+			&#34;0000-hdr.part&#34; \
+			&#34;0001-lists.part&#34; \
+			&#34;0002-${ruleset}.lists.part&#34; \
+			&#34;0004-${ruleset}.model_keycodes.part&#34; \
+			&#34;0005-layout1_keycodes.part&#34; \
+			&#34;0006-layout_keycodes.part&#34; \
+			&#34;0007-options_keycodes.part&#34; \
+			&#34;0008-modellayout_geometry.part&#34; \
+			&#34;0009-model_geometry.part&#34; \
+			&#34;0011-modellayoutvariant_symbols.part&#34; \
+			&#34;0013-modellayout_symbols.part&#34; \
+			&#34;0016-modellayout1_symbols.part&#34; \
+			&#34;0018-modellayout2_symbols.part&#34; \
+			&#34;0020-modellayout3_symbols.part&#34; \
+			&#34;0022-modellayout4_symbols.part&#34; \
+			&#34;0026-${ruleset}.model_symbols.part&#34; \
+			&#34;0027-${ruleset}.modellayout_symbols1.part&#34; \
+			&#34;0033-modellayout_compat.part&#34; \
+			&#34;0034-modellayout1_compat.part&#34; \
+			&#34;0035-model_types.part&#34; \
+			&#34;0036-layoutoption_symbols.part&#34; \
+			&#34;0037-layout1option_symbols.part&#34; \
+			&#34;0038-layout2option_symbols.part&#34; \
+			&#34;0039-layout3option_symbols.part&#34; \
+			&#34;0040-layout4option_symbols.part&#34; \
+			&#34;0042-option_symbols.part&#34; \
+			&#34;0043-option_compat.part&#34; \
+			&#34;0044-option_types.part&#34;; do
+			if [ -f &#34;rules/$part&#34; ]; then
+				cat &#34;rules/$part&#34; &gt;&gt; &#34;$out&#34;
+			fi
+		done
+	}
+
+	build_rules base
+	build_rules evdev
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

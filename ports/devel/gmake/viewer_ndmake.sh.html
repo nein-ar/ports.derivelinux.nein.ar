@@ -1,0 +1,66 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/devel/gmake/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>devel/gmake/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=gmake
+VERSION=4.4.1
+RELEASE=1
+SOURCE=&#34;https://gnu.mirror.constant.com/make/make-${VERSION}.tar.gz&#34;
+
+build() {
+	msg &#34;patching Makefile.am for hell...&#34;
+	# this is test-suite shell stuff, not part of the build
+	sed -i &#39;184,206d&#39; Makefile.am || die &#34;Makefile.am patch failed&#34;
+
+	msg &#34;generating hell metadata...&#34;
+	demiurge . || die &#34;demiurge failed&#34;
+
+	msg &#34;generating ninja files with hell...&#34;
+	satan gen \
+		-DCFLAGS=&#34;${CFLAGS} -std=gnu89&#34; \
+		-DCOND_HAVE_GUILE=0 \
+		-DUNDEF_HAVE_GUILE=1 \
+		-DCOND_USE_CUSTOMS=0 \
+		-DREMOTE=stub \
+		-DCOND_WINDOWSENV=0 \
+		-DUNDEF_WINDOWS32=1 \
+		-DUNDEF_HAVE_DOS_PATHS=1 \
+		-DCOND_KNOWN_PREFIX=1 \
+		-DUNDEF_MAKE_LOAD=1 \
+		-DCOND_GL_GENERATE_ALLOCA_H=1 \
+		-DCOND_GL_COND_OBJ_GETLOADAVG=0 \
+		-DCOND_USE_SYSTEM_GLOB=0 \
+		-DLIBINTL= \
+		-DGETLOADAVG_LIBS= \
+		-DAM_LDFLAGS= \
+		-DDEF_FILE_TIMESTAMP_HI_RES=1 \
+		-DDEF_HAVE_DECL_BSD_SIGNAL=1 \
+		-DDEF_HAVE_DECL_GETLOADAVG=1 \
+		-DDEF_HAVE_STDBOOL_H=1 \
+		-DDEF_HAVE_DIRENT_H=1 \
+		-DDEF_HAVE_STRUCT_DIRENT_D_TYPE=1 \
+		-DDEF_ST_MTIM_NSEC=st_mtim.tv_nsec \
+		-DUNDEF_HAVE_UNION_WAIT=1 \
+		-DCHECK_PKG= \
+		-DEXTRA_PKG= \
+		PREFIX=&#34;$PREFIX&#34; DESTDIR=&#34;$PKG&#34; . || die &#34;satan gen failed&#34;
+
+	msg &#34;fixing generated config headers...&#34;
+	cp src/config.h config.h || die &#34;config.h copy failed&#34;
+	sed -i &#34;/^#define PATH_SEPARATOR_CHAR /c\\#define PATH_SEPARATOR_CHAR &#39;:&#39;&#34; config.h || die &#34;config.h patch failed&#34;
+	sed -i &#34;/^#define PATH_SEPARATOR_CHAR /c\\#define PATH_SEPARATOR_CHAR &#39;:&#39;&#34; src/config.h || die &#34;src/config.h patch failed&#34;
+
+	msg &#34;building gmake with hell...&#34;
+	samu || die &#34;samu build failed&#34;
+
+	msg &#34;installing gmake...&#34;
+	samu install || die &#34;samu install failed&#34;
+
+	msg &#34;fixing install layout...&#34;
+	mkdir -p &#34;$PKG$PREFIX/bin&#34; &#34;$PKG$PREFIX/share/man/man1&#34; &#34;$PKG$PREFIX/include&#34; || die &#34;mkdir failed&#34;
+	[ -f &#34;$PKG$PREFIX/bin/make&#34; ] || die &#34;installed make binary missing&#34;
+	mv &#34;$PKG$PREFIX/bin/make&#34; &#34;$PKG$PREFIX/bin/gmake&#34; || die &#34;failed to rename make to gmake&#34;
+	install -m 644 doc/make.1 &#34;$PKG$PREFIX/share/man/man1/gmake.1&#34; || die &#34;failed to install gmake.1&#34;
+	[ -f &#34;$PKG$PREFIX/include/src/gnumake.h&#34; ] &amp;&amp; mv &#34;$PKG$PREFIX/include/src/gnumake.h&#34; &#34;$PKG$PREFIX/include/gnumake.h&#34;
+	[ -d &#34;$PKG$PREFIX/include/src&#34; ] &amp;&amp; rmdir &#34;$PKG$PREFIX/include/src&#34; 2&gt;/dev/null || true
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

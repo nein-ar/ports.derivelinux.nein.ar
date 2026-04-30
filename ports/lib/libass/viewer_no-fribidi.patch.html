@@ -1,0 +1,276 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: no-fribidi.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/libass/viewer_no-fribidi.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/libass/no-fribidi.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat no-fribidi.patch</pre><pre class="terminal-content">diff --git a/libass/ass_render.h b/libass/ass_render.h
+index 7a157ab..c8adf1d 100644
+--- a/libass/ass_render.h
++++ b/libass/ass_render.h
+@@ -22,7 +22,6 @@
+ 
+ #include &lt;inttypes.h&gt;
+ #include &lt;stdbool.h&gt;
+-#include &lt;fribidi.h&gt;
+ #include &lt;ft2build.h&gt;
+ #include FT_FREETYPE_H
+ #include FT_GLYPH_H
+@@ -49,6 +48,8 @@
+ #define PARSED_FADE (1&lt;&lt;0)
+ #define PARSED_A    (1&lt;&lt;1)
+ 
++typedef uint32_t FriBidiChar;
++
+ typedef struct {
+     ASS_Image result;
+     CompositeHashValue *source;
+diff --git a/libass/ass_shaper.c b/libass/ass_shaper.c
+index 86f2c66..e72a7d5 100644
+--- a/libass/ass_shaper.c
++++ b/libass/ass_shaper.c
+@@ -87,8 +87,7 @@ struct ass_shaper_metrics_data {
+  */
+ void ass_shaper_info(ASS_Library *lib)
+ {
+-    ass_msg(lib, MSGL_INFO, &#34;Shaper: FriBidi &#34;
+-            FRIBIDI_VERSION &#34; (SIMPLE)&#34;
++    ass_msg(lib, MSGL_INFO, &#34;Shaper: &#34;
+             &#34; HarfBuzz-ng %s (COMPLEX)&#34;, hb_version_string()
+            );
+ }
+@@ -705,8 +704,7 @@ static bool shape_harfbuzz(ASS_Shaper *shaper, GlyphInfo *glyphs, size_t len)
+                     lead_context, i - offset + 1);
+         }
+ 
+-        props.direction = FRIBIDI_LEVEL_IS_RTL(level) ?
+-            HB_DIRECTION_RTL : HB_DIRECTION_LTR;
++        props.direction = HB_DIRECTION_LTR;
+         props.script = glyphs[offset].script;
+         props.language  = hb_shaper_get_run_language(shaper, props.script);
+         hb_buffer_set_segment_properties(buf, &amp;props);
+@@ -774,35 +772,6 @@ void ass_shaper_determine_script(ASS_Shaper *shaper, GlyphInfo *glyphs,
+     }
+ }
+ 
+-/**
+- * \brief Shape event text with FriBidi. Does mirroring and simple
+- * Arabic shaping.
+- * \param len number of clusters
+- */
+-static void shape_fribidi(ASS_Shaper *shaper, GlyphInfo *glyphs, size_t len)
+-{
+-    int i;
+-    FriBidiJoiningType *joins = calloc(len, sizeof(*joins));
+-
+-    // shape on codepoint level
+-    fribidi_get_joining_types(shaper-&gt;event_text, len, joins);
+-    fribidi_join_arabic(shaper-&gt;ctypes, len, shaper-&gt;emblevels, joins);
+-    fribidi_shape(FRIBIDI_FLAGS_DEFAULT | FRIBIDI_FLAGS_ARABIC,
+-            shaper-&gt;emblevels, len, joins, shaper-&gt;event_text);
+-
+-    // update indexes
+-    for (i = 0; i &lt; len; i++) {
+-        GlyphInfo *info = glyphs + i;
+-        FT_Face face = info-&gt;font-&gt;faces[info-&gt;face_index];
+-        info-&gt;symbol = shaper-&gt;event_text[i];
+-        info-&gt;glyph_index = ass_font_index_magic(face, shaper-&gt;event_text[i]);
+-        if (info-&gt;glyph_index)
+-            info-&gt;glyph_index = FT_Get_Char_Index(face, info-&gt;glyph_index);
+-    }
+-
+-    free(joins);
+-}
+-
+ /**
+  * \brief Toggle kerning for HarfBuzz shaping.
+  * \param shaper shaper instance
+@@ -895,7 +864,7 @@ void ass_shaper_set_base_direction(ASS_Shaper *shaper, FriBidiParType dir)
+     shaper-&gt;base_direction = dir;
+ 
+     if (shaper-&gt;whole_text_layout != WHOLE_TEXT_LAYOUT_EXPLICIT)
+-        shaper-&gt;whole_text_layout = dir == FRIBIDI_PAR_ON ?
++        shaper-&gt;whole_text_layout = dir == 0 ?
+             WHOLE_TEXT_LAYOUT_IMPLICIT : WHOLE_TEXT_LAYOUT_OFF;
+ }
+ 
+@@ -935,7 +904,7 @@ void ass_shaper_set_whole_text_layout(ASS_Shaper *shaper, bool enable)
+ {
+     shaper-&gt;whole_text_layout = enable ?
+         WHOLE_TEXT_LAYOUT_EXPLICIT :
+-        shaper-&gt;base_direction == FRIBIDI_PAR_ON ?
++        shaper-&gt;base_direction == 0 ?
+             WHOLE_TEXT_LAYOUT_IMPLICIT : WHOLE_TEXT_LAYOUT_OFF;
+ }
+ 
+@@ -946,8 +915,7 @@ void ass_shaper_set_whole_text_layout(ASS_Shaper *shaper, bool enable)
+  */
+ bool ass_shaper_shape(ASS_Shaper *shaper, TextInfo *text_info)
+ {
+-    int i, ret, last_break;
+-    FriBidiParType dir, *pdir;
++    int i;
+     GlyphInfo *glyphs = text_info-&gt;glyphs;
+     shaper-&gt;event_text = text_info-&gt;event_text;
+ 
+@@ -957,61 +925,7 @@ bool ass_shaper_shape(ASS_Shaper *shaper, TextInfo *text_info)
+     for (i = 0; i &lt; text_info-&gt;length; i++)
+         shaper-&gt;event_text[i] = glyphs[i].symbol;
+ 
+-    fribidi_get_bidi_types(shaper-&gt;event_text,
+-            text_info-&gt;length, shaper-&gt;ctypes);
+-
+-    int n_pars = 1;
+-    for (i = 0; i &lt; text_info-&gt;length - 1; i++)
+-        if (shaper-&gt;ctypes[i] == FRIBIDI_TYPE_BS)
+-            n_pars++;
+-
+-    if (!check_par_allocations(shaper, n_pars))
+-        return false;
+-
+-#ifdef USE_FRIBIDI_EX_API
+-    if (shaper-&gt;bidi_brackets) {
+-        fribidi_get_bracket_types(shaper-&gt;event_text,
+-                text_info-&gt;length, shaper-&gt;ctypes, shaper-&gt;btypes);
+-    }
+-#endif
+-
+-    // Get bidi embedding levels
+-    last_break = 0;
+-    pdir = shaper-&gt;pbase_dir;
+-    for (i = 0; i &lt; text_info-&gt;length; i++) {
+-        // Embedding levels must be calculated one bidi &#34;paragraph&#34; at a time
+-        if (i == text_info-&gt;length - 1 ||
+-                shaper-&gt;ctypes[i] == FRIBIDI_TYPE_BS ||
+-                (!shaper-&gt;whole_text_layout &amp;&amp;
+-                    (glyphs[i + 1].starts_new_run || glyphs[i].hspacing))) {
+-            dir = shaper-&gt;base_direction;
+-#ifdef USE_FRIBIDI_EX_API
+-            FriBidiBracketType *btypes = NULL;
+-            if (shaper-&gt;bidi_brackets)
+-                btypes = shaper-&gt;btypes + last_break;
+-            ret = fribidi_get_par_embedding_levels_ex(
+-                    shaper-&gt;ctypes + last_break, btypes,
+-                    i - last_break + 1, &amp;dir, shaper-&gt;emblevels + last_break);
+-#else
+-            ret = fribidi_get_par_embedding_levels(shaper-&gt;ctypes + last_break,
+-                    i - last_break + 1, &amp;dir, shaper-&gt;emblevels + last_break);
+-#endif
+-            if (ret == 0)
+-                return false;
+-            last_break = i + 1;
+-            if (shaper-&gt;whole_text_layout)
+-                *pdir++ = dir;
+-        }
+-    }
+-
+-    switch (shaper-&gt;shaping_level) {
+-    case ASS_SHAPING_SIMPLE:
+-        shape_fribidi(shaper, glyphs, text_info-&gt;length);
+-        return true;
+-    case ASS_SHAPING_COMPLEX:
+-    default:
+-        return shape_harfbuzz(shaper, glyphs, text_info-&gt;length);
+-    }
++    return shape_harfbuzz(shaper, glyphs, text_info-&gt;length);
+ }
+ 
+ /**
+@@ -1025,7 +939,7 @@ ASS_Shaper *ass_shaper_new(Cache *metrics_cache, Cache *face_size_metrics_cache)
+     if (!shaper)
+         return NULL;
+ 
+-    shaper-&gt;base_direction = FRIBIDI_PAR_ON;
++    shaper-&gt;base_direction = 0;
+ 
+     if (!init_features(shaper))
+         goto error;
+@@ -1087,38 +1001,12 @@ void ass_shaper_cleanup(ASS_Shaper *shaper, TextInfo *text_info)
+  */
+ FriBidiStrIndex *ass_shaper_reorder(ASS_Shaper *shaper, TextInfo *text_info)
+ {
+-    int i, ret;
++    int i;
+ 
+     // Initialize reorder map
+     for (i = 0; i &lt; text_info-&gt;length; i++)
+         shaper-&gt;cmap[i] = i;
+ 
+-    // Create reorder map line-by-line or run-by-run
+-    int last_break = 0;
+-    FriBidiParType *pdir = shaper-&gt;whole_text_layout ?
+-        shaper-&gt;pbase_dir : &amp;shaper-&gt;base_direction;
+-    GlyphInfo *glyphs = text_info-&gt;glyphs;
+-    for (i = 0; i &lt; text_info-&gt;length; i++) {
+-        // Bidi &#34;paragraph separators&#34; may occur between line breaks:
+-        // U+001C..1E even with ASS_FEATURE_WRAP_UNICODE,
+-        // or U+000D, U+0085, U+2029 only without it
+-        if (i == text_info-&gt;length - 1 || glyphs[i + 1].linebreak ||
+-                shaper-&gt;ctypes[i] == FRIBIDI_TYPE_BS ||
+-                (!shaper-&gt;whole_text_layout &amp;&amp;
+-                    (glyphs[i + 1].starts_new_run || glyphs[i].hspacing))) {
+-            ret = fribidi_reorder_line(0,
+-                    shaper-&gt;ctypes, i - last_break + 1, last_break, *pdir,
+-                    shaper-&gt;emblevels, NULL,
+-                    shaper-&gt;cmap);
+-            if (ret == 0)
+-                return NULL;
+-
+-            last_break = i + 1;
+-            if (shaper-&gt;whole_text_layout &amp;&amp; shaper-&gt;ctypes[i] == FRIBIDI_TYPE_BS)
+-                pdir++;
+-        }
+-    }
+-
+     return shaper-&gt;cmap;
+ }
+ 
+@@ -1136,10 +1024,5 @@ FriBidiStrIndex *ass_shaper_get_reorder_map(ASS_Shaper *shaper)
+  */
+ FriBidiParType ass_resolve_base_direction(int enc)
+ {
+-    switch (enc) {
+-        case -1:
+-            return FRIBIDI_PAR_ON;
+-        default:
+-            return FRIBIDI_PAR_LTR;
+-    }
++    return 0;
+ }
+diff --git a/libass/ass_shaper.h b/libass/ass_shaper.h
+index 06f868d..333252b 100644
+--- a/libass/ass_shaper.h
++++ b/libass/ass_shaper.h
+@@ -21,14 +21,15 @@
+ 
+ typedef struct ass_shaper ASS_Shaper;
+ 
+-#include &lt;fribidi.h&gt;
+ #include &lt;stdbool.h&gt;
+ #include &#34;ass_render.h&#34;
+ #include &#34;ass_cache.h&#34;
+ 
+-#if FRIBIDI_MAJOR_VERSION &gt;= 1
+-#define USE_FRIBIDI_EX_API
+-#endif
++typedef uint32_t FriBidiChar;
++typedef uint32_t FriBidiCharType;
++typedef int FriBidiStrIndex;
++typedef int FriBidiParType;
++typedef signed char FriBidiLevel;
+ 
+ void ass_shaper_info(ASS_Library *lib);
+ ASS_Shaper *ass_shaper_new(Cache *metrics_cache, Cache *face_size_metrics_cache);
+diff --git a/meson.build b/meson.build
+index 9eb7969..bc40a57 100644
+--- a/meson.build
++++ b/meson.build
+@@ -87,12 +87,6 @@ deps += dependency(
+     default_options: [&#39;harfbuzz=disabled&#39;],
+ )
+ 
+-deps += dependency(
+-    &#39;fribidi&#39;,
+-    version: &#39;&gt;= 0.19.1&#39;,
+-    default_options: [&#39;docs=false&#39;, &#39;tests=false&#39;],
+-)
+-
+ harfbuzz_options = [
+     &#39;tests=disabled&#39;,
+     &#39;cairo=disabled&#39;,
+
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

@@ -1,0 +1,112 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: musl-targets.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/devel/llvm/viewer_musl-targets.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>devel/llvm/musl-targets.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat musl-targets.patch</pre><pre class="terminal-content">diff --git a/clang/lib/Driver/ToolChains/Gnu.cpp b/clang/lib/Driver/ToolChains/Gnu.cpp
+index 543f396..24ee06b 100644
+--- a/clang/lib/Driver/ToolChains/Gnu.cpp
++++ b/clang/lib/Driver/ToolChains/Gnu.cpp
+@@ -2545,8 +2545,7 @@ void Generic_GCC::GCCInstallationDetector::AddDefaultGCCPrefixes(
+       // 64-bit compiler which defaults to &#34;-m32&#34;, hence &#34;powerpc64-suse-linux&#34;.
+       &#34;powerpc64-suse-linux&#34;, &#34;powerpc-montavista-linuxspe&#34;};
+   static const char *const PPCLELibDirs[] = {&#34;/lib32&#34;, &#34;/lib&#34;};
+-  static const char *const PPCLETriples[] = {&#34;powerpcle-unknown-linux-gnu&#34;,
+-                                             &#34;powerpcle-linux-musl&#34;};
++  static const char *const PPCLETriples[] = {&#34;powerpcle-unknown-linux-gnu&#34;};
+ 
+   static const char *const PPC64LibDirs[] = {&#34;/lib64&#34;, &#34;/lib&#34;};
+   static const char *const PPC64Triples[] = {&#34;powerpc64-unknown-linux-gnu&#34;,
+@@ -2619,6 +2618,95 @@ void Generic_GCC::GCCInstallationDetector::AddDefaultGCCPrefixes(
+     return;
+   }
+ 
++  if (TargetTriple.isMusl()) {
++    static const char *const AArch64MuslTriples[] = {&#34;aarch64-linux-musl&#34;};
++    static const char *const ARMHFMuslTriples[] = {
++        &#34;arm-linux-musleabihf&#34;, &#34;armv7l-linux-musleabihf&#34;
++    };
++    static const char *const ARMMuslTriples[] = {&#34;arm-linux-musleabi&#34;};
++    static const char *const X86_64MuslTriples[] = {
++        &#34;x86_64-linux-musl&#34;,
++        &#34;x86_64-pc-linux-musl&#34;, &#34;x86_64-unknown-linux-musl&#34;
++    };
++    static const char *const X86MuslTriples[] = {&#34;i686-linux-musl&#34;};
++    static const char *const MIPSMuslTriples[] = {
++        &#34;mips-linux-musl&#34;, &#34;mipsel-linux-musl&#34;,
++        &#34;mipsel-linux-muslhf&#34;, &#34;mips-linux-muslhf&#34;
++    };
++    static const char *const PPCMuslTriples[] = {&#34;powerpc-linux-musl&#34;};
++    static const char *const PPCLEMuslTriples[] = {&#34;powerpcle-linux-musl&#34;};
++    static const char *const PPC64MuslTriples[] = {&#34;powerpc64-linux-musl&#34;};
++    static const char *const PPC64LEMuslTriples[] = {&#34;powerpc64le-linux-musl&#34;};
++    static const char *const RISCV64MuslTriples[] = {&#34;riscv64-linux-musl&#34;};
++
++    switch (TargetTriple.getArch()) {
++    case llvm::Triple::aarch64:
++      LibDirs.append(begin(AArch64LibDirs), end(AArch64LibDirs));
++      TripleAliases.append(begin(AArch64MuslTriples), end(AArch64MuslTriples));
++      BiarchLibDirs.append(begin(AArch64LibDirs), end(AArch64LibDirs));
++      BiarchTripleAliases.append(begin(AArch64MuslTriples), end(AArch64MuslTriples));
++      break;
++    case llvm::Triple::arm:
++      LibDirs.append(begin(ARMLibDirs), end(ARMLibDirs));
++      if (TargetTriple.getEnvironment() == llvm::Triple::MuslEABIHF) {
++        TripleAliases.append(begin(ARMHFMuslTriples), end(ARMHFMuslTriples));
++      } else {
++        TripleAliases.append(begin(ARMMuslTriples), end(ARMMuslTriples));
++      }
++      break;
++    case llvm::Triple::x86_64:
++      LibDirs.append(begin(X86_64LibDirs), end(X86_64LibDirs));
++      TripleAliases.append(begin(X86_64MuslTriples), end(X86_64MuslTriples));
++      BiarchLibDirs.append(begin(X86LibDirs), end(X86LibDirs));
++      BiarchTripleAliases.append(begin(X86MuslTriples), end(X86MuslTriples));
++      break;
++    case llvm::Triple::x86:
++      LibDirs.append(begin(X86LibDirs), end(X86LibDirs));
++      TripleAliases.append(begin(X86MuslTriples), end(X86MuslTriples));
++      BiarchLibDirs.append(begin(X86_64LibDirs), end(X86_64LibDirs));
++      BiarchTripleAliases.append(begin(X86_64MuslTriples), end(X86_64MuslTriples));
++      break;
++    case llvm::Triple::mips:
++      LibDirs.append(begin(MIPSLibDirs), end(MIPSLibDirs));
++      TripleAliases.append(begin(MIPSMuslTriples), end(MIPSMuslTriples));
++      break;
++    case llvm::Triple::ppc:
++      LibDirs.append(begin(PPCLibDirs), end(PPCLibDirs));
++      TripleAliases.append(begin(PPCMuslTriples), end(PPCMuslTriples));
++      BiarchLibDirs.append(begin(PPC64LibDirs), end(PPC64LibDirs));
++      BiarchTripleAliases.append(begin(PPC64MuslTriples), end(PPC64MuslTriples));
++      break;
++    case llvm::Triple::ppcle:
++      LibDirs.append(begin(PPCLELibDirs), end(PPCLELibDirs));
++      TripleAliases.append(begin(PPCLEMuslTriples), end(PPCLEMuslTriples));
++      BiarchLibDirs.append(begin(PPC64LELibDirs), end(PPC64LELibDirs));
++      BiarchTripleAliases.append(begin(PPC64LEMuslTriples), end(PPC64LEMuslTriples));
++      break;
++    case llvm::Triple::ppc64:
++      LibDirs.append(begin(PPC64LibDirs), end(PPC64LibDirs));
++      TripleAliases.append(begin(PPC64MuslTriples), end(PPC64MuslTriples));
++      BiarchLibDirs.append(begin(PPCLibDirs), end(PPCLibDirs));
++      BiarchTripleAliases.append(begin(PPCMuslTriples), end(PPCMuslTriples));
++      break;
++    case llvm::Triple::ppc64le:
++      LibDirs.append(begin(PPC64LELibDirs), end(PPC64LELibDirs));
++      TripleAliases.append(begin(PPC64LEMuslTriples), end(PPC64LEMuslTriples));
++      BiarchLibDirs.append(begin(PPCLELibDirs), end(PPCLELibDirs));
++      BiarchTripleAliases.append(begin(PPCLEMuslTriples), end(PPCLEMuslTriples));
++      break;
++    case llvm::Triple::riscv64:
++      LibDirs.append(begin(RISCV64LibDirs), end(RISCV64LibDirs));
++      TripleAliases.append(begin(RISCV64MuslTriples), end(RISCV64MuslTriples));
++      break;
++    default:
++      break;
++    }
++    TripleAliases.push_back(TargetTriple.str());
++    if (TargetTriple.str() != BiarchTriple.str())
++      BiarchTripleAliases.push_back(BiarchTriple.str());
++    return;
++  }
++
+   // Android targets should not use GNU/Linux tools or libraries.
+   if (TargetTriple.isAndroid()) {
+     static const char *const AArch64AndroidTriples[] = {
+
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

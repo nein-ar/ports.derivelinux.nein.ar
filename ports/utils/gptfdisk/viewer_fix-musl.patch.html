@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: fix-musl.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/utils/gptfdisk/viewer_fix-musl.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>utils/gptfdisk/fix-musl.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat fix-musl.patch</pre><pre class="terminal-content">--- a/diskio-unix.cc
++++ b/diskio-unix.cc
+@@ -52,7 +52,7 @@
+ // work.
+ int DiskIO::OpenForRead(void) {
+    int shouldOpen = 1;
+-   struct stat64 st;
++   struct stat st;
+ 
+    if (isOpen) { // file is already open
+       if (openForWrite) {
+@@ -78,7 +78,7 @@
+       } else {
+          isOpen = 0;
+          openForWrite = 0;
+-         if (fstat64(fd, &amp;st) == 0) {
++         if (fstat(fd, &amp;st) == 0) {
+             if (S_ISDIR(st.st_mode))
+                cerr &lt;&lt; &#34;The specified path is a directory!\n&#34;;
+ #if !(defined(__FreeBSD__) || defined(__FreeBSD_kernel__)) \
+@@ -311,7 +311,7 @@
+ // Note that seeking beyond the end of the file is NOT detected as a failure!
+ int DiskIO::Seek(uint64_t sector) {
+    int retval = 1;
+-   off64_t seekTo, sought;
++   off_t seekTo, sought;
+ 
+    // If disk isn&#39;t open, try to open it....
+    if (!isOpen) {
+@@ -320,7 +320,7 @@
+ 
+    if (isOpen) {
+       seekTo = sector * (uint64_t) GetBlockSize();
+-      sought = lseek64(fd, seekTo, SEEK_SET);
++      sought = lseek(fd, seekTo, SEEK_SET);
+       if (sought != seekTo) {
+          retval = 0;
+       } // if
+@@ -428,8 +428,8 @@
+ // return correct values for disk image files.
+ uint64_t DiskIO::DiskSize(int *err) {
+    uint64_t sectors = 0; // size in sectors
+-   off64_t bytes = 0; // size in bytes
+-   struct stat64 st;
++   off_t bytes = 0; // size in bytes
++   struct stat st;
+    int platformFound = 0;
+ #ifdef __sun__
+    struct dk_minfo minfo;
+@@ -488,7 +488,7 @@
+       // file (a QEMU image, dd backup, or what have you) and see what
+       // fstat() gives us....
+       if ((sectors == 0) || (*err == -1)) {
+-         if (fstat64(fd, &amp;st) == 0) {
++         if (fstat(fd, &amp;st) == 0) {
+             bytes = st.st_size;
+             if ((bytes % UINT64_C(512)) != 0)
+                cerr &lt;&lt; &#34;Warning: File size is not a multiple of 512 bytes!&#34;
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

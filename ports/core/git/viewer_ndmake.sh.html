@@ -1,0 +1,70 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/core/git/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>core/git/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=git
+VERSION=2.48.1
+RELEASE=1
+SOURCE=&#34;https://mirrors.edge.kernel.org/pub/software/scm/git/git-${VERSION}.tar.gz&#34;
+
+build() {
+    cd &#34;$SRC/git-${VERSION}&#34; || die &#34;cannot enter source directory&#34;
+    _curl_libs=&#34;-Wl,-Bstatic -lcurl -lbearssl -lzstd -lz&#34;
+
+    if command -v pkg-config &gt;/dev/null 2&gt;&amp;1; then
+        _pc_libs=$(pkg-config --static --libs libcurl 2&gt;/dev/null || true)
+        if [ -n &#34;$_pc_libs&#34; ]; then
+            _curl_libs=&#34;$_pc_libs&#34;
+        fi
+    fi
+
+    msg &#34;disabling templates to avoid tar compatibility issues&#34;
+    cat &gt; templates/Makefile &lt;&lt;&#39;TMPL_EOF&#39;
+install:
+	@true
+clean:
+	@true
+all:
+	@true
+TMPL_EOF
+
+    msg &#34;creating config.mak&#34;
+    cat &gt; config.mak &lt;&lt;CFGEOF
+SHELL_PATH = /bin/sh
+NO_GETTEXT = YesPlease
+NO_SVN_TESTS = YesPlease
+NO_TCLTK = YesPlease
+NO_EXPAT = YesPlease
+NO_NSEC = YesPlease
+NO_PYTHON = YesPlease
+NO_PERL = YesPlease
+NO_SYS_POLL_H = 1
+NO_CROSS_DIRECTORY_HARDLINKS = 1
+NO_INSTALL_HARDLINKS = 1
+NO_REGEX = NeedsStartEnd
+NO_INSTALL_TEMPLATES = 1
+OPENSSL_SHA1 = YesPlease
+OPENSSL_SHA256 = YesPlease
+
+# Force static linking
+CC = ${CC:-cc}
+LDFLAGS = -static
+BASIC_LDFLAGS =
+CC_LD_DYNPATH =
+EXTLIBS += -lpthread -lrt
+CFGEOF
+
+    msg &#34;building with gmake&#34;
+    gmake \
+        SHELL=/bin/sh \
+        prefix=&#34;$PREFIX&#34; \
+        CURL_LIBCURL=&#34;$_curl_libs&#34; \
+        OPENSSL_SHA1=1 \
+        OPENSSL_SHA256=1 \
+        V=1 \
+        -j&#34;$NPROC&#34; \
+        all || die &#34;gmake build failed&#34;
+
+    msg &#34;installing&#34;
+    gmake prefix=&#34;$PREFIX&#34; DESTDIR=&#34;$PKG&#34; install || die &#34;gmake install failed&#34;
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

@@ -1,0 +1,387 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: 0001-static-mesa-wayland.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/wl/vkgears/viewer_0001-static-mesa-wayland.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>wl/vkgears/0001-static-mesa-wayland.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat 0001-static-mesa-wayland.patch</pre><pre class="terminal-content">diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1b1dfa3..078471f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -12,30 +12,24 @@ endif (HAVE_LIB_M)
+ 
+ find_package(PkgConfig)
+ pkg_check_modules(GLFW3 glfw3)
+-pkg_check_modules(VULKAN vulkan)
+ 
+ # Find OpenGL library
+ include(FindOpenGL)
+ 
+-# Find Vulkan library
+-include(FindVulkan)
+-if (NOT Vulkan_GLSLANG_VALIDATOR_EXECUTABLE)
+-    find_program (GLSL_LANG_VALIDATOR NAMES glslangValidator PATHS ${VULKAN_SDK}/bin)
+-    set(Vulkan_GLSLANG_VALIDATOR_EXECUTABLE &#34;${GLSL_LANG_VALIDATOR}&#34;)
+-endif()
++find_program(GLSLANG_VALIDATOR NAMES glslangValidator PATHS ${VULKAN_SDK}/bin)
+ 
+ # set defaults for options
+-set (OPENGL_EXAMPLES_DEFAULT ${OpenGL_OpenGL_FOUND})
+-set (VULKAN_EXAMPLES_DEFAULT ${Vulkan_FOUND})
+-if(NOT Vulkan_GLSLANG_VALIDATOR_EXECUTABLE)
++set (OPENGL_EXAMPLES_DEFAULT OFF)
++set (VULKAN_EXAMPLES_DEFAULT ON)
++if(NOT GLSLANG_VALIDATOR)
+     set (VULKAN_EXAMPLES_DEFAULT OFF)
+ endif()
+ 
+ # user configurable options
+ option(OPENGL_EXAMPLES &#34;Build OpenGL examples&#34; ${OPENGL_EXAMPLES_DEFAULT})
+ option(VULKAN_EXAMPLES &#34;Build Vulkan examples&#34; ${VULKAN_EXAMPLES_DEFAULT})
+-option(EXTERNAL_GLFW &#34;Use external GLFW project&#34; ON)
+-option(EXTERNAL_GLAD &#34;Use external GLAD project&#34; ON)
++option(EXTERNAL_GLFW &#34;Use external GLFW project&#34; OFF)
++option(EXTERNAL_GLAD &#34;Use external GLAD project&#34; OFF)
+ 
+ message(STATUS &#34;OPENGL_EXAMPLES = ${OPENGL_EXAMPLES}&#34;)
+ message(STATUS &#34;VULKAN_EXAMPLES = ${VULKAN_EXAMPLES}&#34;)
+@@ -69,7 +63,7 @@ if (EXTERNAL_GLFW)
+     list(APPEND GLFW_LIBS_ALL ${GLFW_LIBRARIES} ${EXTRA_LIBS})
+ else ()
+     add_definitions(${GLFW3_CFLAGS})
+-    list(APPEND GLFW_LIBS_ALL ${GLFW3_LDFLAGS} ${EXTRA_LIBS})
++    list(APPEND GLFW_LIBS_ALL ${GLFW3_STATIC_LDFLAGS} ${EXTRA_LIBS})
+ endif ()
+ 
+ # Support for external glad
+@@ -111,6 +105,33 @@ if (OPENGL_EXAMPLES)
+ endif (OPENGL_EXAMPLES)
+ 
+ if (VULKAN_EXAMPLES)
++    find_library(MESA_STATIC_VULKAN NAMES vulkan_lvp_static REQUIRED)
++    find_package(Threads REQUIRED)
++    find_program(LLVM_CONFIG llvm-config REQUIRED)
++    execute_process(
++        COMMAND ${LLVM_CONFIG} --libs
++        OUTPUT_VARIABLE LLVM_LIBS
++        OUTPUT_STRIP_TRAILING_WHITESPACE
++    )
++    separate_arguments(LLVM_LIBS)
++
++    find_library(LIBZ z)
++    find_library(LIBZSTD zstd)
++    find_library(LIBUNWIND unwind)
++    find_library(LIBDRM drm)
++    find_library(LIBEXPAT expat)
++    find_library(LIBDISPLAY_INFO display-info)
++    find_library(LIBWAYLAND_CLIENT wayland-client)
++    find_library(LIBUDEV udev)
++    find_library(LIBSENSORS sensors)
++    find_library(LIBSPIRVTOOLS_OPT SPIRV-Tools-opt)
++    find_library(LIBSPIRVTOOLS SPIRV-Tools)
++    find_library(LIBSPIRVTOOLS_LINK SPIRV-Tools-link)
++
++    if (EXISTS &#34;${CMAKE_SOURCE_DIR}/../include/vulkan/vulkan.h&#34;)
++        include_directories(&#34;${CMAKE_SOURCE_DIR}/../include&#34;)
++    endif ()
++
+     file(GLOB_RECURSE VERTEX_SHADER_SOURCE &#34;${SHADER_DIR}/*.v450.vert&#34;)
+     file(GLOB_RECURSE FRAGMENT_SHADER_SOURCE &#34;${SHADER_DIR}/*.v450.frag&#34;)
+     set(SHADER_SOURCE ${VERTEX_SHADER_SOURCE} ${FRAGMENT_SHADER_SOURCE})
+@@ -118,15 +139,38 @@ if (VULKAN_EXAMPLES)
+ 
+     foreach(shader ${SHADER_SOURCE})
+         add_custom_command(OUTPUT ${shader}.spv DEPENDS ${shader}
+-            COMMAND ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} -V ${shader} -o ${shader}.spv)
++            COMMAND ${GLSLANG_VALIDATOR} -V ${shader} -o ${shader}.spv)
+         list(APPEND SHADERS ${shader}.spv)
+     endforeach(shader)
+-
+-    include_directories(${Vulkan_INCLUDE_DIRS})
++    set(VK1_GEARS_VULKAN_LIBS
++        ${MESA_STATIC_VULKAN}
++        ${LLVM_LIBS}
++        stdc++
++        Threads::Threads
++        ${EXTRA_LIBS}
++    )
++    foreach(lib IN ITEMS
++        LIBZSTD
++        LIBZ
++        LIBUNWIND
++        LIBDRM
++        LIBEXPAT
++        LIBDISPLAY_INFO
++        LIBWAYLAND_CLIENT
++        LIBUDEV
++        LIBSENSORS
++        LIBSPIRVTOOLS_OPT
++        LIBSPIRVTOOLS
++        LIBSPIRVTOOLS_LINK
++    )
++        if (${lib})
++            list(APPEND VK1_GEARS_VULKAN_LIBS ${${lib}})
++        endif ()
++    endforeach()
+ 
+     message(&#34;-- Adding: vk1_gears&#34;)
+     add_executable(vk1_gears src/vk1_gears.c ${SHADERS})
+-    target_link_libraries(vk1_gears ${Vulkan_LIBRARIES} ${GLFW_LIBS_ALL})
++    target_link_libraries(vk1_gears ${VK1_GEARS_VULKAN_LIBS} ${GLFW_LIBS_ALL})
+ 
+     if (EXTERNAL_GLFW)
+         add_dependencies(vk1_gears GLFW-build)
+diff --git a/src/vk1_gears.c b/src/vk1_gears.c
+index 8e6e63d..8f79ffc 100644
+--- a/src/vk1_gears.c
++++ b/src/vk1_gears.c
+@@ -40,6 +40,7 @@
+ #include &lt;string.h&gt;
+ #include &lt;assert.h&gt;
+ #include &lt;errno.h&gt;
++#include &lt;limits.h&gt;
+ 
+ #include &lt;sys/types.h&gt;
+ #include &lt;sys/stat.h&gt;
+@@ -47,8 +48,16 @@
+ 
+ #include &#34;linmath.h&#34;
+ 
+-#include &lt;vulkan/vulkan_core.h&gt;
++#define VK_USE_PLATFORM_WAYLAND_KHR
++#define GLFW_INCLUDE_NONE
++#define GLFW_EXPOSE_NATIVE_WAYLAND
++#include &lt;vulkan/vulkan.h&gt;
+ #include &lt;GLFW/glfw3.h&gt;
++#include &lt;GLFW/glfw3native.h&gt;
++
++#ifndef VKGEARS_SHADER_DIR
++#define VKGEARS_SHADER_DIR &#34;/usr/share/vkgears/shaders&#34;
++#endif
+ 
+ static const char* frag_shader_filename = &#34;shaders/gears.v450.frag.spv&#34;;
+ static const char* vert_shader_filename = &#34;shaders/gears.v450.vert.spv&#34;;
+@@ -142,6 +151,7 @@ typedef struct gears_app
+     VkFormat format;
+     VkColorSpaceKHR color_space;
+     VkSurfaceCapabilitiesKHR surface_capabilities;
++    VkExtent2D swapchain_extent;
+     VkSwapchainKHR swapchain;
+     VkSampleCountFlags sample_count;
+     uint32_t swapchain_image_count;
+@@ -493,12 +503,23 @@ static void gears_parse_options(gears_app *app, const int argc, const char **arg
+ 
+ static void gears_init_glfw(gears_app *app)
+ {
++    glfwSetErrorCallback(gears_glfw_error);
++#ifdef GLFW_PLATFORM_WAYLAND
++    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
++    glfwInitHint(GLFW_WAYLAND_LIBDECOR, GLFW_WAYLAND_DISABLE_LIBDECOR);
++#endif
+     if (!glfwInit()) {
+-        panic(&#34;glfwInit failed\n&#34;);
++        const char *error_desc = NULL;
++        int error_code = glfwGetError(&amp;error_desc);
++        panic(&#34;glfwInit failed: code=%d desc=%s\n&#34;,
++              error_code,
++              error_desc ? error_desc : &#34;(null)&#34;);
+     }
+-    if (!glfwVulkanSupported()) {
+-        panic(&#34;glfwVulkanSupported failed\n&#34;);
++#ifdef GLFW_PLATFORM_WAYLAND
++    if (glfwGetPlatform() != GLFW_PLATFORM_WAYLAND) {
++        panic(&#34;glfw did not initialize a wayland backend\n&#34;);
+     }
++#endif
+ }
+ 
+ static void gears_destroy_window(gears_app *app)
+@@ -510,7 +530,6 @@ static void gears_destroy_window(gears_app *app)
+ static void gears_create_window(gears_app *app)
+ {
+     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+-    glfwSetErrorCallback(gears_glfw_error);
+     app-&gt;window = glfwCreateWindow(app-&gt;width, app-&gt;height, &#34;VK1 Gears&#34;,
+         NULL, NULL);
+     if (!app-&gt;window) {
+@@ -547,12 +566,9 @@ static int check_layers(VkLayerProperties *instance_layers,
+ 
+ static void gears_create_instance(gears_app *app)
+ {
+-    uint32_t required_extension_count = 0;
+     uint32_t instance_count = 0;
+-    uint32_t validation_layer_count = 0;
+     uint32_t enabled_extensions_count = 0;
+     uint32_t enabled_layer_count = 0;
+-    const char **required_extensions = NULL;
+     const char *extension_names[64];
+     const char *layer_names[64];
+ 
+@@ -585,15 +601,9 @@ static void gears_create_instance(gears_app *app)
+         free(instance_layers);
+     }
+ 
+-    required_extensions =
+-        glfwGetRequiredInstanceExtensions(&amp;required_extension_count);
+-    if (!required_extensions) {
+-        panic(&#34;glfwGetRequiredInstanceExtensions failed\n&#34;);
+-    }
+-    for (size_t i = 0; i &lt; required_extension_count; i++) {
+-        extension_names[enabled_extensions_count++] = required_extensions[i];
+-        assert(enabled_extensions_count &lt; 64);
+-    }
++    extension_names[enabled_extensions_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
++    extension_names[enabled_extensions_count++] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
++    assert(enabled_extensions_count &lt; 64);
+ 
+     const VkApplicationInfo ai = {
+         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+@@ -624,8 +634,20 @@ static void gears_destroy_surface(gears_app *app)
+ 
+ static void gears_create_surface(gears_app *app)
+ {
+-    VK_CALL(glfwCreateWindowSurface
+-        (app-&gt;instance, app-&gt;window, NULL, &amp;app-&gt;surface));
++    struct wl_display *display = glfwGetWaylandDisplay();
++    struct wl_surface *surface = glfwGetWaylandWindow(app-&gt;window);
++    if (!display || !surface) {
++        panic(&#34;GLFW did not expose Wayland display/surface\n&#34;);
++    }
++
++    const VkWaylandSurfaceCreateInfoKHR wsci = {
++        .sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
++        .pNext = NULL,
++        .flags = 0,
++        .display = display,
++        .surface = surface,
++    };
++    VK_CALL(vkCreateWaylandSurfaceKHR(app-&gt;instance, &amp;wsci, NULL, &amp;app-&gt;surface));
+ }
+ 
+ static void gears_find_physical_device(gears_app *app)
+@@ -766,8 +788,35 @@ static void gears_create_swapchain(gears_app *app)
+         (app-&gt;physdev, app-&gt;surface, &amp;app-&gt;surface_capabilities));
+ 
+     glfwGetFramebufferSize(app-&gt;window, &amp;app-&gt;width, &amp;app-&gt;height);
+-    assert(app-&gt;surface_capabilities.currentExtent.width == app-&gt;width);
+-    assert(app-&gt;surface_capabilities.currentExtent.height == app-&gt;height);
++    if (app-&gt;surface_capabilities.currentExtent.width == UINT32_MAX) {
++        app-&gt;swapchain_extent.width = app-&gt;width;
++        app-&gt;swapchain_extent.height = app-&gt;height;
++
++        if (app-&gt;swapchain_extent.width &lt;
++            app-&gt;surface_capabilities.minImageExtent.width) {
++            app-&gt;swapchain_extent.width =
++                app-&gt;surface_capabilities.minImageExtent.width;
++        }
++        if (app-&gt;swapchain_extent.width &gt;
++            app-&gt;surface_capabilities.maxImageExtent.width) {
++            app-&gt;swapchain_extent.width =
++                app-&gt;surface_capabilities.maxImageExtent.width;
++        }
++        if (app-&gt;swapchain_extent.height &lt;
++            app-&gt;surface_capabilities.minImageExtent.height) {
++            app-&gt;swapchain_extent.height =
++                app-&gt;surface_capabilities.minImageExtent.height;
++        }
++        if (app-&gt;swapchain_extent.height &gt;
++            app-&gt;surface_capabilities.maxImageExtent.height) {
++            app-&gt;swapchain_extent.height =
++                app-&gt;surface_capabilities.maxImageExtent.height;
++        }
++    } else {
++        app-&gt;swapchain_extent = app-&gt;surface_capabilities.currentExtent;
++        assert(app-&gt;swapchain_extent.width == (uint32_t) app-&gt;width);
++        assert(app-&gt;swapchain_extent.height == (uint32_t) app-&gt;height);
++    }
+ 
+     if (app-&gt;surface_capabilities.maxImageCount != 0 &amp;&amp;
+         min_image_count &gt; app-&gt;surface_capabilities.maxImageCount) {
+@@ -784,10 +833,6 @@ static void gears_create_swapchain(gears_app *app)
+     }
+ 
+     /* create swapchain */
+-    const VkExtent2D swapchain_extent = {
+-        app-&gt;surface_capabilities.currentExtent.width,
+-        app-&gt;surface_capabilities.currentExtent.height
+-    };
+     const VkSwapchainCreateInfoKHR sci = {
+         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+         .pNext = NULL,
+@@ -797,8 +842,8 @@ static void gears_create_swapchain(gears_app *app)
+         .imageFormat = app-&gt;format,
+         .imageColorSpace = app-&gt;color_space,
+         .imageExtent = {
+-            .width = swapchain_extent.width,
+-            .height = swapchain_extent.height,
++            .width = app-&gt;swapchain_extent.width,
++            .height = app-&gt;swapchain_extent.height,
+         },
+         .imageArrayLayers = 1,
+         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+@@ -895,7 +940,11 @@ static void gears_create_image(gears_app *app, gears_image_buffer *imbuf,
+         .flags = 0,
+         .imageType = VK_IMAGE_TYPE_2D,
+         .format = imbuf-&gt;format,
+-        .extent = { app-&gt;width, app-&gt;height, 1 },
++        .extent = {
++            app-&gt;swapchain_extent.width,
++            app-&gt;swapchain_extent.height,
++            1
++        },
+         .mipLevels = 1,
+         .arrayLayers = 1,
+         .samples = sample_count,
+@@ -1208,8 +1257,8 @@ static void gears_create_frame_buffers(gears_app *app)
+         .renderPass = app-&gt;render_pass,
+         .attachmentCount = app-&gt;multisampling_enable ? 3 : 2,
+         .pAttachments = attachments,
+-        .width = app-&gt;width,
+-        .height = app-&gt;height,
++        .width = app-&gt;swapchain_extent.width,
++        .height = app-&gt;swapchain_extent.height,
+         .layers = 1,
+     };
+ 
+@@ -1246,10 +1295,18 @@ static VkShaderModule gears_create_shader_from_file(gears_app *app,
+     char *buf;
+     size_t nread;
+     VkShaderModule module;
++    char installed_filename[PATH_MAX];
+ 
+     if ((f = fopen(filename, &#34;r&#34;)) == NULL) {
+-        panic(&#34;gears_create_shader_from_file: open: %s: %s&#34;,
+-            filename, strerror(errno));
++        snprintf(installed_filename, sizeof(installed_filename), &#34;%s/%s&#34;,
++            VKGEARS_SHADER_DIR, strrchr(filename, &#39;/&#39;) ?
++            strrchr(filename, &#39;/&#39;) + 1 : filename);
++        f = fopen(installed_filename, &#34;r&#34;);
++        if (f == NULL) {
++            panic(&#34;gears_create_shader_from_file: open: %s: %s&#34;,
++                installed_filename, strerror(errno));
++        }
++        filename = installed_filename;
+     }
+     if (fstat(fileno(f), &amp;statbuf) &lt; 0) {
+         panic(&#34;gears_create_shader_from_file: stat: %s: %s&#34;,
+@@ -1854,20 +1911,20 @@ static void gears_record_command_buffers(gears_app *app, size_t j)
+         .renderPass = app-&gt;render_pass,
+         .renderArea.offset.x = 0,
+         .renderArea.offset.y = 0,
+-        .renderArea.extent = app-&gt;surface_capabilities.currentExtent,
++        .renderArea.extent = app-&gt;swapchain_extent,
+         .clearValueCount = 3,
+         .pClearValues = clear_values,
+     };
+ 
+     VkRect2D scissor = {
+-        .extent = app-&gt;surface_capabilities.currentExtent
++        .extent = app-&gt;swapchain_extent
+     };
+ 
+     VkViewport viewport = {
+         .x = 0,
+-        .y = (float)app-&gt;surface_capabilities.currentExtent.height,
+-        .height = -(float)app-&gt;surface_capabilities.currentExtent.height,
+-        .width = (float)app-&gt;surface_capabilities.currentExtent.width,
++        .y = (float)app-&gt;swapchain_extent.height,
++        .height = -(float)app-&gt;swapchain_extent.height,
++        .width = (float)app-&gt;swapchain_extent.width,
+         .minDepth = 0.0f,
+         .maxDepth = 1.0f,
+     };
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

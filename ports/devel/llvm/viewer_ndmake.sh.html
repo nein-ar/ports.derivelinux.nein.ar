@@ -1,0 +1,121 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/devel/llvm/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>devel/llvm/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=llvm
+VERSION=21.1.8
+RELEASE=1
+SOURCE=&#34;https://github.com/llvm/llvm-project/releases/download/llvmorg-${VERSION}/llvm-project-${VERSION}.src.tar.xz
+    0012-libc-libc-abi-libunwind-disable-multiarch-locations.patch
+    0014-clang-disable-multiarch-layout-on-musl.patch
+    0017-clang-use-as-needed-by-default.patch
+    0024-clang-link-libcxxabi-on-linux-when-using-libc.patch
+    compiler-rt-sanitizer-supported-arch.patch
+    fix-msan-with-musl.patch
+    musl-stack-size.patch
+    musl-targets.patch&#34;
+BUILD_STYLE=cmake
+BUILD_OPT=&#34;
+    -DLLVM_TARGETS_TO_BUILD=&#39;host;AMDGPU&#39;
+    -DLLVM_HOST_TRIPLE=x86_64-pc-linux-musl
+    -DLLVM_INCLUDE_BENCHMARKS=OFF
+    -DLLVM_INCLUDE_EXAMPLES=OFF
+    -DLLVM_INCLUDE_DOCS=OFF
+    -DLLVM_INCLUDE_TESTS=OFF
+    -DLLVM_ENABLE_RUNTIMES=&#39;compiler-rt;libunwind;libcxx;libcxxabi&#39;
+    -DLLVM_ENABLE_PROJECTS=&#39;clang;clang-tools-extra;lld&#39;
+    -DLLVM_ENABLE_RTTI=ON
+    -DLLVM_ENABLE_EH=ON
+    -DLLVM_ENABLE_LIBXML2=OFF
+    -DLLVM_ENABLE_LIBCXX=ON
+    -DLLVM_ENABLE_LLD=ON
+    -DLLVM_INSTALL_BINUTILS_SYMLINKS=ON
+    -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON
+    -DLLVM_ENABLE_PLUGINS=OFF
+    -DLLVM_BUILD_LLVM_DYLIB=OFF
+    -DLLVM_LINK_LLVM_DYLIB=OFF
+    -DLLVM_ENABLE_LTO=OFF
+    -DLLVM_BUILD_LTO=OFF
+    -DLLVM_TOOL_LTO_BUILD=OFF
+    -DCLANG_BUILD_EXAMPLES=OFF
+    -DCLANG_INCLUDE_DOCS=OFF
+    -DCLANG_INCLUDE_TESTS=OFF
+    -DCLANG_PLUGIN_SUPPORT=OFF
+    -DLIBCLANG_BUILD_STATIC=ON
+    -DCLANG_TOOL_LIBCLANG_BUILD=OFF
+    -DCLANG_TOOL_CLANG_SHLIB_BUILD=OFF
+    -DCLANG_TOOL_C_INDEX_TEST_BUILD=OFF
+    -DCLANG_ENABLE_STATIC_ANALYZER=OFF
+    -DCLANG_DEFAULT_RTLIB=compiler-rt
+    -DCLANG_DEFAULT_UNWINDLIB=libunwind
+    -DCLANG_DEFAULT_CXX_STDLIB=libc++
+    -DCLANG_CONFIG_FILE_SYSTEM_DIR=/etc/clang
+    -DLIBCXX_HAS_MUSL_LIBC=ON
+    -DLIBCXX_CXX_ABI=libcxxabi
+    -DLIBCXX_USE_COMPILER_RT=ON
+    -DLIBCXX_HAS_ATOMIC_LIB=No
+    -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON
+    -DLIBCXXABI_USE_LLVM_UNWINDER=ON
+    -DLIBCXXABI_USE_COMPILER_RT=ON
+    -DLIBCXXABI_ENABLE_STATIC_UNWINDER=ON
+    -DLIBCXX_ENABLE_SHARED=OFF
+    -DLIBCXXABI_ENABLE_SHARED=OFF
+    -DLIBUNWIND_ENABLE_SHARED=OFF
+    -DLIBUNWIND_HAS_NODEFAULTLIBS_FLAG=OFF
+    -DLIBUNWIND_USE_COMPILER_RT=ON
+    -DLIBUNWIND_ENABLE_ASSERTIONS=OFF
+    -DCOMPILER_RT_USE_BUILTINS_LIBRARY=ON
+    -DCOMPILER_RT_INCLUDE_TESTS=OFF
+    -DCOMPILER_RT_BUILD_SANITIZERS=ON
+    -DCOMPILER_RT_BUILD_GWP_ASAN=OFF
+    -DMLIR_INSTALL_AGGREGATE_OBJECTS=OFF&#34;
+if [ -e /usr/bin/ccache ]; then
+    BUILD_OPT=&#34;$BUILD_OPT -DLLVM_CCACHE_BUILD=ON&#34;
+fi
+
+build() {
+    msg &#34;building llvm with cmake (custom config)...&#34;
+    C_COMPILER=$(command -v &#34;${CC:-cc}&#34;)
+    CXX_COMPILER=$(command -v &#34;${CXX:-c++}&#34;)
+
+    cmake -S llvm -B build \
+        -G Ninja \
+        -DCMAKE_MAKE_PROGRAM=&#34;$(command -v samu)&#34; \
+        -DCMAKE_C_COMPILER=&#34;$C_COMPILER&#34; \
+        -DCMAKE_CXX_COMPILER=&#34;$CXX_COMPILER&#34; \
+        -DCMAKE_INSTALL_PREFIX=&#34;$PREFIX&#34; \
+        -DCMAKE_INSTALL_BINDIR=bin \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DLLVM_INCLUDE_TESTS=OFF \
+        -DLLVM_BUILD_TESTS=OFF \
+        ${BUILD_OPT} \
+        -DLLVM_ENABLE_ZSTD=OFF \
+        -DLLVM_ENABLE_ZLIB=OFF || die &#34;cmake config failed&#34;
+
+    cmake --build build --parallel &#34;$NPROC&#34; || die &#34;cmake build failed&#34;
+    DESTDIR=&#34;$PKG&#34; cmake --install build || die &#34;cmake install failed&#34;
+
+    msg &#34;installing llvm.pc...&#34;
+    mkdir -p &#34;$PKG/$PREFIX/lib/pkgconfig&#34;
+    LLVM_CONFIG=&#34;$PKG/$PREFIX/bin/llvm-config&#34;
+    [ -x &#34;$LLVM_CONFIG&#34; ] || die &#34;installed llvm-config not found&#34;
+
+    LLVM_VERSION=$(&#34;$LLVM_CONFIG&#34; --version) || die &#34;llvm-config --version failed&#34;
+    LLVM_CPPFLAGS=$(&#34;$LLVM_CONFIG&#34; --cppflags) || die &#34;llvm-config --cppflags failed&#34;
+    LLVM_LIBS=$(&#34;$LLVM_CONFIG&#34; --libs --system-libs --link-static) || die &#34;llvm-config --libs failed&#34;
+
+    cat &gt; &#34;$PKG/$PREFIX/lib/pkgconfig/llvm.pc&#34; &lt;&lt;EOF
+prefix=$PREFIX
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: llvm
+Description: LLVM libraries and headers
+Version: $LLVM_VERSION
+Cflags: $LLVM_CPPFLAGS
+Libs: -L\${libdir} $LLVM_LIBS
+EOF
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

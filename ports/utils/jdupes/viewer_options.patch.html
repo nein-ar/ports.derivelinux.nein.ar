@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: options.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/utils/jdupes/viewer_options.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>205</strong> total ports</span> <span><strong>20</strong> updated this week</span> <span><strong>14</strong> categories</span> <span><strong>79</strong> building failed</span> <span>last update: 2026-04-30 12:01 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>utils/jdupes/options.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat options.patch</pre><pre class="terminal-content">diff --git a/Makefile b/Makefile
+index 724e7b3..ed5edd2 100644
+--- a/Makefile
++++ b/Makefile
+@@ -10,11 +10,11 @@ PREFIX = /usr/local
+ 
+ # Certain platforms do not support long options (command line options).
+ # To disable long options, uncomment the following line.
+-#CFLAGS += -DOMIT_GETOPT_LONG
++CFLAGS += -DOMIT_GETOPT_LONG 
+ 
+ # Uncomment for -B/--dedupe.
+ # This can also be enabled at build time: &#39;make ENABLE_DEDUPE=1&#39;
+-#CFLAGS += -DENABLE_DEDUPE
++CFLAGS += -DENABLE_DEDUPE -DENABLE_BTRFS
+ 
+ # Uncomment for low memory usage at the expense of speed and features
+ # This can be enabled at build time: &#39;make LOW_MEMORY=1&#39;
+@@ -22,7 +22,7 @@ PREFIX = /usr/local
+ 
+ # Uncomment this to build in hardened mode.
+ # This can be enabled at build time: &#39;make HARDEN=1&#39;
+-#HARDEN=1
++HARDEN=1
+ 
+ #####################################################################
+ # Developer Configuration Section                                   #
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>
