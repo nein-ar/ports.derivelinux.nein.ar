@@ -3,14 +3,17 @@ name: Build and Deploy
 on:
   push:
     branches: [ master ]
+
   schedule:
     - cron: '0,30 * * * *'
+
   workflow_dispatch:
     inputs:
       skip_restore_cache:
         description: "Do not restore cache"
         type: boolean
         default: false
+
       skip_save_cache:
         description: "Do not save cache"
         type: boolean
@@ -19,8 +22,13 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  CACHE_VERSION: v7
+  GO_VERSION: "1.26.1"
+  CACHE_VERSION: v8
 
 jobs:
   build:
@@ -32,17 +40,24 @@ jobs:
           fetch-depth: 0
           submodules: false
 
-      - run: |
+      - name: Configure git
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - run: |
+      - name: Sync submodules
+        run: |
           set -eu
+
           git submodule update --init --recursive --force
+
           git submodule foreach --recursive '
             set -eu
+
             remote=origin
+
             branch=$(git config -f "$toplevel/.gitmodules" "submodule.$name.branch" || true)
+
             git fetch --prune "$remote"
 
             if [ -n "$branch" ]; then
@@ -63,34 +78,41 @@ jobs:
             git push origin master
           fi
 
-      - id: cache-key
-        run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
 
-      - name: Restore cache
+      - name: Restore Go cache
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_restore_cache != true }}
         uses: actions/cache/restore@v4
         with:
+          lookup-only: false
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-            ~/go/bin
-            ports
-            portsMaster/.cache
-          key: cache-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ steps.cache-key.outputs.date }}
+          key: |
+            go-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            cache-${{ env.CACHE_VERSION }}-${{ runner.os }}-
+            go-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-
+            go-${{ env.CACHE_VERSION }}-${{ runner.os }}-
 
-      - uses: actions/setup-go@v5
+      - name: Restore portsMaster cache
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_restore_cache != true }}
+        uses: actions/cache/restore@v4
         with:
-          go-version: stable
-          cache: false
+          lookup-only: false
+          path: |
+            portsMaster/.cache
+          key: |
+            portsmaster-${{ env.CACHE_VERSION }}-${{ runner.os }}
 
       - name: Install templ
         run: |
           set -eu
 
-          GOBIN="$HOME/go/bin"
-          export GOBIN
+          export GOBIN="$HOME/go/bin"
           export PATH="$GOBIN:$PATH"
 
           go install github.com/a-h/templ/cmd/templ@latest
@@ -101,11 +123,14 @@ jobs:
 
           if [ -d ports/.git ]; then
             cd ports
+
             git remote set-url origin https://codeberg.org/derivelinux/ports \
               || git remote set-url origin https://git.sr.ht/~shrub900/ports
+
             git fetch --all --prune
             git reset --hard origin/HEAD
             git clean -fdx
+
             cd ..
           else
             git clone https://codeberg.org/derivelinux/ports ports \
@@ -116,22 +141,24 @@ jobs:
         run: |
           set -eu
 
-          GOBIN="$HOME/go/bin"
+          export GOBIN="$HOME/go/bin"
           export PATH="$GOBIN:$PATH"
 
-          wget https://pkg.derivelinux.org/ci_status.json -O ci_status.json || echo "warn: ci_status fetch failed"
+          wget -O ci_status.json https://pkg.derivelinux.org/ci_status.json \
+            || echo "warn: ci_status fetch failed"
 
           cd portsMaster
+
           templ generate
           go build -o ./portsMaster .
+
           ./portsMaster --config ../config.toml
 
           cp ../favicon.png ./assets
           cp ../favicon.png .
 
-          ls -FA . .. ./assets
-
-      - uses: peaceiris/actions-gh-pages@v3
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
@@ -142,15 +169,21 @@ jobs:
           commit_message: Update site
           disable_nojekyll: true
 
-      - name: Save cache
+      - name: Save Go cache
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_save_cache != true }}
         uses: actions/cache/save@v4
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-            ~/go/bin
-            ports
+          key: |
+            go-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+
+      - name: Save portsMaster cache
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_save_cache != true }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
             portsMaster/.cache
-          key: cache-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ steps.cache-key.outputs.date }}
-          
+          key: |
+            portsmaster-${{ env.CACHE_VERSION }}-${{ runner.os }}
