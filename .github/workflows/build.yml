@@ -111,11 +111,12 @@ jobs:
       - name: Install templ
         run: |
           set -eu
-
           export GOBIN="$HOME/go/bin"
           export PATH="$GOBIN:$PATH"
-
-          go install github.com/a-h/templ/cmd/templ@latest
+          TEMPL_VERSION=$(
+            go list -m -f '{{.Version}}' github.com/a-h/templ
+          )
+          go install "github.com/a-h/templ/cmd/templ@${TEMPL_VERSION}"
 
       - name: Fetch/update ports repo
         run: |
