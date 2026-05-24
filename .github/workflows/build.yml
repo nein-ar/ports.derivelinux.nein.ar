@@ -113,6 +113,7 @@ jobs:
           set -eu
           export GOBIN="$HOME/go/bin"
           export PATH="$GOBIN:$PATH"
+          cd portsMaster
           TEMPL_VERSION=$(
             go list -m -f '{{.Version}}' github.com/a-h/templ
           )
