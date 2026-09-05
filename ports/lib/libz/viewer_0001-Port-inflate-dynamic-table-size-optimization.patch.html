@@ -1,0 +1,103 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: 0001-Port-inflate-dynamic-table-size-optimization.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/libz/viewer_0001-Port-inflate-dynamic-table-size-optimization.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="games">games</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>210</strong> total ports</span> <span><strong>8</strong> updated this week</span> <span><strong>15</strong> categories</span> <span><strong>53</strong> building failed</span> <span>last update: 2026-09-05 22:46 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/libz/0001-Port-inflate-dynamic-table-size-optimization.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat 0001-Port-inflate-dynamic-table-size-optimization.patch</pre><pre class="terminal-content">From c0f270495c22911bcfb38b66166e3cc493f00fb7 Mon Sep 17 00:00:00 2001
+From: Felix Hanau &lt;felix@cloudflare.com&gt;
+Date: Sun, 12 Feb 2023 21:15:38 -0500
+Subject: [PATCH 1/4] Port inflate dynamic table size optimization
+
+Increase the size of the dynamic tables used for huffman decoding, which
+requires slightly more memory but leads to performance improvements
+across platforms.
+Based on Dougall Johnson&#39;s inflate improvements via Adenilson
+Cavalcanti&#39;s patch for the Chromium zlib fork.
+See https://chromium-review.googlesource.com/c/chromium/src/+/3888219
+for details.
+---
+ infback.c  |  6 +++---
+ inflate.c  |  6 +++---
+ inftrees.h | 10 +++++-----
+ 3 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/infback.c b/infback.c
+index 9b1d776..f0a5905 100644
+--- a/infback.c
++++ b/infback.c
+@@ -401,11 +401,11 @@ int ZEXPORT inflateBack(z_stream *strm,
+             }
+ 
+             /* build code tables -- note: do not change the lenbits or distbits
+-               values here (9 and 6) without reading the comments in inftrees.h
++               values here (10 and 9) without reading the comments in inftrees.h
+                concerning the ENOUGH constants, which depend on those values */
+             state-&gt;next = state-&gt;codes;
+             state-&gt;lencode = (const code *)(state-&gt;next);
+-            state-&gt;lenbits = 9;
++            state-&gt;lenbits = 10;
+             ret = inflate_table(LENS, state-&gt;lens, state-&gt;nlen, &amp;state-&gt;next,
+                                 &amp;state-&gt;lenbits, state-&gt;work);
+             if (ret) {
+@@ -414,7 +414,7 @@ int ZEXPORT inflateBack(z_stream *strm,
+                 break;
+             }
+             state-&gt;distcode = (const code *)(state-&gt;next);
+-            state-&gt;distbits = 6;
++            state-&gt;distbits = 9;
+             ret = inflate_table(DISTS, state-&gt;lens + state-&gt;nlen, state-&gt;ndist,
+                             &amp;state-&gt;next, &amp;state-&gt;distbits, state-&gt;work);
+             if (ret) {
+diff --git a/inflate.c b/inflate.c
+index 9229ab8..33b66c8 100644
+--- a/inflate.c
++++ b/inflate.c
+@@ -849,11 +849,11 @@ int ZEXPORT inflate(z_stream *strm,
+             }
+ 
+             /* build code tables -- note: do not change the lenbits or distbits
+-               values here (9 and 6) without reading the comments in inftrees.h
++               values here (10 and 9) without reading the comments in inftrees.h
+                concerning the ENOUGH constants, which depend on those values */
+             state-&gt;next = state-&gt;codes;
+             state-&gt;lencode = (const code *)(state-&gt;next);
+-            state-&gt;lenbits = 9;
++            state-&gt;lenbits = 10;
+             ret = inflate_table(LENS, state-&gt;lens, state-&gt;nlen, &amp;state-&gt;next,
+                                 &amp;state-&gt;lenbits, state-&gt;work);
+             if (ret) {
+@@ -862,7 +862,7 @@ int ZEXPORT inflate(z_stream *strm,
+                 break;
+             }
+             state-&gt;distcode = (const code *)(state-&gt;next);
+-            state-&gt;distbits = 6;
++            state-&gt;distbits = 9;
+             ret = inflate_table(DISTS, state-&gt;lens + state-&gt;nlen, state-&gt;ndist,
+                                 &amp;state-&gt;next, &amp;state-&gt;distbits, state-&gt;work);
+             if (ret) {
+diff --git a/inftrees.h b/inftrees.h
+index cf54ec1..c69532e 100644
+--- a/inftrees.h
++++ b/inftrees.h
+@@ -36,17 +36,17 @@ typedef struct {
+  */
+ 
+ /* Maximum size of the dynamic table.  The maximum number of code structures is
+-   1444, which is the sum of 852 for literal/length codes and 592 for distance
++   1924, which is the sum of 1332 for literal/length codes and 592 for distance
+    codes.  These values were found by exhaustive searches using the program
+    examples/enough.c found in the zlib distribtution.  The arguments to that
+    program are the number of symbols, the initial root table size, and the
+-   maximum bit length of a code.  &#34;enough 286 9 15&#34; for literal/length codes
+-   returns returns 852, and &#34;enough 30 6 15&#34; for distance codes returns 592.
+-   The initial root table size (9 or 6) is found in the fifth argument of the
++   maximum bit length of a code.  &#34;enough 286 10 15&#34; for literal/length codes
++   returns returns 1332, and &#34;enough 30 9 15&#34; for distance codes returns 592.
++   The initial root table size (10 or 9) is found in the fifth argument of the
+    inflate_table() calls in inflate.c and infback.c.  If the root table size is
+    changed, then these maximum sizes would be need to be recalculated and
+    updated. */
+-#define ENOUGH_LENS 852
++#define ENOUGH_LENS 1332
+ #define ENOUGH_DISTS 592
+ #define ENOUGH (ENOUGH_LENS+ENOUGH_DISTS)
+ 
+-- 
+2.55.0
+
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

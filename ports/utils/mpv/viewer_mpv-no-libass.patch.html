@@ -1,0 +1,375 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: mpv-no-libass.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/utils/mpv/viewer_mpv-no-libass.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="games">games</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>210</strong> total ports</span> <span><strong>8</strong> updated this week</span> <span><strong>15</strong> categories</span> <span><strong>53</strong> building failed</span> <span>last update: 2026-09-05 22:46 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>utils/mpv/mpv-no-libass.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat mpv-no-libass.patch</pre><pre class="terminal-content">diff --git a/meson.build b/meson.build
+index c3cee39..352daaa 100644
+--- a/meson.build
++++ b/meson.build
+@@ -23,13 +23,13 @@ libavutil = dependency(&#39;libavutil&#39;, version: &#39;&gt;= 56.70.100&#39;)
+ libswresample = dependency(&#39;libswresample&#39;, version: &#39;&gt;= 3.9.100&#39;)
+ libswscale = dependency(&#39;libswscale&#39;, version: &#39;&gt;= 5.9.100&#39;)
+ 
+-libass = dependency(&#39;libass&#39;, version: &#39;&gt;= 0.12.2&#39;)
++libass = dependency(&#39;libass&#39;, version: &#39;&gt;= 0.12.2&#39;, required: get_option(&#39;libass&#39;))
+ pthreads = dependency(&#39;threads&#39;)
+ 
+ # the dependency order of libass -&gt; ffmpeg is necessary due to
+ # static linking symbol resolution between fontconfig and MinGW
+-dependencies = [libass,
+-                libavcodec,
++dependencies = [
++                libavcodec,
+                 libavfilter,
+                 libavformat,
+                 libavutil,
+@@ -44,7 +44,7 @@ features = {
+     &#39;gpl&#39;: get_option(&#39;gpl&#39;),
+     &#39;jpegxl&#39;: libavformat.version().version_compare(&#39;&gt;= 59.27.100&#39;),
+     &#39;avif_muxer&#39;: libavformat.version().version_compare(&#39;&gt;= 59.24.100&#39;),
+-    &#39;libass&#39;: true,
++    &#39;libass&#39;: libass.found(),
+     &#39;threads&#39;: true,
+ }
+ 
+@@ -181,75 +181,84 @@ sources = files(
+     &#39;stream/stream_slice.c&#39;,
+ 
+     ## Subtitles
+-    &#39;sub/ass_mp.c&#39;,
+     &#39;sub/dec_sub.c&#39;,
+     &#39;sub/draw_bmp.c&#39;,
+-    &#39;sub/filter_sdh.c&#39;,
+     &#39;sub/img_convert.c&#39;,
+-    &#39;sub/lavc_conv.c&#39;,
+     &#39;sub/osd.c&#39;,
+-    &#39;sub/osd_libass.c&#39;,
+-    &#39;sub/sd_ass.c&#39;,
+-    &#39;sub/sd_lavc.c&#39;,
+ 
+     ## Video
+     &#39;video/csputils.c&#39;,
+     &#39;video/decode/vd_lavc.c&#39;,
+     &#39;video/filter/refqueue.c&#39;,
+     &#39;video/filter/vf_format.c&#39;,
+     &#39;video/filter/vf_sub.c&#39;,
+     &#39;video/fmt-conversion.c&#39;,
+     &#39;video/hwdec.c&#39;,
+     &#39;video/image_loader.c&#39;,
+     &#39;video/image_writer.c&#39;,
+     &#39;video/img_format.c&#39;,
+     &#39;video/mp_image.c&#39;,
+     &#39;video/mp_image_pool.c&#39;,
+     &#39;video/out/aspect.c&#39;,
+     &#39;video/out/bitmap_packer.c&#39;,
+     &#39;video/out/dither.c&#39;,
+     &#39;video/out/dr_helper.c&#39;,
+     &#39;video/out/filter_kernels.c&#39;,
+     &#39;video/out/gpu/context.c&#39;,
+     &#39;video/out/gpu/error_diffusion.c&#39;,
+     &#39;video/out/gpu/hwdec.c&#39;,
+     &#39;video/out/gpu/lcms.c&#39;,
+     &#39;video/out/gpu/libmpv_gpu.c&#39;,
+     &#39;video/out/gpu/osd.c&#39;,
+     &#39;video/out/gpu/ra.c&#39;,
+     &#39;video/out/gpu/shader_cache.c&#39;,
+     &#39;video/out/gpu/spirv.c&#39;,
+     &#39;video/out/gpu/user_shaders.c&#39;,
+     &#39;video/out/gpu/utils.c&#39;,
+     &#39;video/out/gpu/video.c&#39;,
+     &#39;video/out/gpu/video_shaders.c&#39;,
+     &#39;video/out/libmpv_sw.c&#39;,
+     &#39;video/out/vo.c&#39;,
+     &#39;video/out/vo_gpu.c&#39;,
+     &#39;video/out/vo_image.c&#39;,
+     &#39;video/out/vo_lavc.c&#39;,
+     &#39;video/out/vo_libmpv.c&#39;,
+     &#39;video/out/vo_null.c&#39;,
+     &#39;video/out/vo_tct.c&#39;,
+     &#39;video/out/vo_kitty.c&#39;,
+     &#39;video/out/win_state.c&#39;,
+     &#39;video/repack.c&#39;,
+     &#39;video/sws_utils.c&#39;,
+ 
+     ## osdep
+     &#39;osdep/io.c&#39;,
+     &#39;osdep/semaphore_osx.c&#39;,
+     &#39;osdep/subprocess.c&#39;,
+     &#39;osdep/threads.c&#39;,
+     &#39;osdep/timer.c&#39;,
+ 
+     ## tree_allocator
+     &#39;ta/ta.c&#39;,
+     &#39;ta/ta_talloc.c&#39;,
+     &#39;ta/ta_utils.c&#39;
+ )
+ 
+ 
++if features[&#39;libass&#39;]
++    dependencies = [libass] + dependencies
++    sources += files(
++        &#39;sub/ass_mp.c&#39;,
++        &#39;sub/filter_sdh.c&#39;,
++        &#39;sub/lavc_conv.c&#39;,
++        &#39;sub/osd_libass.c&#39;,
++        &#39;sub/sd_ass.c&#39;,
++        &#39;sub/sd_lavc.c&#39;,
++    )
++else
++    sources += files(&#39;sub/osd_dummy.c&#39;)
++endif
++
++
+ # compiler stuff
+ cc = meson.get_compiler(&#39;c&#39;)
+ 
+diff --git a/meson_options.txt b/meson_options.txt
+index 5f2d31d..3420d41 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -15,6 +15,7 @@ option(&#39;dvbin&#39;, type: &#39;feature&#39;, value: &#39;disabled&#39;, description: &#39;DVB input modu
+ option(&#39;dvdnav&#39;, type: &#39;feature&#39;, value: &#39;disabled&#39;, description: &#39;dvdnav support&#39;)
+ option(&#39;iconv&#39;, type: &#39;feature&#39;, value: &#39;auto&#39;, description: &#39;iconv&#39;)
+ option(&#39;javascript&#39;, type: &#39;feature&#39;, value: &#39;auto&#39;, description: &#39;Javascript (MuJS backend)&#39;)
++option(&#39;libass&#39;, type: &#39;feature&#39;, value: &#39;enabled&#39;, description: &#39;SSA/ASS subtitles and graphical text OSD&#39;)
+ option(&#39;lcms2&#39;, type: &#39;feature&#39;, value: &#39;auto&#39;, description: &#39;LCMS2 support&#39;)
+ option(&#39;libarchive&#39;, type: &#39;feature&#39;, value: &#39;auto&#39;, description: &#39;libarchive wrapper for reading zip files and more&#39;)
+ option(&#39;libavdevice&#39;, type: &#39;feature&#39;, value: &#39;auto&#39;, description: &#39;libavdevice&#39;)
+diff --git a/player/command.c b/player/command.c
+index 0eb13a7..e398bc2 100644
+--- a/player/command.c
++++ b/player/command.c
+@@ -27,7 +27,11 @@
+ #include &lt;pthread.h&gt;
+ #include &lt;sys/types.h&gt;
+ 
++#include &#34;config.h&#34;
++
++#if HAVE_LIBASS
+ #include &lt;ass/ass.h&gt;
++#endif
+ #include &lt;libavutil/avstring.h&gt;
+ #include &lt;libavutil/common.h&gt;
+ 
+@@ -3310,7 +3314,11 @@ static int mp_property_ffmpeg(void *ctx, struct m_property *prop,
+ static int mp_property_libass_version(void *ctx, struct m_property *prop,
+                                       int action, void *arg)
+ {
++#if HAVE_LIBASS
+     return m_property_int64_ro(action, arg, ass_library_version());
++#else
++    return M_PROPERTY_UNAVAILABLE;
++#endif
+ }
+ 
+ static int mp_property_platform(void *ctx, struct m_property *prop,
+diff --git a/sub/dec_sub.c b/sub/dec_sub.c
+index 30f5b65..acd5eed 100644
+--- a/sub/dec_sub.c
++++ b/sub/dec_sub.c
+@@ -22,6 +22,8 @@
+ #include &lt;assert.h&gt;
+ #include &lt;pthread.h&gt;
+ 
++#include &#34;config.h&#34;
++
+ #include &#34;demux/demux.h&#34;
+ #include &#34;sd.h&#34;
+ #include &#34;dec_sub.h&#34;
+@@ -33,12 +35,16 @@
+ #include &#34;misc/dispatch.h&#34;
+ #include &#34;osdep/threads.h&#34;
+ 
++#if HAVE_LIBASS
+ extern const struct sd_functions sd_ass;
+ extern const struct sd_functions sd_lavc;
++#endif
+ 
+ static const struct sd_functions *const sd_list[] = {
++#if HAVE_LIBASS
+     &amp;sd_lavc,
+     &amp;sd_ass,
++#endif
+     NULL
+ };
+ 
+diff --git a/sub/osd_dummy.c b/sub/osd_dummy.c
+new file mode 100644
+index 0000000..0339e3d
+--- /dev/null
++++ b/sub/osd_dummy.c
+@@ -0,0 +1,101 @@
++/*
++ * no-op OSD backend for builds without libass
++ */
++
++#include &lt;string.h&gt;
++
++#include &#34;common/msg.h&#34;
++#include &#34;osd.h&#34;
++#include &#34;osd_state.h&#34;
++#include &#34;sd.h&#34;
++
++void osd_init_backend(struct osd_state *osd)
++{
++}
++
++void osd_destroy_backend(struct osd_state *osd)
++{
++}
++
++struct sub_bitmaps *osd_object_get_bitmaps(struct osd_state *osd,
++                                           struct osd_object *obj, int format)
++{
++    return NULL;
++}
++
++void osd_set_external(struct osd_state *osd, struct osd_external_ass *ov)
++{
++}
++
++void osd_set_external_remove_owner(struct osd_state *osd, void *owner)
++{
++}
++
++void osd_get_text_size(struct osd_state *osd, int *out_screen_h, int *out_font_h)
++{
++    *out_screen_h = 0;
++    *out_font_h = 0;
++}
++
++void osd_get_function_sym(char *buffer, size_t buffer_size, int osd_function)
++{
++    if (buffer_size)
++        buffer[0] = &#39;\0&#39;;
++}
++
++int sd_ass_fmt_offset(const char *event_format)
++{
++    int n = 0;
++    while (event_format &amp;&amp; (event_format = strchr(event_format, &#39;,&#39;))) {
++        event_format++;
++        n++;
++    }
++    return n - 1;
++}
++
++bstr sd_ass_pkt_text(struct sd_filter *ft, struct demux_packet *pkt, int offset)
++{
++    bstr text = {(char *)pkt-&gt;buffer, pkt-&gt;len};
++    bstr original = text;
++
++    while (offset-- &gt; 0) {
++        int comma = bstrchr(text, &#39;,&#39;);
++        if (comma &lt; 0) {
++            MP_WARN(ft, &#34;Malformed event &#39;%.*s&#39;\n&#34;, BSTR_P(original));
++            return (bstr){NULL, 0};
++        }
++        text = bstr_cut(text, comma + 1);
++    }
++    return text;
++}
++
++bstr sd_ass_to_plaintext(char *out, size_t out_size, const char *in)
++{
++    size_t length = 0;
++    bool in_override = false;
++
++    while (*in) {
++        char c = *in++;
++
++        if (c == &#39;{&#39;) {
++            in_override = true;
++            continue;
++        }
++        if (in_override) {
++            if (c == &#39;}&#39;)
++                in_override = false;
++            continue;
++        }
++        if (c == &#39;\\&#39; &amp;&amp; (*in == &#39;N&#39; || *in == &#39;n&#39; || *in == &#39;h&#39;)) {
++            c = *in == &#39;h&#39; ? &#39; &#39; : &#39;\n&#39;;
++            in++;
++        }
++        if (length &lt; out_size)
++            out[length] = c;
++        length++;
++    }
++
++    if (length &lt; out_size)
++        out[length] = &#39;\0&#39;;
++    return (bstr){out, length &lt; out_size ? length : out_size};
++}
+diff --git a/version.py b/version.py
+index 78db0c5..9118f0e 100755
+--- a/version.py
++++ b/version.py
+@@ -6,7 +6,7 @@ import time
+ 
+ from datetime import datetime,timezone
+ from shutil import which
+-from subprocess import check_output, DEVNULL
++from subprocess import check_output, CalledProcessError, DEVNULL
+ 
+ srcdir = os.path.dirname(os.path.abspath(sys.argv[0]))
+ git_dir = os.path.join(srcdir, &#34;.git&#34;)
+@@ -14,10 +14,15 @@ git = which(&#39;git&#39;)
+ 
+ if git and os.path.exists(git_dir):
+     # stdin is set to DEVNULL to workaround waf preforking issues
+-    version = check_output([git, &#34;-C&#34;, srcdir, &#34;describe&#34;, &#34;--always&#34;, &#34;--tags&#34;,
+-                            &#34;--dirty&#34;], stdin=DEVNULL, encoding=&#34;UTF-8&#34;)
+-    version = version[1:].strip()
+-else:
++    try:
++        version = check_output([git, &#34;-C&#34;, srcdir, &#34;describe&#34;, &#34;--always&#34;,
++                                &#34;--tags&#34;, &#34;--dirty&#34;], stdin=DEVNULL,
++                               stderr=DEVNULL, encoding=&#34;UTF-8&#34;)
++        version = version[1:].strip()
++    except CalledProcessError:
++        git = None
++
++if not git or not os.path.exists(git_dir):
+     version_path = os.path.join(srcdir, &#34;VERSION&#34;)
+     with open(version_path, &#34;r&#34;) as f:
+         version = f.readline().strip()
+diff --git a/wscript b/wscript
+index 82f65b4..29329bc 100644
+--- a/wscript
++++ b/wscript
+@@ -334,7 +334,7 @@ iconv support use --disable-iconv.&#34;,
+         &#39;desc&#39; : &#39;Javascript (MuJS backend)&#39;,
+         &#39;func&#39;: check_pkg_config(&#39;mujs&#39;, &#39;&gt;= 1.0.0&#39;),
+     }, {
+-        &#39;name&#39;: &#39;libass&#39;,
++        &#39;name&#39;: &#39;--libass&#39;,
+         &#39;desc&#39;: &#39;SSA/ASS support&#39;,
+         &#39;func&#39;: check_pkg_config(&#39;libass&#39;, &#39;&gt;= 0.12.2&#39;),
+         &#39;req&#39;: True,
+diff --git a/wscript_build.py b/wscript_build.py
+index a470808..062e215 100644
+--- a/wscript_build.py
++++ b/wscript_build.py
+@@ -432,18 +432,19 @@ def build(ctx):
+         ( &#34;stream/stream_null.c&#34; ),
+ 
+         ## Subtitles
+-        ( &#34;sub/ass_mp.c&#34; ),
++        ( &#34;sub/ass_mp.c&#34;,                    &#34;libass&#34; ),
+         ( &#34;sub/dec_sub.c&#34; ),
+         ( &#34;sub/draw_bmp.c&#34; ),
+         ( &#34;sub/filter_regex.c&#34;,                  &#34;posix&#34; ),
+         ( &#34;sub/filter_jsre.c&#34;,                   &#34;javascript&#34; ),
+-        ( &#34;sub/filter_sdh.c&#34; ),
++        ( &#34;sub/filter_sdh.c&#34;,                &#34;libass&#34; ),
+         ( &#34;sub/img_convert.c&#34; ),
+-        ( &#34;sub/lavc_conv.c&#34; ),
++        ( &#34;sub/lavc_conv.c&#34;,                 &#34;libass&#34; ),
+         ( &#34;sub/osd.c&#34; ),
+-        ( &#34;sub/osd_libass.c&#34; ),
+-        ( &#34;sub/sd_ass.c&#34; ),
+-        ( &#34;sub/sd_lavc.c&#34; ),
++        ( &#34;sub/osd_libass.c&#34;,                &#34;libass&#34; ),
++        ( &#34;sub/osd_dummy.c&#34;,                 &#34;!libass&#34; ),
++        ( &#34;sub/sd_ass.c&#34;,                    &#34;libass&#34; ),
++        ( &#34;sub/sd_lavc.c&#34;,                   &#34;libass&#34; ),
+ 
+         ## Video
+         ( &#34;video/csputils.c&#34; ),
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

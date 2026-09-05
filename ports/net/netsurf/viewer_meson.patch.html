@@ -1,0 +1,2016 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: meson.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/net/netsurf/viewer_meson.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="games">games</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>210</strong> total ports</span> <span><strong>8</strong> updated this week</span> <span><strong>15</strong> categories</span> <span><strong>53</strong> building failed</span> <span>last update: 2026-09-05 22:46 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>net/netsurf/meson.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat meson.patch</pre><pre class="terminal-content">diff --git a/frontends/tiny/wl.c b/frontends/tiny/wl.c
+index a6664b124b68241c77b8009d6f2238ec61bdf74b..1e8c50bb518055cfddf19ed6f1ba34c8b2f041b3 100644
+--- a/frontends/tiny/wl.c
++++ b/frontends/tiny/wl.c
+@@ -969,8 +969,6 @@ platform_window_destroy(struct platform_window *p)
+ 	wl_surface_destroy(p-&gt;surface);
+ 	destroyimage(p-&gt;image);
+ 	pixman_region32_fini(&amp;p-&gt;damage);
+-	free(p);
+-
+ 	tiny_schedule(-1, redraw, p);
+ 	tiny_schedule(-1, resize, p);
+ 	tiny_schedule(-1, keyrepeat, p);
+@@ -978,6 +976,7 @@ platform_window_destroy(struct platform_window *p)
+ 		wl-&gt;kbdfocus = NULL;
+ 	if (wl-&gt;ptrfocus == p)
+ 		wl-&gt;ptrfocus = NULL;
++	free(p);
+ }
+ 
+ void
+diff --git a/meson.build b/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..4f85a10e39df21b520ff8e4a1bfe11ee83d85271
+--- /dev/null
++++ b/meson.build
+@@ -0,0 +1,195 @@
++project(
++  &#39;netsurf-tiny&#39;,
++  &#39;c&#39;,
++  version: &#39;3.10&#39;,
++  meson_version: &#39;&gt;=0.59&#39;,
++  default_options: [&#39;c_std=c99&#39;, &#39;warning_level=1&#39;],
++)
++
++cc = meson.get_compiler(&#39;c&#39;)
++awk = find_program(&#39;awk&#39;)
++wayland = import(&#39;wayland&#39;)
++
++wayland_client_dep = dependency(&#39;wayland-client&#39;)
++wayland_cursor_dep = dependency(&#39;wayland-cursor&#39;)
++xkbcommon_dep = dependency(&#39;xkbcommon&#39;)
++pixman_dep = dependency(&#39;pixman-1&#39;)
++freetype_dep = dependency(&#39;freetype2&#39;)
++curl_dep = dependency(&#39;libcurl&#39;)
++png_dep = dependency(&#39;libpng&#39;)
++jpeg_dep = dependency(&#39;libjpeg&#39;)
++threads_dep = dependency(&#39;threads&#39;)
++zlib_dep = dependency(&#39;zlib&#39;)
++m_dep = cc.find_library(&#39;m&#39;, required: false)
++iconv_dep = cc.find_library(&#39;iconv&#39;, required: false)
++
++# NetSurf libraries are deliberately instantiated as subprojects.  Do not use
++# dependency(..., fallback: ...) here: that permits an installed library to win
++# before Meson consults its wrap, which can silently mix incompatible releases.
++wapcaplet_dep = subproject(&#39;libwapcaplet&#39;).get_variable(&#39;libwapcaplet_dep&#39;)
++parserutils_dep = subproject(&#39;libparserutils&#39;).get_variable(&#39;libparserutils_dep&#39;)
++hubbub_dep = subproject(&#39;libhubbub&#39;).get_variable(&#39;libhubbub_dep&#39;)
++dom_dep = subproject(&#39;libdom&#39;).get_variable(&#39;libdom_dep&#39;)
++css_dep = subproject(&#39;libcss&#39;).get_variable(&#39;libcss_dep&#39;)
++nsgif_dep = subproject(&#39;libnsgif&#39;).get_variable(&#39;libnsgif_dep&#39;)
++nsbmp_dep = subproject(&#39;libnsbmp&#39;).get_variable(&#39;libnsbmp_dep&#39;)
++nsutils_dep = subproject(&#39;libnsutils&#39;).get_variable(&#39;libnsutils_dep&#39;)
++svgtiny_dep = subproject(&#39;libsvgtiny&#39;).get_variable(&#39;libsvgtiny_dep&#39;)
++utf8proc_dep = subproject(&#39;libutf8proc&#39;).get_variable(&#39;libutf8proc_dep&#39;)
++
++install_resource_dir = get_option(&#39;prefix&#39;) / get_option(&#39;datadir&#39;) / &#39;netsurf&#39;
++source_resource_path = meson.current_source_dir() / &#39;resources&#39;
++tiny_resource_path = meson.current_source_dir() / &#39;frontends/tiny/res&#39;
++build_resource_path = meson.current_build_dir()
++
++conf = configuration_data()
++conf.set(&#39;nstiny&#39;, 1)
++conf.set(&#39;WITH_BMP&#39;, 1)
++conf.set(&#39;WITH_CURL&#39;, 1)
++conf.set(&#39;WITH_GIF&#39;, 1)
++conf.set(&#39;WITH_JPEG&#39;, 1)
++conf.set(&#39;WITH_PNG&#39;, 1)
++conf.set(&#39;WITH_NS_SVG&#39;, 1)
++conf.set(&#39;WITH_UTF8PROC&#39;, 1)
++conf.set_quoted(&#39;NETSURF_HOMEPAGE&#39;, get_option(&#39;homepage&#39;))
++conf.set_quoted(&#39;NETSURF_BUILTIN_LOG_FILTER&#39;, &#39;level:WARNING&#39;)
++conf.set_quoted(&#39;NETSURF_BUILTIN_VERBOSE_FILTER&#39;, &#39;level:DEBUG&#39;)
++conf.set_quoted(&#39;TINY_RESPATH&#39;,
++  install_resource_dir + &#39;:&#39; +
++  build_resource_path + &#39;:&#39; +
++  source_resource_path / &#39;en&#39; + &#39;:&#39; +
++  source_resource_path + &#39;:&#39; +
++  tiny_resource_path + &#39;:&#39; +
++  get_option(&#39;font_path&#39;))
++conf.set_quoted(&#39;TINY_FONT_SANS_SERIF&#39;, get_option(&#39;font_sans&#39;))
++conf.set_quoted(&#39;TINY_FONT_SANS_SERIF_BOLD&#39;, get_option(&#39;font_sans_bold&#39;))
++conf.set_quoted(&#39;TINY_FONT_SANS_SERIF_ITALIC&#39;, get_option(&#39;font_sans_italic&#39;))
++conf.set_quoted(&#39;TINY_FONT_SANS_SERIF_ITALIC_BOLD&#39;, get_option(&#39;font_sans_bold_italic&#39;))
++conf.set_quoted(&#39;TINY_FONT_SERIF&#39;, get_option(&#39;font_serif&#39;))
++conf.set_quoted(&#39;TINY_FONT_SERIF_BOLD&#39;, get_option(&#39;font_serif_bold&#39;))
++conf.set_quoted(&#39;TINY_FONT_MONOSPACE&#39;, get_option(&#39;font_monospace&#39;))
++conf.set_quoted(&#39;TINY_FONT_MONOSPACE_BOLD&#39;, get_option(&#39;font_monospace_bold&#39;))
++conf.set_quoted(&#39;TINY_FONT_CURSIVE&#39;, get_option(&#39;font_sans&#39;))
++conf.set_quoted(&#39;TINY_FONT_FANTASY&#39;, get_option(&#39;font_sans&#39;))
++conf.set(&#39;TINY_DPI&#39;, get_option(&#39;dpi&#39;))
++configure_file(output: &#39;config.h&#39;, configuration: conf)
++configure_file(input: &#39;testament.h.in&#39;, output: &#39;testament.h&#39;, copy: true)
++
++add_project_arguments(
++  &#39;-D_GNU_SOURCE&#39;,
++  &#39;-DUTF8PROC_EXPORTS&#39;,
++  &#39;-include&#39;, meson.current_build_dir() / &#39;config.h&#39;,
++  language: &#39;c&#39;,
++)
++
++xdg_shell_protocol = wayland.find_protocol(&#39;xdg-shell&#39;, state: &#39;stable&#39;)
++xdg_shell_sources = wayland.scan_xml(
++  xdg_shell_protocol,
++  client: true,
++  server: false,
++)
++
++messages = custom_target(
++  &#39;Messages&#39;,
++  input: &#39;resources/FatMessages&#39;,
++  output: &#39;Messages&#39;,
++  command: [awk, &#39;-f&#39;, files(&#39;tools/messages.awk&#39;), &#39;-v&#39;, &#39;lang=en&#39;, &#39;-v&#39;, &#39;filter=any&#39;, &#39;@INPUT@&#39;],
++  capture: true,
++  install: true,
++  install_dir: get_option(&#39;datadir&#39;) / &#39;netsurf&#39;,
++)
++
++netsurf_sources = files(
++  &#39;desktop/cookie_manager.c&#39;, &#39;desktop/knockout.c&#39;, &#39;desktop/hotlist.c&#39;,
++  &#39;desktop/mouse.c&#39;, &#39;desktop/plot_style.c&#39;, &#39;desktop/print.c&#39;,
++  &#39;desktop/search.c&#39;, &#39;desktop/searchweb.c&#39;, &#39;desktop/scrollbar.c&#39;,
++  &#39;desktop/textarea.c&#39;, &#39;desktop/version.c&#39;, &#39;desktop/system_colour.c&#39;,
++  &#39;desktop/local_history.c&#39;, &#39;desktop/global_history.c&#39;, &#39;desktop/treeview.c&#39;,
++  &#39;desktop/page-info.c&#39;, &#39;desktop/browser.c&#39;, &#39;desktop/browser_window.c&#39;,
++  &#39;desktop/browser_history.c&#39;, &#39;desktop/download.c&#39;, &#39;desktop/frames.c&#39;,
++  &#39;desktop/netsurf.c&#39;, &#39;desktop/cw_helper.c&#39;, &#39;desktop/save_complete.c&#39;,
++  &#39;desktop/save_text.c&#39;, &#39;desktop/selection.c&#39;, &#39;desktop/textinput.c&#39;,
++  &#39;desktop/gui_factory.c&#39;, &#39;desktop/save_pdf.c&#39;, &#39;desktop/font_haru.c&#39;,
++  &#39;frontends/tiny/download.c&#39;, &#39;frontends/tiny/fetch.c&#39;,
++  &#39;frontends/tiny/icons.c&#39;, &#39;frontends/tiny/gui.c&#39;, &#39;frontends/tiny/render.c&#39;,
++  &#39;frontends/tiny/schedule.c&#39;, &#39;frontends/tiny/ui.c&#39;, &#39;frontends/tiny/wl.c&#39;,
++  &#39;content/content.c&#39;, &#39;content/content_factory.c&#39;, &#39;content/dirlist.c&#39;,
++  &#39;content/fetch.c&#39;, &#39;content/hlcache.c&#39;, &#39;content/llcache.c&#39;,
++  &#39;content/mimesniff.c&#39;, &#39;content/textsearch.c&#39;, &#39;content/urldb.c&#39;,
++  &#39;content/no_backing_store.c&#39;, &#39;content/fetchers/curl.c&#39;,
++  &#39;content/fetchers/data.c&#39;, &#39;content/fetchers/file.c&#39;,
++  &#39;content/fetchers/about.c&#39;, &#39;content/fetchers/resource.c&#39;,
++  &#39;content/handlers/image/image.c&#39;, &#39;content/handlers/image/image_cache.c&#39;,
++  &#39;content/handlers/image/bmp.c&#39;, &#39;content/handlers/image/gif.c&#39;,
++  &#39;content/handlers/image/ico.c&#39;, &#39;content/handlers/image/jpeg.c&#39;,
++  &#39;content/handlers/image/png.c&#39;, &#39;content/handlers/image/svg.c&#39;,
++  &#39;content/handlers/css/css.c&#39;, &#39;content/handlers/css/dump.c&#39;,
++  &#39;content/handlers/css/internal.c&#39;, &#39;content/handlers/css/hints.c&#39;,
++  &#39;content/handlers/css/select.c&#39;, &#39;content/handlers/css/utils.c&#39;,
++  &#39;content/handlers/javascript/fetcher.c&#39;,
++  &#39;content/handlers/javascript/none/none.c&#39;,
++  &#39;content/handlers/html/box_construct.c&#39;,
++  &#39;content/handlers/html/box_inspect.c&#39;,
++  &#39;content/handlers/html/box_manipulate.c&#39;,
++  &#39;content/handlers/html/box_normalise.c&#39;,
++  &#39;content/handlers/html/box_special.c&#39;, &#39;content/handlers/html/box_textarea.c&#39;,
++  &#39;content/handlers/html/css.c&#39;, &#39;content/handlers/html/css_fetcher.c&#39;,
++  &#39;content/handlers/html/dom_event.c&#39;, &#39;content/handlers/html/font.c&#39;,
++  &#39;content/handlers/html/form.c&#39;, &#39;content/handlers/html/forms.c&#39;,
++  &#39;content/handlers/html/html.c&#39;, &#39;content/handlers/html/imagemap.c&#39;,
++  &#39;content/handlers/html/interaction.c&#39;, &#39;content/handlers/html/layout.c&#39;,
++  &#39;content/handlers/html/object.c&#39;, &#39;content/handlers/html/redraw.c&#39;,
++  &#39;content/handlers/html/redraw_border.c&#39;, &#39;content/handlers/html/script.c&#39;,
++  &#39;content/handlers/html/table.c&#39;, &#39;content/handlers/html/textselection.c&#39;,
++  &#39;content/handlers/text/textplain.c&#39;,
++  &#39;utils/bloom.c&#39;, &#39;utils/corestrings.c&#39;, &#39;utils/file.c&#39;, &#39;utils/filename.c&#39;,
++  &#39;utils/filepath.c&#39;, &#39;utils/hashmap.c&#39;, &#39;utils/hashtable.c&#39;, &#39;utils/idna.c&#39;,
++  &#39;utils/libdom.c&#39;, &#39;utils/log.c&#39;, &#39;utils/messages.c&#39;, &#39;utils/nscolour.c&#39;,
++  &#39;utils/nsoption.c&#39;, &#39;utils/punycode.c&#39;, &#39;utils/ssl_certs.c&#39;,
++  &#39;utils/talloc.c&#39;, &#39;utils/time.c&#39;, &#39;utils/url.c&#39;, &#39;utils/useragent.c&#39;,
++  &#39;utils/utf8.c&#39;, &#39;utils/utils.c&#39;,
++  &#39;utils/http/challenge.c&#39;, &#39;utils/http/generics.c&#39;,
++  &#39;utils/http/primitives.c&#39;, &#39;utils/http/parameter.c&#39;,
++  &#39;utils/http/cache-control.c&#39;, &#39;utils/http/content-disposition.c&#39;,
++  &#39;utils/http/content-type.c&#39;, &#39;utils/http/strict-transport-security.c&#39;,
++  &#39;utils/http/www-authenticate.c&#39;,
++  &#39;utils/nsurl/nsurl.c&#39;, &#39;utils/nsurl/parse.c&#39;,
++)
++
++netsurf_deps = [
++  css_dep, dom_dep, nsbmp_dep, nsgif_dep, nsutils_dep, svgtiny_dep,
++  parserutils_dep, wapcaplet_dep, curl_dep, freetype_dep, jpeg_dep, png_dep,
++  utf8proc_dep, wayland_client_dep, wayland_cursor_dep, xkbcommon_dep,
++  pixman_dep, threads_dep, zlib_dep, m_dep, iconv_dep,
++]
++
++executable(
++  &#39;nstiny&#39;,
++  netsurf_sources,
++  xdg_shell_sources,
++  include_directories: include_directories(&#39;.&#39;, &#39;include&#39;, &#39;frontends&#39;, &#39;content/handlers&#39;),
++  dependencies: netsurf_deps,
++  install: true,
++)
++
++install_data(
++  &#39;resources/SearchEngines&#39;, &#39;resources/adblock.css&#39;, &#39;resources/default.css&#39;,
++  &#39;resources/favicon.png&#39;, &#39;resources/internal.css&#39;, &#39;resources/netsurf.png&#39;,
++  &#39;resources/quirks.css&#39;, &#39;resources/en/credits.html&#39;,
++  &#39;resources/en/licence.html&#39;, &#39;resources/en/welcome.html&#39;,
++  install_dir: get_option(&#39;datadir&#39;) / &#39;netsurf&#39;,
++)
++install_data(
++  &#39;frontends/tiny/res/icons/COPYING&#39;,
++  &#39;frontends/tiny/res/icons/add.ff&#39;,
++  &#39;frontends/tiny/res/icons/back.ff&#39;,
++  &#39;frontends/tiny/res/icons/close.ff&#39;,
++  &#39;frontends/tiny/res/icons/down.ff&#39;,
++  &#39;frontends/tiny/res/icons/forward.ff&#39;,
++  &#39;frontends/tiny/res/icons/home.ff&#39;,
++  &#39;frontends/tiny/res/icons/reload.ff&#39;,
++  &#39;frontends/tiny/res/icons/remove.ff&#39;,
++  &#39;frontends/tiny/res/icons/stop.ff&#39;,
++  &#39;frontends/tiny/res/icons/up.ff&#39;,
++  install_dir: get_option(&#39;datadir&#39;) / &#39;netsurf/icons&#39;,
++)
+diff --git a/meson.options b/meson.options
+new file mode 100644
+index 0000000000000000000000000000000000000000..69dd86af326cab0e88c228c60985f644edbeaa8e
+--- /dev/null
++++ b/meson.options
+@@ -0,0 +1,11 @@
++option(&#39;homepage&#39;, type: &#39;string&#39;, value: &#39;https://lite.duckduckgo.com/lite&#39;, description: &#39;default home page&#39;)
++option(&#39;dpi&#39;, type: &#39;integer&#39;, value: 96, min: 50, max: 400, description: &#39;default browser DPI&#39;)
++option(&#39;font_path&#39;, type: &#39;string&#39;, value: &#39;/share/fonts/noto-fonts&#39;, description: &#39;font search path&#39;)
++option(&#39;font_sans&#39;, type: &#39;string&#39;, value: &#39;NotoSans-Regular.ttf&#39;)
++option(&#39;font_sans_bold&#39;, type: &#39;string&#39;, value: &#39;NotoSans-Bold.ttf&#39;)
++option(&#39;font_sans_italic&#39;, type: &#39;string&#39;, value: &#39;NotoSans-Italic.ttf&#39;)
++option(&#39;font_sans_bold_italic&#39;, type: &#39;string&#39;, value: &#39;NotoSans-BoldItalic.ttf&#39;)
++option(&#39;font_serif&#39;, type: &#39;string&#39;, value: &#39;NotoSerif-Regular.ttf&#39;)
++option(&#39;font_serif_bold&#39;, type: &#39;string&#39;, value: &#39;NotoSerif-Bold.ttf&#39;)
++option(&#39;font_monospace&#39;, type: &#39;string&#39;, value: &#39;NotoSansMono-Regular.ttf&#39;)
++option(&#39;font_monospace_bold&#39;, type: &#39;string&#39;, value: &#39;NotoSansMono-Bold.ttf&#39;)
+diff --git a/subprojects/libcss.wrap b/subprojects/libcss.wrap
+new file mode 100644
+index 0000000000000000000000000000000000000000..0d973223f3273f90ba20925c5ce0eb8cae32e811
+--- /dev/null
++++ b/subprojects/libcss.wrap
+@@ -0,0 +1,8 @@
++[wrap-git]
++url = git://git.netsurf-browser.org/libcss.git
++revision = 385769d6554d2d3a9c2c35a04cf5dde706cefb6b
++depth = 1
++patch_directory = libcss
++
++[provide]
++libcss = libcss_dep
+diff --git a/subprojects/libdom.wrap b/subprojects/libdom.wrap
+new file mode 100644
+index 0000000000000000000000000000000000000000..89df4ab14d254b3e9f3ee43f5fe42902b2172b53
+--- /dev/null
++++ b/subprojects/libdom.wrap
+@@ -0,0 +1,8 @@
++[wrap-git]
++url = git://git.netsurf-browser.org/libdom.git
++revision = 93b8a9bba18fc3166dd158484188b1730afdd382
++depth = 1
++patch_directory = libdom
++
++[provide]
++libdom = libdom_dep
+diff --git a/subprojects/libhubbub.wrap b/subprojects/libhubbub.wrap
+new file mode 100644
+index 0000000000000000000000000000000000000000..9b038108f78268ebf24b068fd5cb5582e7db05a3
+--- /dev/null
++++ b/subprojects/libhubbub.wrap
+@@ -0,0 +1,8 @@
++[wrap-git]
++url = git://git.netsurf-browser.org/libhubbub.git
++revision = 41b3e0e617cfce96de85d4d031c4d131e3dc4cf4
++depth = 1
++patch_directory = libhubbub
++
++[provide]
++libhubbub = libhubbub_dep
+diff --git a/subprojects/libnsbmp.wrap b/subprojects/libnsbmp.wrap
+new file mode 100644
+index 0000000000000000000000000000000000000000..1b5a6b2b86aee373222e3333326fc8e814ad9651
+--- /dev/null
++++ b/subprojects/libnsbmp.wrap
+@@ -0,0 +1,8 @@
++[wrap-git]
++url = git://git.netsurf-browser.org/libnsbmp.git
++revision = 3155a7e9db2d7d7c2349a12bc892fa9ff68c2338
++depth = 1
++patch_directory = libnsbmp
++
++[provide]
++libnsbmp = libnsbmp_dep
+diff --git a/subprojects/libnsgif.wrap b/subprojects/libnsgif.wrap
+new file mode 100644
+index 0000000000000000000000000000000000000000..f08147109f799c090af03c76a2959a64428add3f
+--- /dev/null
++++ b/subprojects/libnsgif.wrap
+@@ -0,0 +1,8 @@
++[wrap-git]
++url = git://git.netsurf-browser.org/libnsgif.git
++revision = a937d161f6787ecc1c1bef9bad6039925ff13d72
++depth = 1
++patch_directory = libnsgif
++
++[provide]
++libnsgif = libnsgif_dep
+diff --git a/subprojects/libnsutils.wrap b/subprojects/libnsutils.wrap
+new file mode 100644
+index 0000000000000000000000000000000000000000..876ee438596383c3ca8fe1ef3fa2c953f4347943
+--- /dev/null
++++ b/subprojects/libnsutils.wrap
+@@ -0,0 +1,8 @@
++[wrap-git]
++url = git://git.netsurf-browser.org/libnsutils.git
++revision = 142a7945fb9fe477324f8df5e9645ef161042483
++depth = 1
++patch_directory = libnsutils
++
++[provide]
++libnsutils = libnsutils_dep
+diff --git a/subprojects/libparserutils.wrap b/subprojects/libparserutils.wrap
+new file mode 100644
+index 0000000000000000000000000000000000000000..68f04309aa489930b5ff51b22af6642e728dc674
+--- /dev/null
++++ b/subprojects/libparserutils.wrap
+@@ -0,0 +1,8 @@
++[wrap-git]
++url = git://git.netsurf-browser.org/libparserutils.git
++revision = 269b0047aa506be93637e93d109a34f4bd7cefc4
++depth = 1
++patch_directory = libparserutils
++
++[provide]
++libparserutils = libparserutils_dep
+diff --git a/subprojects/libsvgtiny.wrap b/subprojects/libsvgtiny.wrap
+new file mode 100644
+index 0000000000000000000000000000000000000000..d6e9cb943779c136675ef1a5e8b3a69929e3da5d
+--- /dev/null
++++ b/subprojects/libsvgtiny.wrap
+@@ -0,0 +1,8 @@
++[wrap-git]
++url = git://git.netsurf-browser.org/libsvgtiny.git
++revision = e31a20a97c6cd957ac4d858318f5819b90d97f77
++depth = 1
++patch_directory = libsvgtiny
++
++[provide]
++libsvgtiny = libsvgtiny_dep
+diff --git a/subprojects/libutf8proc.wrap b/subprojects/libutf8proc.wrap
+new file mode 100644
+index 0000000000000000000000000000000000000000..1267b3886eecd69e53dbdd63e7231c77eebf33b8
+--- /dev/null
++++ b/subprojects/libutf8proc.wrap
+@@ -0,0 +1,8 @@
++[wrap-git]
++url = git://git.netsurf-browser.org/libutf8proc.git
++revision = 0d22740b0de2636307cb95c928b244263ed17caa
++depth = 1
++patch_directory = libutf8proc
++
++[provide]
++libutf8proc = libutf8proc_dep
+diff --git a/subprojects/libwapcaplet.wrap b/subprojects/libwapcaplet.wrap
+new file mode 100644
+index 0000000000000000000000000000000000000000..0e958acba2f59b539d861440b04ea32553f7c0c5
+--- /dev/null
++++ b/subprojects/libwapcaplet.wrap
+@@ -0,0 +1,8 @@
++[wrap-git]
++url = git://git.netsurf-browser.org/libwapcaplet.git
++revision = b5e42b12211a92339b0b62cb90f1a86a397e146e
++depth = 1
++patch_directory = libwapcaplet
++
++[provide]
++libwapcaplet = libwapcaplet_dep
+diff --git a/subprojects/packagefiles/libcss/meson.build b/subprojects/packagefiles/libcss/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..7bdd7f852aa5e8d7956f84329346860542914237
+--- /dev/null
++++ b/subprojects/packagefiles/libcss/meson.build
+@@ -0,0 +1,227 @@
++project(&#39;libcss&#39;, &#39;c&#39;, version: &#39;0.9.1&#39;, default_options: [&#39;c_std=c99&#39;])
++
++awk = find_program(&#39;awk&#39;)
++sh = find_program(&#39;sh&#39;)
++parserutils_dep = dependency(&#39;libparserutils&#39;)
++wapcaplet_dep = dependency(&#39;libwapcaplet&#39;)
++
++gen_prop_parser = executable(
++  &#39;gen_prop_parser&#39;,
++  &#39;src/parse/properties/css_property_parser_gen.c&#39;,
++  native: true,
++  c_args: [&#39;-D_GNU_SOURCE&#39;],
++)
++
++prop_parsers = custom_target(
++  &#39;generated property parsers&#39;,
++  input: &#39;src/parse/properties/properties.gen&#39;,
++  output: &#39;prop_parsers.c&#39;,
++  command: [
++    sh, &#39;-c&#39;,
++    &#39;awk -f &#34;$1&#34; -v &#34;gen_prop_parser=$2&#34; &#34;$3&#34; &gt; &#34;$4&#34;&#39;,
++    &#39;generate-prop-parsers&#39;,
++    files(&#39;prop_parsers.awk&#39;), gen_prop_parser,
++    &#39;@INPUT@&#39;,
++    &#39;@OUTPUT@&#39;,
++  ],
++)
++
++css_sources = files(
++  &#39;src/charset/detect.c&#39;,
++  &#39;src/lex/lex.c&#39;,
++  &#39;src/parse/font_face.c&#39;,
++  &#39;src/parse/important.c&#39;,
++  &#39;src/parse/language.c&#39;,
++  &#39;src/parse/mq.c&#39;,
++  &#39;src/parse/parse.c&#39;,
++  &#39;src/parse/properties/azimuth.c&#39;,
++  &#39;src/parse/properties/background.c&#39;,
++  &#39;src/parse/properties/background_position.c&#39;,
++  &#39;src/parse/properties/border.c&#39;,
++  &#39;src/parse/properties/border_color.c&#39;,
++  &#39;src/parse/properties/border_spacing.c&#39;,
++  &#39;src/parse/properties/border_style.c&#39;,
++  &#39;src/parse/properties/border_width.c&#39;,
++  &#39;src/parse/properties/clip.c&#39;,
++  &#39;src/parse/properties/column_rule.c&#39;,
++  &#39;src/parse/properties/columns.c&#39;,
++  &#39;src/parse/properties/content.c&#39;,
++  &#39;src/parse/properties/cue.c&#39;,
++  &#39;src/parse/properties/cursor.c&#39;,
++  &#39;src/parse/properties/elevation.c&#39;,
++  &#39;src/parse/properties/flex.c&#39;,
++  &#39;src/parse/properties/flex_flow.c&#39;,
++  &#39;src/parse/properties/font.c&#39;,
++  &#39;src/parse/properties/font_family.c&#39;,
++  &#39;src/parse/properties/font_weight.c&#39;,
++  &#39;src/parse/properties/list_style.c&#39;,
++  &#39;src/parse/properties/list_style_type.c&#39;,
++  &#39;src/parse/properties/margin.c&#39;,
++  &#39;src/parse/properties/opacity.c&#39;,
++  &#39;src/parse/properties/outline.c&#39;,
++  &#39;src/parse/properties/overflow.c&#39;,
++  &#39;src/parse/properties/padding.c&#39;,
++  &#39;src/parse/properties/pause.c&#39;,
++  &#39;src/parse/properties/play_during.c&#39;,
++  &#39;src/parse/properties/properties.c&#39;,
++  &#39;src/parse/properties/quotes.c&#39;,
++  &#39;src/parse/properties/text_decoration.c&#39;,
++  &#39;src/parse/properties/utils.c&#39;,
++  &#39;src/parse/properties/voice_family.c&#39;,
++  &#39;src/parse/propstrings.c&#39;,
++  &#39;src/select/arena.c&#39;,
++  &#39;src/select/computed.c&#39;,
++  &#39;src/select/dispatch.c&#39;,
++  &#39;src/select/font_face.c&#39;,
++  &#39;src/select/hash.c&#39;,
++  &#39;src/select/properties/align_content.c&#39;,
++  &#39;src/select/properties/align_items.c&#39;,
++  &#39;src/select/properties/align_self.c&#39;,
++  &#39;src/select/properties/azimuth.c&#39;,
++  &#39;src/select/properties/background_attachment.c&#39;,
++  &#39;src/select/properties/background_color.c&#39;,
++  &#39;src/select/properties/background_image.c&#39;,
++  &#39;src/select/properties/background_position.c&#39;,
++  &#39;src/select/properties/background_repeat.c&#39;,
++  &#39;src/select/properties/border_bottom_color.c&#39;,
++  &#39;src/select/properties/border_bottom_style.c&#39;,
++  &#39;src/select/properties/border_bottom_width.c&#39;,
++  &#39;src/select/properties/border_collapse.c&#39;,
++  &#39;src/select/properties/border_left_color.c&#39;,
++  &#39;src/select/properties/border_left_style.c&#39;,
++  &#39;src/select/properties/border_left_width.c&#39;,
++  &#39;src/select/properties/border_right_color.c&#39;,
++  &#39;src/select/properties/border_right_style.c&#39;,
++  &#39;src/select/properties/border_right_width.c&#39;,
++  &#39;src/select/properties/border_spacing.c&#39;,
++  &#39;src/select/properties/border_top_color.c&#39;,
++  &#39;src/select/properties/border_top_style.c&#39;,
++  &#39;src/select/properties/border_top_width.c&#39;,
++  &#39;src/select/properties/bottom.c&#39;,
++  &#39;src/select/properties/box_sizing.c&#39;,
++  &#39;src/select/properties/break_after.c&#39;,
++  &#39;src/select/properties/break_before.c&#39;,
++  &#39;src/select/properties/break_inside.c&#39;,
++  &#39;src/select/properties/caption_side.c&#39;,
++  &#39;src/select/properties/clear.c&#39;,
++  &#39;src/select/properties/clip.c&#39;,
++  &#39;src/select/properties/color.c&#39;,
++  &#39;src/select/properties/column_count.c&#39;,
++  &#39;src/select/properties/column_fill.c&#39;,
++  &#39;src/select/properties/column_gap.c&#39;,
++  &#39;src/select/properties/column_rule_color.c&#39;,
++  &#39;src/select/properties/column_rule_style.c&#39;,
++  &#39;src/select/properties/column_rule_width.c&#39;,
++  &#39;src/select/properties/column_span.c&#39;,
++  &#39;src/select/properties/column_width.c&#39;,
++  &#39;src/select/properties/content.c&#39;,
++  &#39;src/select/properties/counter_increment.c&#39;,
++  &#39;src/select/properties/counter_reset.c&#39;,
++  &#39;src/select/properties/cue_after.c&#39;,
++  &#39;src/select/properties/cue_before.c&#39;,
++  &#39;src/select/properties/cursor.c&#39;,
++  &#39;src/select/properties/direction.c&#39;,
++  &#39;src/select/properties/display.c&#39;,
++  &#39;src/select/properties/elevation.c&#39;,
++  &#39;src/select/properties/empty_cells.c&#39;,
++  &#39;src/select/properties/flex_basis.c&#39;,
++  &#39;src/select/properties/flex_direction.c&#39;,
++  &#39;src/select/properties/flex_grow.c&#39;,
++  &#39;src/select/properties/flex_shrink.c&#39;,
++  &#39;src/select/properties/flex_wrap.c&#39;,
++  &#39;src/select/properties/float.c&#39;,
++  &#39;src/select/properties/font_family.c&#39;,
++  &#39;src/select/properties/font_size.c&#39;,
++  &#39;src/select/properties/font_style.c&#39;,
++  &#39;src/select/properties/font_variant.c&#39;,
++  &#39;src/select/properties/font_weight.c&#39;,
++  &#39;src/select/properties/height.c&#39;,
++  &#39;src/select/properties/helpers.c&#39;,
++  &#39;src/select/properties/justify_content.c&#39;,
++  &#39;src/select/properties/left.c&#39;,
++  &#39;src/select/properties/letter_spacing.c&#39;,
++  &#39;src/select/properties/line_height.c&#39;,
++  &#39;src/select/properties/list_style_image.c&#39;,
++  &#39;src/select/properties/list_style_position.c&#39;,
++  &#39;src/select/properties/list_style_type.c&#39;,
++  &#39;src/select/properties/margin_bottom.c&#39;,
++  &#39;src/select/properties/margin_left.c&#39;,
++  &#39;src/select/properties/margin_right.c&#39;,
++  &#39;src/select/properties/margin_top.c&#39;,
++  &#39;src/select/properties/max_height.c&#39;,
++  &#39;src/select/properties/max_width.c&#39;,
++  &#39;src/select/properties/min_height.c&#39;,
++  &#39;src/select/properties/min_width.c&#39;,
++  &#39;src/select/properties/opacity.c&#39;,
++  &#39;src/select/properties/order.c&#39;,
++  &#39;src/select/properties/orphans.c&#39;,
++  &#39;src/select/properties/outline_color.c&#39;,
++  &#39;src/select/properties/outline_style.c&#39;,
++  &#39;src/select/properties/outline_width.c&#39;,
++  &#39;src/select/properties/overflow_x.c&#39;,
++  &#39;src/select/properties/overflow_y.c&#39;,
++  &#39;src/select/properties/padding_bottom.c&#39;,
++  &#39;src/select/properties/padding_left.c&#39;,
++  &#39;src/select/properties/padding_right.c&#39;,
++  &#39;src/select/properties/padding_top.c&#39;,
++  &#39;src/select/properties/page_break_after.c&#39;,
++  &#39;src/select/properties/page_break_before.c&#39;,
++  &#39;src/select/properties/page_break_inside.c&#39;,
++  &#39;src/select/properties/pause_after.c&#39;,
++  &#39;src/select/properties/pause_before.c&#39;,
++  &#39;src/select/properties/pitch.c&#39;,
++  &#39;src/select/properties/pitch_range.c&#39;,
++  &#39;src/select/properties/play_during.c&#39;,
++  &#39;src/select/properties/position.c&#39;,
++  &#39;src/select/properties/quotes.c&#39;,
++  &#39;src/select/properties/richness.c&#39;,
++  &#39;src/select/properties/right.c&#39;,
++  &#39;src/select/properties/speak.c&#39;,
++  &#39;src/select/properties/speak_header.c&#39;,
++  &#39;src/select/properties/speak_numeral.c&#39;,
++  &#39;src/select/properties/speak_punctuation.c&#39;,
++  &#39;src/select/properties/speech_rate.c&#39;,
++  &#39;src/select/properties/stress.c&#39;,
++  &#39;src/select/properties/table_layout.c&#39;,
++  &#39;src/select/properties/text_align.c&#39;,
++  &#39;src/select/properties/text_decoration.c&#39;,
++  &#39;src/select/properties/text_indent.c&#39;,
++  &#39;src/select/properties/text_transform.c&#39;,
++  &#39;src/select/properties/top.c&#39;,
++  &#39;src/select/properties/unicode_bidi.c&#39;,
++  &#39;src/select/properties/vertical_align.c&#39;,
++  &#39;src/select/properties/visibility.c&#39;,
++  &#39;src/select/properties/voice_family.c&#39;,
++  &#39;src/select/properties/volume.c&#39;,
++  &#39;src/select/properties/white_space.c&#39;,
++  &#39;src/select/properties/widows.c&#39;,
++  &#39;src/select/properties/width.c&#39;,
++  &#39;src/select/properties/word_spacing.c&#39;,
++  &#39;src/select/properties/writing_mode.c&#39;,
++  &#39;src/select/properties/z_index.c&#39;,
++  &#39;src/select/select.c&#39;,
++  &#39;src/stylesheet.c&#39;,
++  &#39;src/utils/errors.c&#39;,
++  &#39;src/utils/utils.c&#39;,
++)
++
++inc = include_directories(&#39;.&#39;, &#39;include&#39;, &#39;src&#39;)
++libcss = static_library(
++  &#39;css&#39;,
++  css_sources,
++  prop_parsers,
++  include_directories: inc,
++  dependencies: [parserutils_dep, wapcaplet_dep],
++  c_args: [
++    &#39;-D_BSD_SOURCE&#39;,
++    &#39;-D_DEFAULT_SOURCE&#39;,
++    &#39;-D_ALIGNED=__attribute__((aligned))&#39;,
++  ],
++)
++
++libcss_dep = declare_dependency(
++  link_with: libcss,
++  include_directories: inc,
++  dependencies: [parserutils_dep, wapcaplet_dep],
++)
++meson.override_dependency(&#39;libcss&#39;, libcss_dep)
+diff --git a/subprojects/packagefiles/libcss/prop_parsers.awk b/subprojects/packagefiles/libcss/prop_parsers.awk
+new file mode 100644
+index 0000000000000000000000000000000000000000..68a596af99a1fc05a32016c8e37b60279fede2d2
+--- /dev/null
++++ b/subprojects/packagefiles/libcss/prop_parsers.awk
+@@ -0,0 +1,10 @@
++BEGIN {
++	FS=&#34;:&#34;
++}
++
++/^#/ { next }
++/^$/ { next }
++
++{
++	system(gen_prop_parser &#34; &#39;&#34; $0 &#34;&#39;&#34;)
++}
+diff --git a/subprojects/packagefiles/libdom/dom/bindings/hubbub/meson.build b/subprojects/packagefiles/libdom/dom/bindings/hubbub/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..95432eee0f58204f5dd55c816d58547b780f04d9
+--- /dev/null
++++ b/subprojects/packagefiles/libdom/dom/bindings/hubbub/meson.build
+@@ -0,0 +1,2 @@
++configure_file(input: &#39;../../../bindings/hubbub/errors.h&#39;, output: &#39;errors.h&#39;, copy: true)
++configure_file(input: &#39;../../../bindings/hubbub/parser.h&#39;, output: &#39;parser.h&#39;, copy: true)
+diff --git a/subprojects/packagefiles/libdom/dom/bindings/xml/meson.build b/subprojects/packagefiles/libdom/dom/bindings/xml/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..45a4f9ed97392d57ff6a95ff5cf9b85d1762b5fd
+--- /dev/null
++++ b/subprojects/packagefiles/libdom/dom/bindings/xml/meson.build
+@@ -0,0 +1,2 @@
++configure_file(input: &#39;../../../bindings/xml/xmlerror.h&#39;, output: &#39;xmlerror.h&#39;, copy: true)
++configure_file(input: &#39;../../../bindings/xml/xmlparser.h&#39;, output: &#39;xmlparser.h&#39;, copy: true)
+diff --git a/subprojects/packagefiles/libdom/meson.build b/subprojects/packagefiles/libdom/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..8cbf1260370808e4d5fa469d90bda3e6295956a2
+--- /dev/null
++++ b/subprojects/packagefiles/libdom/meson.build
+@@ -0,0 +1,75 @@
++project(&#39;libdom&#39;, &#39;c&#39;, version: &#39;0.4.1&#39;, default_options: [&#39;c_std=c99&#39;])
++
++parserutils_dep = dependency(&#39;libparserutils&#39;)
++wapcaplet_dep = dependency(&#39;libwapcaplet&#39;)
++hubbub_dep = dependency(&#39;libhubbub&#39;)
++expat_dep = dependency(&#39;expat&#39;)
++
++subdir(&#39;dom/bindings/hubbub&#39;)
++subdir(&#39;dom/bindings/xml&#39;)
++
++inc = include_directories(&#39;.&#39;, &#39;include&#39;, &#39;src&#39;)
++sources = files(
++  &#39;src/core/string.c&#39;, &#39;src/core/node.c&#39;, &#39;src/core/attr.c&#39;,
++  &#39;src/core/characterdata.c&#39;, &#39;src/core/element.c&#39;,
++  &#39;src/core/implementation.c&#39;, &#39;src/core/text.c&#39;, &#39;src/core/typeinfo.c&#39;,
++  &#39;src/core/comment.c&#39;, &#39;src/core/namednodemap.c&#39;, &#39;src/core/nodelist.c&#39;,
++  &#39;src/core/cdatasection.c&#39;, &#39;src/core/document_type.c&#39;,
++  &#39;src/core/entity_ref.c&#39;, &#39;src/core/pi.c&#39;, &#39;src/core/doc_fragment.c&#39;,
++  &#39;src/core/document.c&#39;,
++  &#39;src/events/event.c&#39;, &#39;src/events/dispatch.c&#39;,
++  &#39;src/events/event_target.c&#39;, &#39;src/events/document_event.c&#39;,
++  &#39;src/events/custom_event.c&#39;, &#39;src/events/keyboard_event.c&#39;,
++  &#39;src/events/mouse_wheel_event.c&#39;, &#39;src/events/text_event.c&#39;,
++  &#39;src/events/event_listener.c&#39;, &#39;src/events/mouse_event.c&#39;,
++  &#39;src/events/mutation_event.c&#39;, &#39;src/events/ui_event.c&#39;,
++  &#39;src/events/mouse_multi_wheel_event.c&#39;,
++  &#39;src/events/mutation_name_event.c&#39;,
++  &#39;src/html/html_applet_element.c&#39;, &#39;src/html/html_area_element.c&#39;,
++  &#39;src/html/html_anchor_element.c&#39;, &#39;src/html/html_basefont_element.c&#39;,
++  &#39;src/html/html_base_element.c&#39;, &#39;src/html/html_body_element.c&#39;,
++  &#39;src/html/html_button_element.c&#39;, &#39;src/html/html_canvas_element.c&#39;,
++  &#39;src/html/html_collection.c&#39;, &#39;src/html/html_document.c&#39;,
++  &#39;src/html/html_element.c&#39;, &#39;src/html/html_dlist_element.c&#39;,
++  &#39;src/html/html_directory_element.c&#39;, &#39;src/html/html_options_collection.c&#39;,
++  &#39;src/html/html_html_element.c&#39;, &#39;src/html/html_head_element.c&#39;,
++  &#39;src/html/html_link_element.c&#39;, &#39;src/html/html_title_element.c&#39;,
++  &#39;src/html/html_meta_element.c&#39;, &#39;src/html/html_style_element.c&#39;,
++  &#39;src/html/html_form_element.c&#39;, &#39;src/html/html_select_element.c&#39;,
++  &#39;src/html/html_input_element.c&#39;, &#39;src/html/html_text_area_element.c&#39;,
++  &#39;src/html/html_opt_group_element.c&#39;, &#39;src/html/html_option_element.c&#39;,
++  &#39;src/html/html_hr_element.c&#39;, &#39;src/html/html_menu_element.c&#39;,
++  &#39;src/html/html_fieldset_element.c&#39;, &#39;src/html/html_legend_element.c&#39;,
++  &#39;src/html/html_div_element.c&#39;, &#39;src/html/html_paragraph_element.c&#39;,
++  &#39;src/html/html_heading_element.c&#39;, &#39;src/html/html_quote_element.c&#39;,
++  &#39;src/html/html_pre_element.c&#39;, &#39;src/html/html_br_element.c&#39;,
++  &#39;src/html/html_label_element.c&#39;, &#39;src/html/html_ulist_element.c&#39;,
++  &#39;src/html/html_olist_element.c&#39;, &#39;src/html/html_li_element.c&#39;,
++  &#39;src/html/html_font_element.c&#39;, &#39;src/html/html_mod_element.c&#39;,
++  &#39;src/html/html_image_element.c&#39;, &#39;src/html/html_object_element.c&#39;,
++  &#39;src/html/html_param_element.c&#39;, &#39;src/html/html_map_element.c&#39;,
++  &#39;src/html/html_script_element.c&#39;, &#39;src/html/html_tablecaption_element.c&#39;,
++  &#39;src/html/html_tablecell_element.c&#39;, &#39;src/html/html_tablecol_element.c&#39;,
++  &#39;src/html/html_tablesection_element.c&#39;, &#39;src/html/html_table_element.c&#39;,
++  &#39;src/html/html_tablerow_element.c&#39;, &#39;src/html/html_frameset_element.c&#39;,
++  &#39;src/html/html_frame_element.c&#39;, &#39;src/html/html_iframe_element.c&#39;,
++  &#39;src/html/html_isindex_element.c&#39;,
++  &#39;src/utils/namespace.c&#39;, &#39;src/utils/hashtable.c&#39;,
++  &#39;src/utils/character_valid.c&#39;, &#39;src/utils/validate.c&#39;,
++  &#39;bindings/hubbub/parser.c&#39;, &#39;bindings/xml/expat_xmlparser.c&#39;,
++)
++
++libdom = static_library(
++  &#39;dom&#39;,
++  sources,
++  include_directories: inc,
++  dependencies: [parserutils_dep, wapcaplet_dep, hubbub_dep, expat_dep],
++  c_args: [&#39;-D_BSD_SOURCE&#39;, &#39;-D_DEFAULT_SOURCE&#39;],
++)
++
++libdom_dep = declare_dependency(
++  link_with: libdom,
++  include_directories: inc,
++  dependencies: [parserutils_dep, wapcaplet_dep, hubbub_dep, expat_dep],
++)
++meson.override_dependency(&#39;libdom&#39;, libdom_dep)
+diff --git a/subprojects/packagefiles/libhubbub/entities.awk b/subprojects/packagefiles/libhubbub/entities.awk
+new file mode 100644
+index 0000000000000000000000000000000000000000..9802bef85328dd6945d3fc75f6f6d613633b828f
+--- /dev/null
++++ b/subprojects/packagefiles/libhubbub/entities.awk
+@@ -0,0 +1,45 @@
++BEGIN {
++	for (i = 32; i &lt;= 126; ++i) ord[sprintf(&#34;%c&#34;, i)] = i
++	n = -1
++}
++function makenode(c) {
++	++n
++	splits[n] = c
++	left[n] = -1
++	equal[n] = -1
++	right[n] = -1
++	values[n] = 0
++}
++function insert(nodes, id, c) {
++	nextid = nodes[id]
++	if (nextid != -1) return nextid
++	makenode(c)
++	nodes[id] = n
++	return n
++}
++/^(#|$)/ {next}
++{
++	id = 0
++	c = ord[substr($1, 1, 1)]
++	if (n &lt; 0) makenode(c)
++	for (i = 1; i &lt;= length($1) + 1;) {
++		if (c &lt; splits[id]) {
++			id = insert(left, id, c)
++		} else if (c == splits[id]) {
++			if (i &gt;= length($1)) values[id] = $2
++			if (c == 0) break
++			++i
++			c = i &lt;= length($1) ? ord[substr($1, i, 1)] : 0
++			id = insert(equal, id, c)
++		} else {
++			id = insert(right, id, c)
++		}
++	}
++}
++END {
++	print &#34;static hubbub_entity_node dict[] = {&#34;
++	for (i = 0; i &lt;= n; ++i)
++		print &#34;\t{ &#34;splits[i]&#34;, &#34;left[i]&#34;, &#34;equal[i]&#34;, &#34;right[i]&#34;, &#34;values[i]&#34; },&#34;
++	print &#34;};&#34;
++	print &#34;static int32_t dict_root = 0;&#34;
++}
+diff --git a/subprojects/packagefiles/libhubbub/meson.build b/subprojects/packagefiles/libhubbub/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..ecb23066116a10088b08453196d6f0482096d3c0
+--- /dev/null
++++ b/subprojects/packagefiles/libhubbub/meson.build
+@@ -0,0 +1,61 @@
++project(&#39;libhubbub&#39;, &#39;c&#39;, version: &#39;0.3.7&#39;, default_options: [&#39;c_std=c99&#39;])
++
++awk = find_program(&#39;awk&#39;)
++parserutils_dep = dependency(&#39;libparserutils&#39;)
++
++entities_inc = custom_target(
++  &#39;HTML entities&#39;,
++  input: &#39;build/Entities&#39;,
++  output: &#39;entities.inc&#39;,
++  command: [awk, &#39;-f&#39;, files(&#39;entities.awk&#39;), &#39;@INPUT@&#39;],
++  capture: true,
++)
++
++inc = include_directories(&#39;.&#39;, &#39;include&#39;, &#39;src&#39;)
++sources = files(
++  &#39;src/parser.c&#39;,
++  &#39;src/charset/detect.c&#39;,
++  &#39;src/tokeniser/entities.c&#39;,
++  &#39;src/tokeniser/tokeniser.c&#39;,
++  &#39;src/treebuilder/treebuilder.c&#39;,
++  &#39;src/treebuilder/initial.c&#39;,
++  &#39;src/treebuilder/before_html.c&#39;,
++  &#39;src/treebuilder/before_head.c&#39;,
++  &#39;src/treebuilder/in_head.c&#39;,
++  &#39;src/treebuilder/in_head_noscript.c&#39;,
++  &#39;src/treebuilder/after_head.c&#39;,
++  &#39;src/treebuilder/in_body.c&#39;,
++  &#39;src/treebuilder/in_table.c&#39;,
++  &#39;src/treebuilder/in_caption.c&#39;,
++  &#39;src/treebuilder/in_column_group.c&#39;,
++  &#39;src/treebuilder/in_table_body.c&#39;,
++  &#39;src/treebuilder/in_row.c&#39;,
++  &#39;src/treebuilder/in_cell.c&#39;,
++  &#39;src/treebuilder/in_select.c&#39;,
++  &#39;src/treebuilder/in_select_in_table.c&#39;,
++  &#39;src/treebuilder/in_foreign_content.c&#39;,
++  &#39;src/treebuilder/after_body.c&#39;,
++  &#39;src/treebuilder/in_frameset.c&#39;,
++  &#39;src/treebuilder/after_frameset.c&#39;,
++  &#39;src/treebuilder/after_after_body.c&#39;,
++  &#39;src/treebuilder/after_after_frameset.c&#39;,
++  &#39;src/treebuilder/generic_rcdata.c&#39;,
++  &#39;src/utils/errors.c&#39;,
++  &#39;src/utils/string.c&#39;,
++)
++
++libhubbub = static_library(
++  &#39;hubbub&#39;,
++  sources,
++  entities_inc,
++  include_directories: inc,
++  dependencies: parserutils_dep,
++  c_args: [&#39;-D_BSD_SOURCE&#39;, &#39;-D_DEFAULT_SOURCE&#39;, &#39;-DNDEBUG&#39;],
++)
++
++libhubbub_dep = declare_dependency(
++  link_with: libhubbub,
++  include_directories: inc,
++  dependencies: parserutils_dep,
++)
++meson.override_dependency(&#39;libhubbub&#39;, libhubbub_dep)
+diff --git a/subprojects/packagefiles/libnsbmp/meson.build b/subprojects/packagefiles/libnsbmp/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..ba8682607d1e9aaf79c91497a66210d0aa408c92
+--- /dev/null
++++ b/subprojects/packagefiles/libnsbmp/meson.build
+@@ -0,0 +1,12 @@
++project(&#39;libnsbmp&#39;, &#39;c&#39;, version: &#39;0.1.5&#39;, default_options: [&#39;c_std=c99&#39;])
++
++inc = include_directories(&#39;include&#39;)
++libnsbmp = static_library(
++  &#39;nsbmp&#39;,
++  &#39;src/libnsbmp.c&#39;,
++  include_directories: inc,
++  c_args: [&#39;-D_BSD_SOURCE&#39;, &#39;-D_DEFAULT_SOURCE&#39;],
++)
++
++libnsbmp_dep = declare_dependency(link_with: libnsbmp, include_directories: inc)
++meson.override_dependency(&#39;libnsbmp&#39;, libnsbmp_dep)
+diff --git a/subprojects/packagefiles/libnsgif/meson.build b/subprojects/packagefiles/libnsgif/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..753cda30bf467e4ba956ed65033d038b974508e0
+--- /dev/null
++++ b/subprojects/packagefiles/libnsgif/meson.build
+@@ -0,0 +1,12 @@
++project(&#39;libnsgif&#39;, &#39;c&#39;, version: &#39;0.1.0&#39;, default_options: [&#39;c_std=c99&#39;])
++
++inc = include_directories(&#39;include&#39;)
++libnsgif = static_library(
++  &#39;nsgif&#39;,
++  files(&#39;src/libnsgif.c&#39;, &#39;src/lzw.c&#39;),
++  include_directories: inc,
++  c_args: [&#39;-D_BSD_SOURCE&#39;, &#39;-D_DEFAULT_SOURCE&#39;],
++)
++
++libnsgif_dep = declare_dependency(link_with: libnsgif, include_directories: inc)
++meson.override_dependency(&#39;libnsgif&#39;, libnsgif_dep)
+diff --git a/subprojects/packagefiles/libnsutils/meson.build b/subprojects/packagefiles/libnsutils/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..59f75797262a570e4b80ae712f86f4299ab70d60
+--- /dev/null
++++ b/subprojects/packagefiles/libnsutils/meson.build
+@@ -0,0 +1,12 @@
++project(&#39;libnsutils&#39;, &#39;c&#39;, version: &#39;0.1.0&#39;, default_options: [&#39;c_std=c99&#39;])
++
++inc = include_directories(&#39;include&#39;)
++libnsutils = static_library(
++  &#39;nsutils&#39;,
++  files(&#39;src/base64.c&#39;, &#39;src/time.c&#39;, &#39;src/unistd.c&#39;),
++  include_directories: inc,
++  c_args: [&#39;-D_BSD_SOURCE&#39;, &#39;-D_DEFAULT_SOURCE&#39;],
++)
++
++libnsutils_dep = declare_dependency(link_with: libnsutils, include_directories: inc)
++meson.override_dependency(&#39;libnsutils&#39;, libnsutils_dep)
+diff --git a/subprojects/packagefiles/libparserutils/aliases.awk b/subprojects/packagefiles/libparserutils/aliases.awk
+new file mode 100644
+index 0000000000000000000000000000000000000000..84094474c5633a732cbb5f2df4c94e4e95b1fa03
+--- /dev/null
++++ b/subprojects/packagefiles/libparserutils/aliases.awk
+@@ -0,0 +1,33 @@
++BEGIN {
++	print &#34;static parserutils_charset_aliases_canon canonical_charset_names[] = {&#34;
++	n = 0
++}
++/^(#|$)/ {next}
++function addalias(s) {
++	s = tolower(s)
++	gsub(&#34;[^a-z0-9]&#34;, &#34;&#34;, s)
++	if (!(s in aliases)) ++num_aliases
++	aliases[s] = n
++}
++{
++	print &#34;\t{ &#34;$2&#34;, &#34;length($1)&#34;, \&#34;&#34;$1&#34;\&#34; },&#34;
++	addalias($1)
++	for (i = 3; i &lt;= NF; ++i) addalias($i)
++	if ($1 ~ /^ISO-10646-UCS-[24]$/ || $1 ~ /^UTF-(8$|16|32)/)
++		isunicode = (isunicode ? (isunicode&#34; || &#34;) : &#34;&#34;) &#34;((x) == &#34;$2&#34;)&#34;
++	++n
++}
++END {
++	print &#34;};&#34;
++	print &#34;static const uint16_t charset_aliases_canon_count = &#34;n&#34;;&#34;
++	print &#34;typedef struct { uint16_t name_len; const char *name; parserutils_charset_aliases_canon *canon; } parserutils_charset_aliases_alias;&#34;
++	print &#34;static parserutils_charset_aliases_alias charset_aliases[] = {&#34;
++	for (alias in aliases) {
++		i = aliases[alias]
++		print &#34;\t{ &#34;length(alias)&#34;, \&#34;&#34;alias&#34;\&#34;, &amp;canonical_charset_names[&#34;i&#34;] },&#34; | &#34;sort -t &#39;\&#34;&#39; -k 2&#34;
++	}
++	close(&#34;sort -t &#39;\&#34;&#39; -k 2&#34;)
++	print &#34;};&#34;
++	print &#34;static const uint16_t charset_aliases_count = &#34;num_aliases&#34;;&#34;
++	print &#34;#define MIBENUM_IS_UNICODE(x) (&#34;isunicode&#34;)&#34;
++}
+diff --git a/subprojects/packagefiles/libparserutils/meson.build b/subprojects/packagefiles/libparserutils/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..750c53e69bfba6af52ffdb500e32ee73ef05ce68
+--- /dev/null
++++ b/subprojects/packagefiles/libparserutils/meson.build
+@@ -0,0 +1,47 @@
++project(&#39;libparserutils&#39;, &#39;c&#39;, version: &#39;0.2.3&#39;, default_options: [&#39;c_std=c99&#39;])
++
++awk = find_program(&#39;awk&#39;)
++wapcaplet_dep = dependency(&#39;libwapcaplet&#39;)
++
++aliases_inc = custom_target(
++  &#39;parserutils aliases&#39;,
++  input: &#39;build/Aliases&#39;,
++  output: &#39;aliases.inc&#39;,
++  command: [awk, &#39;-f&#39;, files(&#39;aliases.awk&#39;), &#39;@INPUT@&#39;],
++  capture: true,
++)
++
++inc = include_directories(&#39;.&#39;, &#39;include&#39;, &#39;src&#39;)
++sources = files(
++  &#39;src/charset/aliases.c&#39;,
++  &#39;src/charset/codec.c&#39;,
++  &#39;src/charset/codecs/codec_ascii.c&#39;,
++  &#39;src/charset/codecs/codec_8859.c&#39;,
++  &#39;src/charset/codecs/codec_ext8.c&#39;,
++  &#39;src/charset/codecs/codec_utf8.c&#39;,
++  &#39;src/charset/codecs/codec_utf16.c&#39;,
++  &#39;src/charset/encodings/utf8.c&#39;,
++  &#39;src/charset/encodings/utf16.c&#39;,
++  &#39;src/input/filter.c&#39;,
++  &#39;src/input/inputstream.c&#39;,
++  &#39;src/utils/buffer.c&#39;,
++  &#39;src/utils/errors.c&#39;,
++  &#39;src/utils/stack.c&#39;,
++  &#39;src/utils/vector.c&#39;,
++)
++
++libparserutils = static_library(
++  &#39;parserutils&#39;,
++  sources,
++  aliases_inc,
++  include_directories: inc,
++  dependencies: wapcaplet_dep,
++  c_args: [&#39;-D_BSD_SOURCE&#39;, &#39;-D_DEFAULT_SOURCE&#39;],
++)
++
++libparserutils_dep = declare_dependency(
++  link_with: libparserutils,
++  include_directories: inc,
++  dependencies: wapcaplet_dep,
++)
++meson.override_dependency(&#39;libparserutils&#39;, libparserutils_dep)
+diff --git a/subprojects/packagefiles/libsvgtiny/autogenerated_colors.c b/subprojects/packagefiles/libsvgtiny/autogenerated_colors.c
+new file mode 100644
+index 0000000000000000000000000000000000000000..f23635c388630f4d5a56d6b47b44aef2498d149e
+--- /dev/null
++++ b/subprojects/packagefiles/libsvgtiny/autogenerated_colors.c
+@@ -0,0 +1,923 @@
++/* ANSI-C code produced by gperf version 3.3 */
++/* Command-line: gperf --output-file=subprojects/packagefiles/libsvgtiny/autogenerated_colors.c subprojects/libsvgtiny/src/colors.gperf  */
++/* Computed positions: -k&#39;1,3,6-8,12-13&#39; */
++
++#if !((&#39; &#39; == 32) &amp;&amp; (&#39;!&#39; == 33) &amp;&amp; (&#39;&#34;&#39; == 34) &amp;&amp; (&#39;#&#39; == 35) \
++      &amp;&amp; (&#39;%&#39; == 37) &amp;&amp; (&#39;&amp;&#39; == 38) &amp;&amp; (&#39;\&#39;&#39; == 39) &amp;&amp; (&#39;(&#39; == 40) \
++      &amp;&amp; (&#39;)&#39; == 41) &amp;&amp; (&#39;*&#39; == 42) &amp;&amp; (&#39;+&#39; == 43) &amp;&amp; (&#39;,&#39; == 44) \
++      &amp;&amp; (&#39;-&#39; == 45) &amp;&amp; (&#39;.&#39; == 46) &amp;&amp; (&#39;/&#39; == 47) &amp;&amp; (&#39;0&#39; == 48) \
++      &amp;&amp; (&#39;1&#39; == 49) &amp;&amp; (&#39;2&#39; == 50) &amp;&amp; (&#39;3&#39; == 51) &amp;&amp; (&#39;4&#39; == 52) \
++      &amp;&amp; (&#39;5&#39; == 53) &amp;&amp; (&#39;6&#39; == 54) &amp;&amp; (&#39;7&#39; == 55) &amp;&amp; (&#39;8&#39; == 56) \
++      &amp;&amp; (&#39;9&#39; == 57) &amp;&amp; (&#39;:&#39; == 58) &amp;&amp; (&#39;;&#39; == 59) &amp;&amp; (&#39;&lt;&#39; == 60) \
++      &amp;&amp; (&#39;=&#39; == 61) &amp;&amp; (&#39;&gt;&#39; == 62) &amp;&amp; (&#39;?&#39; == 63) &amp;&amp; (&#39;A&#39; == 65) \
++      &amp;&amp; (&#39;B&#39; == 66) &amp;&amp; (&#39;C&#39; == 67) &amp;&amp; (&#39;D&#39; == 68) &amp;&amp; (&#39;E&#39; == 69) \
++      &amp;&amp; (&#39;F&#39; == 70) &amp;&amp; (&#39;G&#39; == 71) &amp;&amp; (&#39;H&#39; == 72) &amp;&amp; (&#39;I&#39; == 73) \
++      &amp;&amp; (&#39;J&#39; == 74) &amp;&amp; (&#39;K&#39; == 75) &amp;&amp; (&#39;L&#39; == 76) &amp;&amp; (&#39;M&#39; == 77) \
++      &amp;&amp; (&#39;N&#39; == 78) &amp;&amp; (&#39;O&#39; == 79) &amp;&amp; (&#39;P&#39; == 80) &amp;&amp; (&#39;Q&#39; == 81) \
++      &amp;&amp; (&#39;R&#39; == 82) &amp;&amp; (&#39;S&#39; == 83) &amp;&amp; (&#39;T&#39; == 84) &amp;&amp; (&#39;U&#39; == 85) \
++      &amp;&amp; (&#39;V&#39; == 86) &amp;&amp; (&#39;W&#39; == 87) &amp;&amp; (&#39;X&#39; == 88) &amp;&amp; (&#39;Y&#39; == 89) \
++      &amp;&amp; (&#39;Z&#39; == 90) &amp;&amp; (&#39;[&#39; == 91) &amp;&amp; (&#39;\\&#39; == 92) &amp;&amp; (&#39;]&#39; == 93) \
++      &amp;&amp; (&#39;^&#39; == 94) &amp;&amp; (&#39;_&#39; == 95) &amp;&amp; (&#39;a&#39; == 97) &amp;&amp; (&#39;b&#39; == 98) \
++      &amp;&amp; (&#39;c&#39; == 99) &amp;&amp; (&#39;d&#39; == 100) &amp;&amp; (&#39;e&#39; == 101) &amp;&amp; (&#39;f&#39; == 102) \
++      &amp;&amp; (&#39;g&#39; == 103) &amp;&amp; (&#39;h&#39; == 104) &amp;&amp; (&#39;i&#39; == 105) &amp;&amp; (&#39;j&#39; == 106) \
++      &amp;&amp; (&#39;k&#39; == 107) &amp;&amp; (&#39;l&#39; == 108) &amp;&amp; (&#39;m&#39; == 109) &amp;&amp; (&#39;n&#39; == 110) \
++      &amp;&amp; (&#39;o&#39; == 111) &amp;&amp; (&#39;p&#39; == 112) &amp;&amp; (&#39;q&#39; == 113) &amp;&amp; (&#39;r&#39; == 114) \
++      &amp;&amp; (&#39;s&#39; == 115) &amp;&amp; (&#39;t&#39; == 116) &amp;&amp; (&#39;u&#39; == 117) &amp;&amp; (&#39;v&#39; == 118) \
++      &amp;&amp; (&#39;w&#39; == 119) &amp;&amp; (&#39;x&#39; == 120) &amp;&amp; (&#39;y&#39; == 121) &amp;&amp; (&#39;z&#39; == 122) \
++      &amp;&amp; (&#39;{&#39; == 123) &amp;&amp; (&#39;|&#39; == 124) &amp;&amp; (&#39;}&#39; == 125) &amp;&amp; (&#39;~&#39; == 126))
++/* The character set is not based on ISO-646.  */
++#error &#34;gperf generated tables don&#39;t work with this execution character set. Please report a bug to &lt;bug-gperf@gnu.org&gt;.&#34;
++#endif
++
++#line 15 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++
++#include &lt;string.h&gt;
++#include &#34;svgtiny.h&#34;
++#include &#34;svgtiny_internal.h&#34;
++
++#line 22 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++struct svgtiny_named_color;
++
++#define TOTAL_KEYWORDS 147
++#define MIN_WORD_LENGTH 3
++#define MAX_WORD_LENGTH 20
++#define MIN_HASH_VALUE 4
++#define MAX_HASH_VALUE 565
++/* maximum key range = 562, duplicates = 0 */
++
++#ifdef __GNUC__
++__inline
++#else
++#ifdef __cplusplus
++inline
++#endif
++#endif
++static unsigned int
++svgtiny_color_hash (register const char *str, register size_t len)
++{
++  static const unsigned short asso_values[] =
++    {
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566,   5,  55,   0,
++       35,   0,  75,  10,   5,   0, 566, 250,  10,  40,
++       85,  60,  70, 144,   0,  20,  45,  10,  30, 185,
++       95, 195, 566,   0, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566, 566, 566,
++      566, 566, 566, 566, 566, 566, 566, 566
++    };
++  register unsigned int hval = len;
++
++  switch (hval)
++    {
++      default:
++        hval += asso_values[(unsigned char)str[12]];
++#if (defined __cplusplus &amp;&amp; (__cplusplus &gt;= 201703L || (__cplusplus &gt;= 201103L &amp;&amp; defined __clang__ &amp;&amp; __clang_major__ + (__clang_minor__ &gt;= 9) &gt; 3))) || (defined __STDC_VERSION__ &amp;&amp; __STDC_VERSION__ &gt;= 202000L &amp;&amp; ((defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 10) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 9)))
++      [[fallthrough]];
++#elif (defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 7) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 10)
++      __attribute__ ((__fallthrough__));
++#endif
++      /*FALLTHROUGH*/
++      case 12:
++        hval += asso_values[(unsigned char)str[11]];
++#if (defined __cplusplus &amp;&amp; (__cplusplus &gt;= 201703L || (__cplusplus &gt;= 201103L &amp;&amp; defined __clang__ &amp;&amp; __clang_major__ + (__clang_minor__ &gt;= 9) &gt; 3))) || (defined __STDC_VERSION__ &amp;&amp; __STDC_VERSION__ &gt;= 202000L &amp;&amp; ((defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 10) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 9)))
++      [[fallthrough]];
++#elif (defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 7) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 10)
++      __attribute__ ((__fallthrough__));
++#endif
++      /*FALLTHROUGH*/
++      case 11:
++      case 10:
++      case 9:
++      case 8:
++        hval += asso_values[(unsigned char)str[7]];
++#if (defined __cplusplus &amp;&amp; (__cplusplus &gt;= 201703L || (__cplusplus &gt;= 201103L &amp;&amp; defined __clang__ &amp;&amp; __clang_major__ + (__clang_minor__ &gt;= 9) &gt; 3))) || (defined __STDC_VERSION__ &amp;&amp; __STDC_VERSION__ &gt;= 202000L &amp;&amp; ((defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 10) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 9)))
++      [[fallthrough]];
++#elif (defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 7) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 10)
++      __attribute__ ((__fallthrough__));
++#endif
++      /*FALLTHROUGH*/
++      case 7:
++        hval += asso_values[(unsigned char)str[6]];
++#if (defined __cplusplus &amp;&amp; (__cplusplus &gt;= 201703L || (__cplusplus &gt;= 201103L &amp;&amp; defined __clang__ &amp;&amp; __clang_major__ + (__clang_minor__ &gt;= 9) &gt; 3))) || (defined __STDC_VERSION__ &amp;&amp; __STDC_VERSION__ &gt;= 202000L &amp;&amp; ((defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 10) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 9)))
++      [[fallthrough]];
++#elif (defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 7) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 10)
++      __attribute__ ((__fallthrough__));
++#endif
++      /*FALLTHROUGH*/
++      case 6:
++        hval += asso_values[(unsigned char)str[5]];
++#if (defined __cplusplus &amp;&amp; (__cplusplus &gt;= 201703L || (__cplusplus &gt;= 201103L &amp;&amp; defined __clang__ &amp;&amp; __clang_major__ + (__clang_minor__ &gt;= 9) &gt; 3))) || (defined __STDC_VERSION__ &amp;&amp; __STDC_VERSION__ &gt;= 202000L &amp;&amp; ((defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 10) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 9)))
++      [[fallthrough]];
++#elif (defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 7) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 10)
++      __attribute__ ((__fallthrough__));
++#endif
++      /*FALLTHROUGH*/
++      case 5:
++      case 4:
++      case 3:
++        hval += asso_values[(unsigned char)str[2]+2];
++#if (defined __cplusplus &amp;&amp; (__cplusplus &gt;= 201703L || (__cplusplus &gt;= 201103L &amp;&amp; defined __clang__ &amp;&amp; __clang_major__ + (__clang_minor__ &gt;= 9) &gt; 3))) || (defined __STDC_VERSION__ &amp;&amp; __STDC_VERSION__ &gt;= 202000L &amp;&amp; ((defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 10) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 9)))
++      [[fallthrough]];
++#elif (defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 7) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 10)
++      __attribute__ ((__fallthrough__));
++#endif
++      /*FALLTHROUGH*/
++      case 2:
++      case 1:
++        hval += asso_values[(unsigned char)str[0]];
++        break;
++    }
++  return hval;
++}
++
++const struct svgtiny_named_color *
++svgtiny_color_lookup (register const char *str, register size_t len)
++{
++#if (defined __GNUC__ &amp;&amp; __GNUC__ + (__GNUC_MINOR__ &gt;= 6) &gt; 4) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 3)
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored &#34;-Wmissing-field-initializers&#34;
++#endif
++  static const struct svgtiny_named_color wordlist[] =
++    {
++#line 44 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;cyan&#34;,		svgtiny_RGB(  0, 255, 255)},
++#line 77 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;gray&#34;,		svgtiny_RGB(128, 128, 128)},
++#line 38 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;chartreuse&#34;,	svgtiny_RGB(127, 255,   0)},
++#line 78 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;grey&#34;,		svgtiny_RGB(128, 128, 128)},
++#line 79 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;green&#34;,		svgtiny_RGB(  0, 128,   0)},
++#line 97 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightgrey&#34;,	svgtiny_RGB(211, 211, 211)},
++#line 96 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightgreen&#34;,	svgtiny_RGB(144, 238, 144)},
++#line 95 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightgray&#34;,	svgtiny_RGB(211, 211, 211)},
++#line 153 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;skyblue&#34;,	svgtiny_RGB(135, 206, 235)},
++#line 156 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;slategrey&#34;,	svgtiny_RGB(112, 128, 144)},
++#line 151 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;sienna&#34;,		svgtiny_RGB(160,  82,  45)},
++#line 155 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;slategray&#34;,	svgtiny_RGB(112, 128, 144)},
++#line 150 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;seashell&#34;,	svgtiny_RGB(255, 245, 238)},
++#line 161 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;teal&#34;,		svgtiny_RGB(  0, 128, 128)},
++#line 40 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;coral&#34;,		svgtiny_RGB(255, 127,  80)},
++#line 99 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightsalmon&#34;,	svgtiny_RGB(255, 160, 122)},
++#line 103 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightslategrey&#34;,	svgtiny_RGB(119, 136, 153)},
++#line 31 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;black&#34;,		svgtiny_RGB(  0,   0,   0)},
++#line 102 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightslategray&#34;,	svgtiny_RGB(119, 136, 153)},
++#line 129 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;orange&#34;,		svgtiny_RGB(255, 165,   0)},
++#line 130 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;orangered&#34;,	svgtiny_RGB(255,  69,   0)},
++#line 30 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;bisque&#34;,		svgtiny_RGB(255, 228, 196)},
++#line 106 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lime&#34;,		svgtiny_RGB(  0, 255,   0)},
++#line 143 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;red&#34;,		svgtiny_RGB(255,   0,   0)},
++#line 107 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;limegreen&#34;,	svgtiny_RGB( 50, 205,  50)},
++#line 92 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightcoral&#34;,	svgtiny_RGB(240, 128, 128)},
++#line 145 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;royalblue&#34;,	svgtiny_RGB( 65, 105, 225)},
++#line 108 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;linen&#34;,		svgtiny_RGB(250, 240, 230)},
++#line 72 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;fuchsia&#34;,	svgtiny_RGB(255,   0, 255)},
++#line 49 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkgreen&#34;,	svgtiny_RGB(  0, 100,   0)},
++#line 91 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightblue&#34;,	svgtiny_RGB(173, 216, 230)},
++#line 55 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkorchid&#34;,	svgtiny_RGB(153,  50, 204)},
++#line 158 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;springgreen&#34;,	svgtiny_RGB(  0, 255, 127)},
++#line 109 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;magenta&#34;,	svgtiny_RGB(255,   0, 255)},
++#line 75 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;gold&#34;,		svgtiny_RGB(255, 215,   0)},
++#line 131 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;orchid&#34;,		svgtiny_RGB(218, 112, 214)},
++#line 154 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;slateblue&#34;,	svgtiny_RGB(106,  90, 205)},
++#line 52 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkmagenta&#34;,	svgtiny_RGB(139, 0,   139)},
++#line 45 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkblue&#34;,	svgtiny_RGB(  0,   0, 139)},
++#line 104 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightsteelblue&#34;,	svgtiny_RGB(176, 196, 222)},
++#line 152 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;silver&#34;,		svgtiny_RGB(192, 192, 192)},
++#line 149 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;seagreen&#34;,	svgtiny_RGB( 46, 139,  87)},
++#line 159 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;steelblue&#34;,	svgtiny_RGB( 70, 130, 180)},
++#line 160 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;tan&#34;,		svgtiny_RGB(210, 180, 140)},
++#line 138 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;peru&#34;,		svgtiny_RGB(205, 133,  63)},
++#line 142 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;purple&#34;,		svgtiny_RGB(128,   0, 128)},
++#line 56 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkred&#34;,	svgtiny_RGB(139,   0,   0)},
++#line 121 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;mintcream&#34;,	svgtiny_RGB(245, 255, 250)},
++#line 69 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;firebrick&#34;,	svgtiny_RGB(178,  34,  34)},
++#line 100 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightseagreen&#34;,	svgtiny_RGB( 32, 178, 170)},
++#line 53 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkolivegreen&#34;,	svgtiny_RGB( 85, 107,  47)},
++#line 122 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;mistyrose&#34;,	svgtiny_RGB(255, 228, 225)},
++#line 84 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;indigo&#34;,		svgtiny_RGB( 75,   0, 130)},
++#line 126 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;oldlace&#34;,	svgtiny_RGB(253, 245, 230)},
++#line 139 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;pink&#34;,		svgtiny_RGB(255, 192, 203)},
++#line 57 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darksalmon&#34;,	svgtiny_RGB(233, 150, 122)},
++#line 87 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lavender&#34;,	svgtiny_RGB(230, 230, 250)},
++#line 85 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;ivory&#34;,		svgtiny_RGB(255, 255, 240)},
++#line 123 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;moccasin&#34;,	svgtiny_RGB(255, 228, 181)},
++#line 37 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;cadetblue&#34;,	svgtiny_RGB( 95, 158, 160)},
++#line 63 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkviolet&#34;,	svgtiny_RGB(148,   0, 211)},
++#line 146 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;saddlebrown&#34;,	svgtiny_RGB(139,  69,  19)},
++#line 59 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkslateblue&#34;,	svgtiny_RGB( 72,  61, 139)},
++#line 133 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;palegreen&#34;,	svgtiny_RGB(152, 251, 152)},
++#line 157 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;snow&#34;,		svgtiny_RGB(255, 250, 250)},
++#line 83 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;indianred&#34;,	svgtiny_RGB(205,  92,  92)},
++#line 94 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightgoldenrodyellow&#34;,	svgtiny_RGB(250, 250, 210)},
++#line 163 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;tomato&#34;,		svgtiny_RGB(255,  99,  71)},
++#line 90 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lemonchiffon&#34;,	svgtiny_RGB(255, 250, 205)},
++#line 98 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightpink&#34;,	svgtiny_RGB(255, 182, 193)},
++#line 110 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;maroon&#34;,		svgtiny_RGB(128,   0,   0)},
++#line 88 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lavenderblush&#34;,	svgtiny_RGB(255, 240, 245)},
++#line 164 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;turquoise&#34;,	svgtiny_RGB( 64, 224, 208)},
++#line 54 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkorange&#34;,	svgtiny_RGB(255, 140,   0)},
++#line 125 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;navy&#34;,		svgtiny_RGB(  0,   0, 128)},
++#line 68 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;dodgerblue&#34;,	svgtiny_RGB( 30, 144, 255)},
++#line 71 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;forestgreen&#34;,	svgtiny_RGB( 34, 139,  34)},
++#line 120 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;midnightblue&#34;,	svgtiny_RGB( 25,  25, 112)},
++#line 115 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;mediumseagreen&#34;,	svgtiny_RGB( 60, 179, 113)},
++#line 58 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkseagreen&#34;,	svgtiny_RGB(143, 188, 143)},
++#line 26 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;aqua&#34;,		svgtiny_RGB(  0, 255, 255)},
++#line 28 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;azure&#34;,		svgtiny_RGB(240, 255, 255)},
++#line 147 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;salmon&#34;,		svgtiny_RGB(250, 128, 114)},
++#line 166 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;wheat&#34;,		svgtiny_RGB(245, 222, 179)},
++#line 35 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;brown&#34;,		svgtiny_RGB(165,  42,  42)},
++#line 27 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;aquamarine&#34;,	svgtiny_RGB(127, 255, 212)},
++#line 39 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;chocolate&#34;,	svgtiny_RGB(210, 105,  30)},
++#line 89 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lawngreen&#34;,	svgtiny_RGB(124, 252,   0)},
++#line 148 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;sandybrown&#34;,	svgtiny_RGB(244, 164,  96)},
++#line 93 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightcyan&#34;,	svgtiny_RGB(224, 255, 255)},
++#line 165 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;violet&#34;,		svgtiny_RGB(238, 130, 238)},
++#line 105 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightyellow&#34;,	svgtiny_RGB(255, 255, 224)},
++#line 112 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;mediumblue&#34;,	svgtiny_RGB(  0,   0, 205)},
++#line 137 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;peachpuff&#34;,	svgtiny_RGB(255, 218, 185)},
++#line 80 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;greenyellow&#34;,	svgtiny_RGB(173, 255,  47)},
++#line 25 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;antiquewhite&#34;,	svgtiny_RGB(250, 235, 215)},
++#line 33 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;blue&#34;,		svgtiny_RGB(  0,   0, 255)},
++#line 119 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;mediumvioletred&#34;,	svgtiny_RGB(199,  21, 133)},
++#line 114 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;mediumpurple&#34;,	svgtiny_RGB(147, 112, 219)},
++#line 76 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;goldenrod&#34;,	svgtiny_RGB(218, 165,  32)},
++#line 32 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;blanchedalmond&#34;,	svgtiny_RGB(255, 235, 205)},
++#line 86 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;khaki&#34;,		svgtiny_RGB(240, 230, 140)},
++#line 140 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;plum&#34;,		svgtiny_RGB(221, 160, 221)},
++#line 113 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;mediumorchid&#34;,	svgtiny_RGB(186,  85, 211)},
++#line 144 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;rosybrown&#34;,	svgtiny_RGB(188, 143, 143)},
++#line 116 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;mediumslateblue&#34;,	svgtiny_RGB(123, 104, 238)},
++#line 62 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkturquoise&#34;,	svgtiny_RGB(  0, 206, 209)},
++#line 135 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;palevioletred&#34;,	svgtiny_RGB(219, 112, 147)},
++#line 136 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;papayawhip&#34;,	svgtiny_RGB(255, 239, 213)},
++#line 117 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;mediumspringgreen&#34;,	svgtiny_RGB(  0, 250, 154)},
++#line 50 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkgrey&#34;,	svgtiny_RGB(169, 169, 169)},
++#line 118 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;mediumturquoise&#34;,	svgtiny_RGB( 72, 209, 204)},
++#line 48 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkgray&#34;,	svgtiny_RGB(169, 169, 169)},
++#line 47 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkgoldenrod&#34;,	svgtiny_RGB(184, 134,  11)},
++#line 67 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;dimgrey&#34;,	svgtiny_RGB(105, 105, 105)},
++#line 66 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;dimgray&#34;,	svgtiny_RGB(105, 105, 105)},
++#line 81 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;honeydew&#34;,	svgtiny_RGB(240, 255, 240)},
++#line 29 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;beige&#34;,		svgtiny_RGB(245, 245, 220)},
++#line 162 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;thistle&#34;,	svgtiny_RGB(216, 191, 216)},
++#line 42 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;cornsilk&#34;,	svgtiny_RGB(255, 248, 220)},
++#line 127 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;olive&#34;,		svgtiny_RGB(128, 128,   0)},
++#line 34 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;blueviolet&#34;,	svgtiny_RGB(138,  43, 226)},
++#line 111 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;mediumaquamarine&#34;,	svgtiny_RGB(102, 205, 170)},
++#line 41 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;cornflowerblue&#34;,	svgtiny_RGB(100, 149, 237)},
++#line 24 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;aliceblue&#34;,	svgtiny_RGB(240, 248, 255)},
++#line 141 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;powderblue&#34;,	svgtiny_RGB(176, 224, 230)},
++#line 134 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;paleturquoise&#34;,	svgtiny_RGB(175, 238, 238)},
++#line 61 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkslategrey&#34;,	svgtiny_RGB( 47,  79,  79)},
++#line 51 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkkhaki&#34;,	svgtiny_RGB(189, 183, 107)},
++#line 60 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkslategray&#34;,	svgtiny_RGB( 47,  79,  79)},
++#line 74 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;ghostwhite&#34;,	svgtiny_RGB(248, 248, 255)},
++#line 128 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;olivedrab&#34;,	svgtiny_RGB(107, 142,  35)},
++#line 132 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;palegoldenrod&#34;,	svgtiny_RGB(238, 232, 170)},
++#line 46 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;darkcyan&#34;,	svgtiny_RGB(  0, 139, 139)},
++#line 82 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;hotpink&#34;,	svgtiny_RGB(255, 105, 180)},
++#line 73 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;gainsboro&#34;,	svgtiny_RGB(220, 220, 220)},
++#line 64 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;deeppink&#34;,	svgtiny_RGB(255,  20, 147)},
++#line 43 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;crimson&#34;,	svgtiny_RGB(220,  20,  60)},
++#line 36 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;burlywood&#34;,	svgtiny_RGB(222, 184, 135)},
++#line 70 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;floralwhite&#34;,	svgtiny_RGB(255, 250, 240)},
++#line 167 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;white&#34;,		svgtiny_RGB(255, 255, 255)},
++#line 124 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;navajowhite&#34;,	svgtiny_RGB(255, 222, 173)},
++#line 169 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;yellow&#34;,		svgtiny_RGB(255, 255,   0)},
++#line 170 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;yellowgreen&#34;,	svgtiny_RGB(154, 205,  50)},
++#line 101 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;lightskyblue&#34;,	svgtiny_RGB(135, 206, 250)},
++#line 65 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;deepskyblue&#34;,	svgtiny_RGB(  0, 191, 255)},
++#line 168 &#34;subprojects/libsvgtiny/src/colors.gperf&#34;
++      {&#34;whitesmoke&#34;,	svgtiny_RGB(245, 245, 245)}
++    };
++#if (defined __GNUC__ &amp;&amp; __GNUC__ + (__GNUC_MINOR__ &gt;= 6) &gt; 4) || (defined __clang__ &amp;&amp; __clang_major__ &gt;= 3)
++#pragma GCC diagnostic pop
++#endif
++
++  if (len &lt;= MAX_WORD_LENGTH &amp;&amp; len &gt;= MIN_WORD_LENGTH)
++    {
++      register unsigned int key = svgtiny_color_hash (str, len);
++
++      if (key &lt;= MAX_HASH_VALUE &amp;&amp; key &gt;= MIN_HASH_VALUE)
++        {
++          register const struct svgtiny_named_color *resword;
++
++          switch (key - 4)
++            {
++              case 0:
++                resword = &amp;wordlist[0];
++                goto compare;
++              case 10:
++                resword = &amp;wordlist[1];
++                goto compare;
++              case 16:
++                resword = &amp;wordlist[2];
++                goto compare;
++              case 20:
++                resword = &amp;wordlist[3];
++                goto compare;
++              case 21:
++                resword = &amp;wordlist[4];
++                goto compare;
++              case 25:
++                resword = &amp;wordlist[5];
++                goto compare;
++              case 26:
++                resword = &amp;wordlist[6];
++                goto compare;
++              case 30:
++                resword = &amp;wordlist[7];
++                goto compare;
++              case 33:
++                resword = &amp;wordlist[8];
++                goto compare;
++              case 35:
++                resword = &amp;wordlist[9];
++                goto compare;
++              case 37:
++                resword = &amp;wordlist[10];
++                goto compare;
++              case 40:
++                resword = &amp;wordlist[11];
++                goto compare;
++              case 44:
++                resword = &amp;wordlist[12];
++                goto compare;
++              case 45:
++                resword = &amp;wordlist[13];
++                goto compare;
++              case 46:
++                resword = &amp;wordlist[14];
++                goto compare;
++              case 52:
++                resword = &amp;wordlist[15];
++                goto compare;
++              case 55:
++                resword = &amp;wordlist[16];
++                goto compare;
++              case 56:
++                resword = &amp;wordlist[17];
++                goto compare;
++              case 60:
++                resword = &amp;wordlist[18];
++                goto compare;
++              case 62:
++                resword = &amp;wordlist[19];
++                goto compare;
++              case 65:
++                resword = &amp;wordlist[20];
++                goto compare;
++              case 67:
++                resword = &amp;wordlist[21];
++                goto compare;
++              case 70:
++                resword = &amp;wordlist[22];
++                goto compare;
++              case 74:
++                resword = &amp;wordlist[23];
++                goto compare;
++              case 75:
++                resword = &amp;wordlist[24];
++                goto compare;
++              case 76:
++                resword = &amp;wordlist[25];
++                goto compare;
++              case 80:
++                resword = &amp;wordlist[26];
++                goto compare;
++              case 81:
++                resword = &amp;wordlist[27];
++                goto compare;
++              case 83:
++                resword = &amp;wordlist[28];
++                goto compare;
++              case 85:
++                resword = &amp;wordlist[29];
++                goto compare;
++              case 90:
++                resword = &amp;wordlist[30];
++                goto compare;
++              case 91:
++                resword = &amp;wordlist[31];
++                goto compare;
++              case 92:
++                resword = &amp;wordlist[32];
++                goto compare;
++              case 93:
++                resword = &amp;wordlist[33];
++                goto compare;
++              case 95:
++                resword = &amp;wordlist[34];
++                goto compare;
++              case 97:
++                resword = &amp;wordlist[35];
++                goto compare;
++              case 100:
++                resword = &amp;wordlist[36];
++                goto compare;
++              case 102:
++                resword = &amp;wordlist[37];
++                goto compare;
++              case 104:
++                resword = &amp;wordlist[38];
++                goto compare;
++              case 105:
++                resword = &amp;wordlist[39];
++                goto compare;
++              case 107:
++                resword = &amp;wordlist[40];
++                goto compare;
++              case 109:
++                resword = &amp;wordlist[41];
++                goto compare;
++              case 110:
++                resword = &amp;wordlist[42];
++                goto compare;
++              case 114:
++                resword = &amp;wordlist[43];
++                goto compare;
++              case 115:
++                resword = &amp;wordlist[44];
++                goto compare;
++              case 117:
++                resword = &amp;wordlist[45];
++                goto compare;
++              case 118:
++                resword = &amp;wordlist[46];
++                goto compare;
++              case 120:
++                resword = &amp;wordlist[47];
++                goto compare;
++              case 125:
++                resword = &amp;wordlist[48];
++                goto compare;
++              case 129:
++                resword = &amp;wordlist[49];
++                goto compare;
++              case 130:
++                resword = &amp;wordlist[50];
++                goto compare;
++              case 135:
++                resword = &amp;wordlist[51];
++                goto compare;
++              case 137:
++                resword = &amp;wordlist[52];
++                goto compare;
++              case 138:
++                resword = &amp;wordlist[53];
++                goto compare;
++              case 140:
++                resword = &amp;wordlist[54];
++                goto compare;
++              case 141:
++                resword = &amp;wordlist[55];
++                goto compare;
++              case 144:
++                resword = &amp;wordlist[56];
++                goto compare;
++              case 145:
++                resword = &amp;wordlist[57];
++                goto compare;
++              case 149:
++                resword = &amp;wordlist[58];
++                goto compare;
++              case 155:
++                resword = &amp;wordlist[59];
++                goto compare;
++              case 156:
++                resword = &amp;wordlist[60];
++                goto compare;
++              case 157:
++                resword = &amp;wordlist[61];
++                goto compare;
++              case 159:
++                resword = &amp;wordlist[62];
++                goto compare;
++              case 160:
++                resword = &amp;wordlist[63];
++                goto compare;
++              case 164:
++                resword = &amp;wordlist[64];
++                goto compare;
++              case 165:
++                resword = &amp;wordlist[65];
++                goto compare;
++              case 166:
++                resword = &amp;wordlist[66];
++                goto compare;
++              case 167:
++                resword = &amp;wordlist[67];
++                goto compare;
++              case 168:
++                resword = &amp;wordlist[68];
++                goto compare;
++              case 170:
++                resword = &amp;wordlist[69];
++                goto compare;
++              case 172:
++                resword = &amp;wordlist[70];
++                goto compare;
++              case 174:
++                resword = &amp;wordlist[71];
++                goto compare;
++              case 175:
++                resword = &amp;wordlist[72];
++                goto compare;
++              case 176:
++                resword = &amp;wordlist[73];
++                goto compare;
++              case 180:
++                resword = &amp;wordlist[74];
++                goto compare;
++              case 181:
++                resword = &amp;wordlist[75];
++                goto compare;
++              case 182:
++                resword = &amp;wordlist[76];
++                goto compare;
++              case 183:
++                resword = &amp;wordlist[77];
++                goto compare;
++              case 185:
++                resword = &amp;wordlist[78];
++                goto compare;
++              case 188:
++                resword = &amp;wordlist[79];
++                goto compare;
++              case 190:
++                resword = &amp;wordlist[80];
++                goto compare;
++              case 191:
++                resword = &amp;wordlist[81];
++                goto compare;
++              case 192:
++                resword = &amp;wordlist[82];
++                goto compare;
++              case 196:
++                resword = &amp;wordlist[83];
++                goto compare;
++              case 200:
++                resword = &amp;wordlist[84];
++                goto compare;
++              case 201:
++                resword = &amp;wordlist[85];
++                goto compare;
++              case 209:
++                resword = &amp;wordlist[86];
++                goto compare;
++              case 210:
++                resword = &amp;wordlist[87];
++                goto compare;
++              case 211:
++                resword = &amp;wordlist[88];
++                goto compare;
++              case 215:
++                resword = &amp;wordlist[89];
++                goto compare;
++              case 221:
++                resword = &amp;wordlist[90];
++                goto compare;
++              case 222:
++                resword = &amp;wordlist[91];
++                goto compare;
++              case 226:
++                resword = &amp;wordlist[92];
++                goto compare;
++              case 230:
++                resword = &amp;wordlist[93];
++                goto compare;
++              case 232:
++                resword = &amp;wordlist[94];
++                goto compare;
++              case 238:
++                resword = &amp;wordlist[95];
++                goto compare;
++              case 240:
++                resword = &amp;wordlist[96];
++                goto compare;
++              case 241:
++                resword = &amp;wordlist[97];
++                goto compare;
++              case 243:
++                resword = &amp;wordlist[98];
++                goto compare;
++              case 245:
++                resword = &amp;wordlist[99];
++                goto compare;
++              case 250:
++                resword = &amp;wordlist[100];
++                goto compare;
++              case 251:
++                resword = &amp;wordlist[101];
++                goto compare;
++              case 255:
++                resword = &amp;wordlist[102];
++                goto compare;
++              case 258:
++                resword = &amp;wordlist[103];
++                goto compare;
++              case 260:
++                resword = &amp;wordlist[104];
++                goto compare;
++              case 261:
++                resword = &amp;wordlist[105];
++                goto compare;
++              case 263:
++                resword = &amp;wordlist[106];
++                goto compare;
++              case 269:
++                resword = &amp;wordlist[107];
++                goto compare;
++              case 271:
++                resword = &amp;wordlist[108];
++                goto compare;
++              case 278:
++                resword = &amp;wordlist[109];
++                goto compare;
++              case 279:
++                resword = &amp;wordlist[110];
++                goto compare;
++              case 281:
++                resword = &amp;wordlist[111];
++                goto compare;
++              case 284:
++                resword = &amp;wordlist[112];
++                goto compare;
++              case 289:
++                resword = &amp;wordlist[113];
++                goto compare;
++              case 293:
++                resword = &amp;wordlist[114];
++                goto compare;
++              case 298:
++                resword = &amp;wordlist[115];
++                goto compare;
++              case 299:
++                resword = &amp;wordlist[116];
++                goto compare;
++              case 306:
++                resword = &amp;wordlist[117];
++                goto compare;
++              case 308:
++                resword = &amp;wordlist[118];
++                goto compare;
++              case 309:
++                resword = &amp;wordlist[119];
++                goto compare;
++              case 311:
++                resword = &amp;wordlist[120];
++                goto compare;
++              case 316:
++                resword = &amp;wordlist[121];
++                goto compare;
++              case 321:
++                resword = &amp;wordlist[122];
++                goto compare;
++              case 330:
++                resword = &amp;wordlist[123];
++                goto compare;
++              case 335:
++                resword = &amp;wordlist[124];
++                goto compare;
++              case 336:
++                resword = &amp;wordlist[125];
++                goto compare;
++              case 338:
++                resword = &amp;wordlist[126];
++                goto compare;
++              case 344:
++                resword = &amp;wordlist[127];
++                goto compare;
++              case 345:
++                resword = &amp;wordlist[128];
++                goto compare;
++              case 349:
++                resword = &amp;wordlist[129];
++                goto compare;
++              case 350:
++                resword = &amp;wordlist[130];
++                goto compare;
++              case 355:
++                resword = &amp;wordlist[131];
++                goto compare;
++              case 364:
++                resword = &amp;wordlist[132];
++                goto compare;
++              case 369:
++                resword = &amp;wordlist[133];
++                goto compare;
++              case 373:
++                resword = &amp;wordlist[134];
++                goto compare;
++              case 380:
++                resword = &amp;wordlist[135];
++                goto compare;
++              case 384:
++                resword = &amp;wordlist[136];
++                goto compare;
++              case 398:
++                resword = &amp;wordlist[137];
++                goto compare;
++              case 410:
++                resword = &amp;wordlist[138];
++                goto compare;
++              case 426:
++                resword = &amp;wordlist[139];
++                goto compare;
++              case 436:
++                resword = &amp;wordlist[140];
++                goto compare;
++              case 437:
++                resword = &amp;wordlist[141];
++                goto compare;
++              case 467:
++                resword = &amp;wordlist[142];
++                goto compare;
++              case 482:
++                resword = &amp;wordlist[143];
++                goto compare;
++              case 483:
++                resword = &amp;wordlist[144];
++                goto compare;
++              case 552:
++                resword = &amp;wordlist[145];
++                goto compare;
++              case 561:
++                resword = &amp;wordlist[146];
++                goto compare;
++            }
++          return (struct svgtiny_named_color *) 0;
++        compare:
++          {
++            register const char *s = resword-&gt;name;
++
++            if (*str == *s &amp;&amp; !strcmp (str + 1, s + 1))
++              return resword;
++          }
++        }
++    }
++  return (struct svgtiny_named_color *) 0;
++}
+diff --git a/subprojects/packagefiles/libsvgtiny/meson.build b/subprojects/packagefiles/libsvgtiny/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..f5b3b81ae981d58b47eecb8044175d8f43870d03
+--- /dev/null
++++ b/subprojects/packagefiles/libsvgtiny/meson.build
+@@ -0,0 +1,20 @@
++project(&#39;libsvgtiny&#39;, &#39;c&#39;, version: &#39;0.1.8&#39;, default_options: [&#39;c_std=c99&#39;])
++
++dom_dep = dependency(&#39;libdom&#39;)
++wapcaplet_dep = dependency(&#39;libwapcaplet&#39;)
++
++inc = include_directories(&#39;.&#39;, &#39;include&#39;, &#39;src&#39;)
++libsvgtiny = static_library(
++  &#39;svgtiny&#39;,
++  files(&#39;src/svgtiny.c&#39;, &#39;src/svgtiny_gradient.c&#39;, &#39;src/svgtiny_list.c&#39;),
++  include_directories: inc,
++  dependencies: [dom_dep, wapcaplet_dep],
++  c_args: [&#39;-D_BSD_SOURCE&#39;, &#39;-D_DEFAULT_SOURCE&#39;],
++)
++
++libsvgtiny_dep = declare_dependency(
++  link_with: libsvgtiny,
++  include_directories: inc,
++  dependencies: [dom_dep, wapcaplet_dep],
++)
++meson.override_dependency(&#39;libsvgtiny&#39;, libsvgtiny_dep)
+diff --git a/subprojects/packagefiles/libutf8proc/meson.build b/subprojects/packagefiles/libutf8proc/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..3b695fe999a508f5415a5ace12f9d565c8f3ba40
+--- /dev/null
++++ b/subprojects/packagefiles/libutf8proc/meson.build
+@@ -0,0 +1,16 @@
++project(&#39;libutf8proc&#39;, &#39;c&#39;, version: &#39;2.4.0&#39;, default_options: [&#39;c_std=c99&#39;])
++
++public_inc = include_directories(&#39;include&#39;)
++private_inc = include_directories(&#39;include/libutf8proc&#39;)
++libutf8proc = static_library(
++  &#39;utf8proc&#39;,
++  &#39;src/utf8proc.c&#39;,
++  include_directories: private_inc,
++  c_args: [&#39;-DUTF8PROC_EXPORTS&#39;],
++)
++
++libutf8proc_dep = declare_dependency(
++  link_with: libutf8proc,
++  include_directories: public_inc,
++)
++meson.override_dependency(&#39;libutf8proc&#39;, libutf8proc_dep)
+diff --git a/subprojects/packagefiles/libwapcaplet/meson.build b/subprojects/packagefiles/libwapcaplet/meson.build
+new file mode 100644
+index 0000000000000000000000000000000000000000..db91a95b3d418dfb0f2a06423cb75dad421e8aef
+--- /dev/null
++++ b/subprojects/packagefiles/libwapcaplet/meson.build
+@@ -0,0 +1,15 @@
++project(&#39;libwapcaplet&#39;, &#39;c&#39;, version: &#39;0.4.3&#39;, default_options: [&#39;c_std=c99&#39;])
++
++inc = include_directories(&#39;include&#39;)
++libwapcaplet = static_library(
++  &#39;wapcaplet&#39;,
++  &#39;src/libwapcaplet.c&#39;,
++  include_directories: inc,
++  c_args: [&#39;-D_BSD_SOURCE&#39;, &#39;-D_DEFAULT_SOURCE&#39;],
++)
++
++libwapcaplet_dep = declare_dependency(
++  link_with: libwapcaplet,
++  include_directories: inc,
++)
++meson.override_dependency(&#39;libwapcaplet&#39;, libwapcaplet_dep)
+diff --git a/testament.h.in b/testament.h.in
+new file mode 100644
+index 0000000000000000000000000000000000000000..2417b6c8604161f7e14092765fd2acabd092c116
+--- /dev/null
++++ b/testament.h.in
+@@ -0,0 +1,8 @@
++#ifndef NETSURF_REVISION_TESTAMENT
++#define NETSURF_REVISION_TESTAMENT 1
++
++#define WT_NO_GIT 1
++#define WT_MODIFIED 0
++#define WT_MODIFICATIONS {{NULL, NULL}}
++
++#endif
+diff --git a/tools/messages.awk b/tools/messages.awk
+new file mode 100644
+index 0000000000000000000000000000000000000000..aeaea725990ef15aa9fd74551bebbf43f3a792b7
+--- /dev/null
++++ b/tools/messages.awk
+@@ -0,0 +1,8 @@
++/^(#|$)/ {next}
++{
++	i = index($0, &#34;:&#34;)
++	if (!i) next
++	split(substr($0, 1, i - 1), key, &#34;.&#34;)
++	if (lang == key[1] &amp;&amp; (filter == &#34;any&#34; || key[2] == &#34;all&#34; || key[3] == filter))
++		print key[3] substr($0, i)
++}
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

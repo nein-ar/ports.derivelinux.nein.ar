@@ -1,0 +1,641 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: byacc-reflex.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/devel/graphviz/viewer_byacc-reflex.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="games">games</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>210</strong> total ports</span> <span><strong>8</strong> updated this week</span> <span><strong>15</strong> categories</span> <span><strong>53</strong> building failed</span> <span>last update: 2026-09-05 22:46 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>devel/graphviz/byacc-reflex.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat byacc-reflex.patch</pre><pre class="terminal-content">diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1cc5cf11219c7ed4e7d32f24276cdf0fbba944e2..b53d90bc6526ccb7b95cf3c5c91e0561c6cd68f3 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -147,12 +147,11 @@ endif()
+ 
+ # ===================== Append local CMake module directory ====================
+ list(APPEND CMAKE_MODULE_PATH &#34;${CMAKE_CURRENT_SOURCE_DIR}/cmake&#34;)
++include(ByaccReflex)
+ 
+ # ============================= Build dependencies =============================
+-find_package(BISON 3.0)
+-set_package_properties(BISON PROPERTIES TYPE REQUIRED)
+-find_package(FLEX)
+-set_package_properties(FLEX PROPERTIES TYPE REQUIRED)
++find_program(BYACC_EXECUTABLE NAMES byacc yacc REQUIRED)
++find_program(REFLEX_EXECUTABLE NAMES reflex flex REQUIRED)
+ find_program(GZIP gzip)
+ 
+ # ================== Convenient values for CMake configuration =================
+diff --git a/cmake/ByaccReflex.cmake b/cmake/ByaccReflex.cmake
+new file mode 100644
+index 0000000000000000000000000000000000000000..a1e840d39613e9641c16051e3fae30c2b0da3cf1
+--- /dev/null
++++ b/cmake/ByaccReflex.cmake
+@@ -0,0 +1,67 @@
++function(_graphviz_byacc_prefix out_var name)
++  if(&#34;${name}&#34; STREQUAL &#34;Grammar&#34;)
++    set(${out_var} &#34;aag&#34; PARENT_SCOPE)
++  elseif(&#34;${name}&#34; STREQUAL &#34;HTMLparse&#34;)
++    set(${out_var} &#34;html&#34; PARENT_SCOPE)
++  elseif(&#34;${name}&#34; STREQUAL &#34;Exparse&#34;)
++    set(${out_var} &#34;ex_&#34; PARENT_SCOPE)
++  elseif(&#34;${name}&#34; STREQUAL &#34;Gmlparse&#34;)
++    set(${out_var} &#34;gml&#34; PARENT_SCOPE)
++  else()
++    string(TOLOWER &#34;${name}&#34; _prefix)
++    set(${out_var} &#34;${_prefix}&#34; PARENT_SCOPE)
++  endif()
++endfunction()
++
++function(BISON_TARGET name input output)
++  set(_options)
++  set(_one_value_args COMPILE_FLAGS)
++  set(_multi_value_args)
++  cmake_parse_arguments(BISON &#34;${_options}&#34; &#34;${_one_value_args}&#34; &#34;${_multi_value_args}&#34; ${ARGN})
++
++  get_filename_component(_out_dir &#34;${output}&#34; DIRECTORY)
++  get_filename_component(_out_base &#34;${output}&#34; NAME_WE)
++  set(_header &#34;${_out_dir}/${_out_base}.h&#34;)
++  _graphviz_byacc_prefix(_prefix &#34;${name}&#34;)
++
++  set(_flags -o &#34;${output}&#34; -H &#34;${_header}&#34; -p &#34;${_prefix}&#34;)
++  if(BISON_COMPILE_FLAGS MATCHES &#34;(^| )--debug( |$)&#34;)
++    list(APPEND _flags -t)
++  endif()
++  if(BISON_COMPILE_FLAGS MATCHES &#34;(^| )--verbose( |$)&#34;)
++    list(APPEND _flags -v)
++  endif()
++
++  add_custom_command(
++    OUTPUT &#34;${output}&#34; &#34;${_header}&#34;
++    COMMAND &#34;${BYACC_EXECUTABLE}&#34; ${_flags} &#34;${input}&#34;
++    MAIN_DEPENDENCY &#34;${input}&#34;
++    VERBATIM
++  )
++
++  set(BISON_${name}_OUTPUTS &#34;${output};${_header}&#34; PARENT_SCOPE)
++endfunction()
++
++function(FLEX_TARGET name input output)
++  set(_options)
++  set(_one_value_args COMPILE_FLAGS)
++  set(_multi_value_args)
++  cmake_parse_arguments(FLEX &#34;${_options}&#34; &#34;${_one_value_args}&#34; &#34;${_multi_value_args}&#34; ${ARGN})
++
++  set(_flags -o &#34;${output}&#34;)
++  if(FLEX_COMPILE_FLAGS MATCHES &#34;(^| )--case-insensitive( |$)&#34;)
++    list(APPEND _flags -i)
++  endif()
++
++  add_custom_command(
++    OUTPUT &#34;${output}&#34;
++    COMMAND &#34;${REFLEX_EXECUTABLE}&#34; ${_flags} &#34;${input}&#34;
++    MAIN_DEPENDENCY &#34;${input}&#34;
++    VERBATIM
++  )
++
++  set(FLEX_${name}_OUTPUTS &#34;${output}&#34; PARENT_SCOPE)
++endfunction()
++
++function(ADD_FLEX_BISON_DEPENDENCY flex_name bison_name)
++endfunction()
+diff --git a/cmd/tools/gmlparse.y b/cmd/tools/gmlparse.y
+index 6839e0112a6b63810ad23253bf273e756d7eaa12..051fc320675dfae65c5b7c2ebb7d8c086fbd3cda 100644
+--- a/cmd/tools/gmlparse.y
++++ b/cmd/tools/gmlparse.y
+@@ -8,14 +8,6 @@
+  * Contributors: Details at https://graphviz.org
+  *************************************************************************/
+ 
+-%require &#34;3.0&#34;
+-
+-  /* By default, Bison emits a parser using symbols prefixed with &#34;yy&#34;. Graphviz
+-   * contains multiple Bison-generated parsers, so we alter this prefix to avoid
+-   * symbol clashes.
+-   */
+-%define api.prefix {gml}
+-
+ %{
+ #include &lt;stdlib.h&gt;
+ #include &lt;string.h&gt;
+diff --git a/lib/cgraph/cghdr.h b/lib/cgraph/cghdr.h
+index 60254b8b04995bec7726a5d763abb9398d5cd88e..c00e497547ce12108ad5fadde23751921361965a 100644
+--- a/lib/cgraph/cghdr.h
++++ b/lib/cgraph/cghdr.h
+@@ -40,6 +40,7 @@
+ #include &lt;assert.h&gt;
+ #include &lt;stdint.h&gt;
+ #include &lt;stdio.h&gt;
++#include &lt;util/agxbuf.h&gt;
+ 
+ #define	SUCCESS				0
+ #define FAILURE				-1
+@@ -104,7 +105,19 @@ void agedgeattr_delete(Agedge_t * e);
+ 	 * See https://westes.github.io/flex/manual/About-yyscan_005ft.html
+ 	 */
+ typedef void *aagscan_t;
+-typedef struct aagextra_s aagextra_t;
++typedef struct aagextra_s {
++	Agdisc_t *Disc;
++	void *Ifile;
++	Agraph_t *G;
++	int SubgraphDepth;
++	struct gstack_s *S;
++	int line_num;
++	int html_nest;
++	const char *InputFile;
++	agxbuf InputFileBuffer;
++	int graphType;
++	agxbuf Sbuf;
++} aagextra_t;
+ 
+ int aaglex_init_extra(aagextra_t* user_defined, aagscan_t* scanner);
+ int aaglex_destroy(aagscan_t);
+diff --git a/lib/cgraph/grammar.y b/lib/cgraph/grammar.y
+index f6d61e378d260784c375d358b7400344f991b696..e3a62aedb2a39c770c3070631b734cae4ac34ffe 100644
+--- a/lib/cgraph/grammar.y
++++ b/lib/cgraph/grammar.y
+@@ -12,51 +12,9 @@
+  * Contributors: Details at https://graphviz.org
+  *************************************************************************/
+ 
+-%require &#34;3.0&#34;
+-
+-  /* By default, Bison emits a parser using symbols prefixed with &#34;yy&#34;. Graphviz
+-   * contains multiple Bison-generated parsers, so we alter this prefix to avoid
+-   * symbol clashes.
+-   */
+-%define api.prefix {aag}
+-
+-  /* Generate a reentrant parser with no global state. */
+-%define api.pure full
+-  /* aagparse() gets an argument defined by flex. */
+-%param { aagscan_t scanner }
+-
+-
+-%code requires {
+-#include &lt;cghdr.h&gt;
+-#include &lt;util/agxbuf.h&gt;
+-
+-struct gstack_s;
+-
+-struct aagextra_s {
+-	/* Common */
+-	Agdisc_t *Disc;		/* discipline passed to agread or agconcat */
+-	void *Ifile;
+-	Agraph_t *G;		/* top level graph */
+-	/* Parser */
+-	int SubgraphDepth;
+-	struct gstack_s *S;
+-	/* Lexer */
+-	int line_num; // = 1;
+-	int html_nest;  /* nesting level for html strings */
+-	const char *InputFile;
+-	agxbuf InputFileBuffer;
+-	int graphType;
+-	/* buffer for arbitrary length strings */
+-	agxbuf Sbuf;
+-};
+-
+-}
+-
+-%code provides {
+-	/* defined in/generated by scan.l */
+-	void aagerror(aagscan_t, const char*);
+-	int aaglex(AAGSTYPE *, aagscan_t);
+-}
++%pure-parser
++%lex-param { aagscan_t scanner }
++%parse-param { aagscan_t scanner }
+ 
+ %{
+ 
+@@ -69,6 +27,11 @@ struct aagextra_s {
+ #include &lt;util/streq.h&gt;
+ #include &lt;util/unreachable.h&gt;
+ 
++/* defined in/generated by scan.l */
++typedef union YYSTYPE AAGSTYPE;
++void aagerror(aagscan_t, const char*);
++int aaglex(AAGSTYPE *, aagscan_t);
++
+ static const char Key[] = &#34;key&#34;;
+ 
+ typedef union s {					/* possible items in generic list */
+@@ -652,4 +615,3 @@ Agraph_t *agconcat(Agraph_t *g, const char *filename, void *chan,
+ Agraph_t *agread(void *fp, Agdisc_t *disc) {
+   return agconcat(NULL, NULL, fp, disc);
+ }
+-
+diff --git a/lib/cgraph/scan.l b/lib/cgraph/scan.l
+index f0a9ed52013742db2cd901f0ee1e95f7bdd999ee..00ea29e82e4c7842a08326803db46740158e57d3 100644
+--- a/lib/cgraph/scan.l
++++ b/lib/cgraph/scan.l
+@@ -19,16 +19,7 @@
+    * contains multiple Flex-generated lexers, so we alter this prefix to avoid
+    * symbol clashes.
+    */
+-%option prefix=&#34;aag&#34;
+-
+-   /* Generate a reentrant parser with no global variables.
+-    * All state will be contained in an opaque structure.
+-    */
+-%option reentrant bison-bridge
+-
+-   /* The generated structure will have space for user data.
+-    */
+-%option extra-type=&#34;struct aagextra_s *&#34;
++%option prefix=&#34;aag_&#34;
+ 
+   /* Avoid generating an unused input function. See
+      https://westes.github.io/flex/manual/Scanner-Options.html
+@@ -37,8 +28,8 @@
+ 
+ %{
+ #include &lt;assert.h&gt;
+-#include &lt;grammar.h&gt;
+ #include &lt;cgraph/cghdr.h&gt;
++#include &lt;grammar.h&gt;
+ #include &lt;stdbool.h&gt;
+ #include &lt;stddef.h&gt;
+ #include &lt;string.h&gt;
+@@ -49,7 +40,15 @@
+ #define GRAPH_EOF_TOKEN		&#39;@&#39;		/* lex class must be defined below */
+ 	/* this is a workaround for linux flex */
+ 
+-#define YYSTYPE AAGSTYPE
++typedef YYSTYPE AAGSTYPE;
++static aagextra_t *aag_extra;
++static YYSTYPE *aag_lvalp;
++#define yyextra aag_extra
++#define yylval aag_lvalp
++#define AAG_SCANNER ((aagscan_t)aag_extra)
++#define aagget_text(scanner) aag_text
++#define aagget_leng(scanner) aag_leng
++#define aagget_lval(scanner) aag_lvalp
+ 
+ /* By default, Flex calls isatty() to determine whether the input it is
+  * scanning is coming from the user typing or from a file. However, our input
+@@ -63,7 +62,7 @@ static int read_input(aagscan_t yyscanner, char *buf, int max_size);
+ 
+ #ifndef YY_INPUT
+ #define YY_INPUT(buf,result,max_size) \
+-	if ((result = read_input(yyscanner, buf, max_size)) &lt; 0) \
++	if ((result = read_input(AAG_SCANNER, buf, max_size)) &lt; 0) \
+ 		YY_FATAL_ERROR( &#34;input in flex scanner failed&#34; )
+ #endif
+ 
+@@ -119,7 +118,7 @@ ID		({NAME}|{NUMBER})
+ &lt;comment&gt;&#34;*&#34;+[^*/\n]*	/* eat up &#39;*&#39;s not followed by &#39;/&#39;s */
+ &lt;comment&gt;&#34;*&#34;+&#34;/&#34;		BEGIN(INITIAL);
+ &#34;//&#34;.*					/* ignore C++-style comments */
+-^&#34;#&#34;.*					ppDirective (yyscanner);
++^&#34;#&#34;.*					ppDirective (AAG_SCANNER);
+ &#34;#&#34;.*					/* ignore shell-like comments */
+ [ \t\r]					/* ignore whitespace */
+ &#34;\xEF\xBB\xBF&#34;				/* ignore BOM */
+@@ -131,28 +130,25 @@ ID		({NAME}|{NUMBER})
+ &#34;subgraph&#34;				return(T_subgraph);
+ &#34;-&gt;&#34;				if (yyextra-&gt;graphType == T_digraph) return(T_edgeop); else return(&#39;-&#39;);
+ &#34;--&#34;				if (yyextra-&gt;graphType == T_graph) return(T_edgeop); else return(&#39;-&#39;);
+-{NAME}					{ yylval-&gt;str = agstrdup(yyextra-&gt;G,aagget_text(yyscanner)); return(T_atom); }
+-{NUMBER}				{ if (chkNum(yyscanner)) yyless(aagget_leng(yyscanner)-1); yylval-&gt;str = agstrdup(yyextra-&gt;G,aagget_text(yyscanner)); return(T_atom); }
+-[&#34;]						BEGIN(qstring); beginstr(yyscanner);
+-&lt;qstring&gt;[&#34;]			BEGIN(INITIAL); endstr(yyscanner); return (T_qatom);
+-&lt;qstring&gt;[\\][&#34;]		addstr (yyscanner,&#34;\&#34;&#34;);
+-&lt;qstring&gt;[\\][\\]		addstr (yyscanner,&#34;\\\\&#34;);
++{NAME}					{ yylval-&gt;str = agstrdup(yyextra-&gt;G,aagget_text(AAG_SCANNER)); return(T_atom); }
++{NUMBER}				{ if (chkNum(AAG_SCANNER)) yyless(aagget_leng(AAG_SCANNER)-1); yylval-&gt;str = agstrdup(yyextra-&gt;G,aagget_text(AAG_SCANNER)); return(T_atom); }
++[&#34;]						BEGIN(qstring); beginstr(AAG_SCANNER);
++&lt;qstring&gt;[&#34;]			BEGIN(INITIAL); endstr(AAG_SCANNER); return (T_qatom);
++&lt;qstring&gt;[\\][&#34;]		addstr (AAG_SCANNER,&#34;\&#34;&#34;);
++&lt;qstring&gt;[\\][\\]		addstr (AAG_SCANNER,&#34;\\\\&#34;);
+ &lt;qstring&gt;[\\][\n]		yyextra-&gt;line_num++; /* ignore escaped newlines */
+-&lt;qstring&gt;[\n]			addstr (yyscanner,&#34;\n&#34;); yyextra-&gt;line_num++;
+-&lt;qstring&gt;([^&#34;\\\n]*|[\\])		addstr(yyscanner,aagget_text(yyscanner));
+-[&lt;]						BEGIN(hstring); yyextra-&gt;html_nest = 1; beginstr(yyscanner);
+-&lt;hstring&gt;[&gt;]			yyextra-&gt;html_nest--; if (yyextra-&gt;html_nest) addstr(yyscanner,aagget_text(yyscanner)); else {BEGIN(INITIAL); endstr_html(yyscanner); return (T_qatom);}
+-&lt;hstring&gt;[&lt;]			yyextra-&gt;html_nest++; addstr(yyscanner,aagget_text(yyscanner));
+-&lt;hstring&gt;[\n]			addstr(yyscanner,aagget_text(yyscanner)); yyextra-&gt;line_num++; /* add newlines */
+-&lt;hstring&gt;([^&gt;&lt;\n]*)		addstr(yyscanner,aagget_text(yyscanner));
+-.						return aagget_text(yyscanner)[0];
++&lt;qstring&gt;[\n]			addstr (AAG_SCANNER,&#34;\n&#34;); yyextra-&gt;line_num++;
++&lt;qstring&gt;([^&#34;\\\n]*|[\\])		addstr(AAG_SCANNER,aagget_text(AAG_SCANNER));
++[&lt;]						BEGIN(hstring); yyextra-&gt;html_nest = 1; beginstr(AAG_SCANNER);
++&lt;hstring&gt;[&gt;]			yyextra-&gt;html_nest--; if (yyextra-&gt;html_nest) addstr(AAG_SCANNER,aagget_text(AAG_SCANNER)); else {BEGIN(INITIAL); endstr_html(AAG_SCANNER); return (T_qatom);}
++&lt;hstring&gt;[&lt;]			yyextra-&gt;html_nest++; addstr(AAG_SCANNER,aagget_text(AAG_SCANNER));
++&lt;hstring&gt;[\n]			addstr(AAG_SCANNER,aagget_text(AAG_SCANNER)); yyextra-&gt;line_num++; /* add newlines */
++&lt;hstring&gt;([^&gt;&lt;\n]*)		addstr(AAG_SCANNER,aagget_text(AAG_SCANNER));
++.						return aagget_text(AAG_SCANNER)[0];
+ %%
+ 
+ void aagerror(aagscan_t yyscanner, const char *str)
+ {
+-	/* for YYSTATE macro */
+-	struct yyguts_t *yyg = yyscanner;
+-
+ 	agxbuf xb = {0};
+ 	if (yyextra-&gt;InputFile) {
+ 		agxbprint (&amp;xb, &#34;%s: &#34;, yyextra-&gt;InputFile);
+@@ -189,22 +185,17 @@ void aagerror(aagscan_t yyscanner, const char *str)
+ }
+ /* must be here to see flex&#39;s macro defns */
+ void aglexeof(aagscan_t yyscanner) {
+-  struct yyguts_t *yyg = yyscanner;
++  (void)yyscanner;
+   unput(GRAPH_EOF_TOKEN);
+ }
+ 
+ void aglexbad(aagscan_t yyscanner) {
+-  struct yyguts_t *yyg = yyscanner;
++  (void)yyscanner;
+   YY_FLUSH_BUFFER;
+ }
+ 
+-#ifndef YY_CALL_ONLY_ARG
+-# define YY_CALL_ONLY_ARG aagscan_t yyscanner
+-#endif
+-
+-int aagwrap(YY_CALL_ONLY_ARG)
++int aag_wrap(void)
+ {
+-	(void)yyscanner;
+ 	return 1;
+ }
+ 
+@@ -310,3 +301,33 @@ static int read_input(aagscan_t scanner, char *buf, int max_size)
+ 	aagextra_t *ctx = aagget_extra(scanner);
+ 	return ctx-&gt;Disc-&gt;io-&gt;afread(ctx-&gt;Ifile, buf, max_size);
+ }
++
++int aaglex(YYSTYPE *lvalp, aagscan_t scanner) {
++  aag_lvalp = lvalp;
++  aag_extra = aagget_extra(scanner);
++  return aag_lex();
++}
++
++int aaglex_init_extra(aagextra_t *user_defined, aagscan_t *scanner) {
++  aag_extra = user_defined;
++  if (scanner != NULL) {
++    *scanner = user_defined;
++  }
++  return 0;
++}
++
++int aaglex_destroy(aagscan_t scanner) {
++  (void)scanner;
++  aag_lvalp = NULL;
++  aag_extra = NULL;
++  return aag_lex_destroy();
++}
++
++aagextra_t *aagget_extra(aagscan_t yyscanner) {
++  return (aagextra_t *)yyscanner;
++}
++
++void aagset_in(FILE *fp, aagscan_t yyscanner) {
++  (void)fp;
++  (void)yyscanner;
++}
+diff --git a/lib/common/htmllex.c b/lib/common/htmllex.c
+index 4aa75b658db2d40cd6f303374003b1097b555adc..b6981eaf05efd981251b8d6bf8e4f6288ef2d6b0 100644
+--- a/lib/common/htmllex.c
++++ b/lib/common/htmllex.c
+@@ -15,8 +15,8 @@
+ #include &lt;assert.h&gt;
+ #include &lt;common/render.h&gt;
+ #include &lt;common/htmltable.h&gt;
+-#include &#34;htmlparse.h&#34;
+ #include &lt;common/htmllex.h&gt;
++#include &#34;htmlparse.h&#34;
+ #include &lt;cdt/cdt.h&gt;
+ #include &lt;limits.h&gt;
+ #include &lt;stdatomic.h&gt;
+@@ -1056,7 +1056,7 @@ static void printTok(htmllexstate_t *ctx, int tok)
+ 
+ #endif
+ 
+-int htmllex(union HTMLSTYPE *htmllval, htmlscan_t *scanner)
++int htmllex(YYSTYPE *htmllval, htmlscan_t *scanner)
+ {
+ #ifdef HAVE_EXPAT
+     static char *begin_html = &#34;&lt;HTML&gt;&#34;;
+@@ -1124,4 +1124,3 @@ int htmllex(union HTMLSTYPE *htmllval, htmlscan_t *scanner)
+     return EOF;
+ #endif
+ }
+-
+diff --git a/lib/common/htmllex.h b/lib/common/htmllex.h
+index 8bf2cc2c852453be6879b565c6a35079762a100d..a012d0c953af26068b7e5aa76d3e15210484429a 100644
+--- a/lib/common/htmllex.h
++++ b/lib/common/htmllex.h
+@@ -12,18 +12,67 @@
+ 
+ #pragma once
+ 
++#include &lt;common/htmltable.h&gt;
++#include &lt;common/textspan.h&gt;
++#include &lt;gvc/gvcext.h&gt;
+ #include &lt;util/agxbuf.h&gt;
++#include &lt;util/list.h&gt;
++#include &lt;util/strview.h&gt;
+ 
+ #ifdef __cplusplus
+ extern &#34;C&#34; {
+ #endif
+ 
+-    union HTMLSTYPE;
++    typedef union YYSTYPE YYSTYPE;
+     typedef struct htmlparserstate_s htmlparserstate_t;
+     typedef struct htmlscan_s htmlscan_t;
+ 
++    static inline void free_ti(textspan_t item) {
++      free(item.str);
++    }
++
++    static inline void free_hi(htextspan_t item) {
++      for (size_t i = 0; i &lt; item.nitems; i++) {
++        free(item.items[i].str);
++      }
++      free(item.items);
++    }
++
++    struct htmlparserstate_s {
++      htmllabel_t* lbl;
++      htmltbl_t* tblstack;
++      LIST(textspan_t) fitemList;
++      LIST(htextspan_t) fspanList;
++      agxbuf* str;
++      LIST(textfont_t *) fontstack;
++      GVC_t* gvc;
++    };
++
++    typedef struct {
++#ifdef HAVE_EXPAT
++        struct XML_ParserStruct *parser;
++#endif
++        char* ptr;
++        int tok;
++        agxbuf* xb;
++        agxbuf lb;
++        int warn;
++        int error;
++        char inCell;
++        char mode;
++        strview_t currtok;
++        strview_t prevtok;
++        GVC_t *gvc;
++        YYSTYPE *htmllval;
++    } htmllexstate_t;
++
++    struct htmlscan_s {
++      htmllexstate_t lexer;
++      htmlparserstate_t parser;
++    };
++
+     extern int initHTMLlexer(htmlscan_t *, char *, agxbuf *, htmlenv_t *);
+-    extern int htmllex(union HTMLSTYPE *, htmlscan_t *);
++    extern int htmllex(YYSTYPE *, htmlscan_t *);
+     extern unsigned long htmllineno(htmlscan_t *);
+     extern int clearHTMLlexer(htmlscan_t *);
+     void htmlerror(htmlscan_t *, const char *);
+diff --git a/lib/common/htmlparse.y b/lib/common/htmlparse.y
+index 9fe77415adcda4bdc0763c92e622eb159e27aa41..d2d1a9a25bc7677d22ae960d6dd699aa2da44b2f 100644
+--- a/lib/common/htmlparse.y
++++ b/lib/common/htmlparse.y
+@@ -10,76 +10,10 @@
+  * Contributors: Details at https://graphviz.org
+  *************************************************************************/
+ 
+-%require &#34;3.0&#34;
++%pure-parser
++%lex-param { htmlscan_t *scanner }
++%parse-param { htmlscan_t *scanner }
+ 
+-  /* By default, Bison emits a parser using symbols prefixed with &#34;yy&#34;. Graphviz
+-   * contains multiple Bison-generated parsers, so we alter this prefix to avoid
+-   * symbol clashes.
+-   */
+-%define api.prefix {html}
+-
+-  /* Generate a reentrant parser with no global state */
+-%define api.pure full
+-%param { htmlscan_t *scanner }
+-
+-
+-%code requires {
+-#include &lt;common/htmllex.h&gt;
+-#include &lt;common/htmltable.h&gt;
+-#include &lt;common/textspan.h&gt;
+-#include &lt;gvc/gvcext.h&gt;
+-#include &lt;util/agxbuf.h&gt;
+-#include &lt;util/list.h&gt;
+-#include &lt;util/strview.h&gt;
+-}
+-
+-%code provides {
+-
+-static inline void free_ti(textspan_t item) {
+-  free(item.str);
+-}
+-
+-static inline void free_hi(htextspan_t item) {
+-  for (size_t i = 0; i &lt; item.nitems; i++) {
+-    free(item.items[i].str);
+-  }
+-  free(item.items);
+-}
+-
+-struct htmlparserstate_s {
+-  htmllabel_t* lbl;       /* Generated label */
+-  htmltbl_t*   tblstack;  /* Stack of tables maintained during parsing */
+-  LIST(textspan_t)  fitemList;
+-  LIST(htextspan_t) fspanList;
+-  agxbuf*      str;       /* Buffer for text */
+-  LIST(textfont_t *)      fontstack;
+-  GVC_t*       gvc;
+-};
+-
+-typedef struct {
+-#ifdef HAVE_EXPAT
+-    struct XML_ParserStruct *parser;
+-#endif
+-    char* ptr;         // input source
+-    int tok;           // token type
+-    agxbuf* xb;        // buffer to gather T_string data
+-    agxbuf lb;         // buffer for translating lexical data
+-    int warn;          // set if warning given
+-    int error;         // set if error given
+-    char inCell;       // set if in TD to allow T_string
+-    char mode;         // for handling artificial &lt;HTML&gt;..&lt;/HTML&gt;
+-    strview_t currtok; // for error reporting
+-    strview_t prevtok; // for error reporting
+-    GVC_t *gvc;        // current GraphViz context
+-    HTMLSTYPE *htmllval; // generated by htmlparse.y
+-} htmllexstate_t;
+-
+-
+-struct htmlscan_s {
+-  htmllexstate_t lexer;
+-  htmlparserstate_t parser;
+-};
+-}
+ 
+ %{
+ 
+diff --git a/lib/expr/exparse.y b/lib/expr/exparse.y
+index df72600f5862b1df844e2cb86594485bdd39c532..6e39dcea104b4ba3e26bba23ae4b0de211182bfa 100644
+--- a/lib/expr/exparse.y
++++ b/lib/expr/exparse.y
+@@ -8,14 +8,6 @@
+  * Contributors: Details at https://graphviz.org
+  *************************************************************************/
+ 
+-%require &#34;3.0&#34;
+-
+-  /* By default, Bison emits a parser using symbols prefixed with &#34;yy&#34;. Graphviz
+-   * contains multiple Bison-generated parsers, so we alter this prefix to avoid
+-   * symbol clashes.
+-   */
+-%define api.prefix {ex_}
+-
+ %{
+ 
+ /*
+@@ -37,6 +29,8 @@
+ #include &lt;util/gv_ctype.h&gt;
+ #include &lt;util/streq.h&gt;
+ 
++void exerror(const char*, ...);
++
+ %}
+ 
+ %union
+diff --git a/lib/expr/expr.h b/lib/expr/expr.h
+index 4aabbf4c839ff6c5a6707c81147148e66e1b77d7..bedc4d64e0ed19b4bb7cec9689b612e5fbf97dec 100644
+--- a/lib/expr/expr.h
++++ b/lib/expr/expr.h
+@@ -24,8 +24,17 @@ extern &#34;C&#34; {
+ #include &lt;ast/ast.h&gt;
+ #include &lt;inttypes.h&gt;
+ 
++typedef union Exdata_u Exdata_t;
++typedef struct Exdisc_s Exdisc_t;
++typedef struct Exnode_s Exnode_t;
++typedef struct Expr_s Expr_t;
++typedef struct Exref_s Exref_t;
++typedef struct Exid_s Exid_t;
++
+ #include &lt;expr/exparse.h&gt;
+ 
++typedef YYSTYPE EX_STYPE;
++
+ #include &lt;assert.h&gt;
+ #include &lt;cdt.h&gt;
+ #include &lt;stdarg.h&gt;
+@@ -78,12 +87,6 @@ extern &#34;C&#34; {
+ 
+ typedef EX_STYPE Extype_t;
+ 
+-typedef union Exdata_u Exdata_t;
+-typedef struct Exdisc_s Exdisc_t;
+-typedef struct Exnode_s Exnode_t;
+-typedef struct Expr_s Expr_t;
+-typedef struct Exref_s Exref_t;
+-
+ typedef void (*Exerror_f) (Expr_t *, Exdisc_t *, int, const char *, ...);
+ typedef void (*Exexit_f)(void *, int);
+ 
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

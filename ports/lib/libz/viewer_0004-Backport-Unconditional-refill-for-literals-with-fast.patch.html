@@ -1,0 +1,205 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: 0004-Backport-Unconditional-refill-for-literals-with-fast.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/libz/viewer_0004-Backport-Unconditional-refill-for-literals-with-fast.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="games">games</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>210</strong> total ports</span> <span><strong>8</strong> updated this week</span> <span><strong>15</strong> categories</span> <span><strong>53</strong> building failed</span> <span>last update: 2026-09-05 22:46 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/libz/0004-Backport-Unconditional-refill-for-literals-with-fast.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat 0004-Backport-Unconditional-refill-for-literals-with-fast.patch</pre><pre class="terminal-content">From bc8d6761c35275f96916238bd450296a9106528d Mon Sep 17 00:00:00 2001
+From: Felix Hanau &lt;felix@cloudflare.com&gt;
+Date: Fri, 8 Sep 2023 17:58:50 -0400
+Subject: [PATCH 4/4] Backport &#34;Unconditional refill for literals with
+ fastpath&#34;
+
+This PR avoids branching before a potential bit buffer refill during
+decompression as the buffer is filled once in every iteration, allowing
+up to two literals to be decoded. See https://chromium-review.googlesource.com/c/chromium/src/+/4247146
+for base commit, rationale and performance metrics. Patch based on
+Dougall Johnson&#39;s inflate improvements.
+
+Also drops superfluous return statement.
+---
+ inffast_chunk.c | 69 +++++++++++++++++++++++++++++++------------------
+ inffast_chunk.h | 17 ++++++++----
+ 2 files changed, 56 insertions(+), 30 deletions(-)
+
+diff --git a/inffast_chunk.c b/inffast_chunk.c
+index 39eff71..7a158d7 100644
+--- a/inffast_chunk.c
++++ b/inffast_chunk.c
+@@ -22,6 +22,7 @@
+  * jloup@gzip.org          madler@alumni.caltech.edu
+  *
+  * Copyright (C) 1995-2017 Mark Adler
++ * Copyright 2023 The Chromium Authors
+  * For conditions of distribution and use, see copyright notice in zlib.h
+  */
+ 
+@@ -46,8 +47,8 @@
+    Entry assumptions:
+ 
+         state-&gt;mode == LEN
+-        strm-&gt;avail_in &gt;= INFLATE_FAST_MIN_INPUT (6 or 8 bytes)
+-        strm-&gt;avail_out &gt;= INFLATE_FAST_MIN_OUTPUT (258 bytes)
++        strm-&gt;avail_in &gt;= INFLATE_FAST_MIN_INPUT (6 or 8 bytes + 7 bytes)
++        strm-&gt;avail_out &gt;= INFLATE_FAST_MIN_OUTPUT (258 bytes + 2 bytes)
+         start &gt;= strm-&gt;avail_out
+         state-&gt;bits &lt; 8
+         strm-&gt;next_out[0..strm-&gt;avail_out] does not overlap with
+@@ -63,7 +64,7 @@
+ 
+    Notes:
+ 
+-    INFLATE_FAST_MIN_INPUT: 6 or 8 bytes
++    INFLATE_FAST_MIN_INPUT: 6 or 8 bytes + 7 bytes
+ 
+     - The maximum input bits used by a length/distance pair is 15 bits for the
+       length code, 5 bits for the length extra, 15 bits for the distance code,
+@@ -85,10 +86,10 @@
+ 
+           (state-&gt;hold &gt;&gt; state-&gt;bits) == 0
+ 
+-    INFLATE_FAST_MIN_OUTPUT: 258 bytes
++    INFLATE_FAST_MIN_OUTPUT: 258 bytes + 2 bytes for literals = 260 bytes
+     - The maximum bytes that a single length/distance pair can output is 258
+       bytes, which is the maximum length that can be coded.  inflate_fast()
+-      requires strm-&gt;avail_out &gt;= 258 for each loop to avoid checking for
++      requires strm-&gt;avail_out &gt;= 260 for each loop to avoid checking for
+       available output space while decoding.
+  */
+ void ZLIB_INTERNAL inflate_fast_chunk_(strm, start)
+@@ -144,22 +145,50 @@ unsigned start;         /* inflate()&#39;s starting value for strm-&gt;avail_out */
+     lmask = (1U &lt;&lt; state-&gt;lenbits) - 1;
+     dmask = (1U &lt;&lt; state-&gt;distbits) - 1;
+ 
++#ifdef INFLATE_CHUNK_READ_64LE
++#define REFILL() do { \
++        Assert(bits &lt; 64, &#34;too many bits in inflate_fast_chunk_&#34;); \
++        hold |= read64le(in) &lt;&lt; bits; \
++        in += 7; \
++        in -= bits &gt;&gt; 3; \
++        bits |= 56; \
++    } while (0)
++#endif
++
+     /* decode literals and length/distances until end-of-block or not enough
+        input data or output space */
+     do {
+-        if (bits &lt; 15) {
+ #ifdef INFLATE_CHUNK_READ_64LE
+-            hold |= read64le(in) &lt;&lt; bits;
+-            in += 6;
+-            bits += 48;
++        REFILL();
+ #else
++        if (bits &lt; 15) {
+             hold += (unsigned long)(*in++) &lt;&lt; bits;
+             bits += 8;
+             hold += (unsigned long)(*in++) &lt;&lt; bits;
+             bits += 8;
+-#endif
+         }
++#endif
+         here = lcode[hold &amp; lmask];
++#ifdef INFLATE_CHUNK_READ_64LE
++        if (here.op == 0) {                     /* literal */
++            Tracevv((stderr, here.val &gt;= 0x20 &amp;&amp; here.val &lt; 0x7f ?
++                    &#34;inflate:         literal &#39;%c&#39;\n&#34; :
++                    &#34;inflate:         literal 0x%02x\n&#34;, here.val));
++            *out++ = (unsigned char)(here.val);
++            hold &gt;&gt;= here.bits;
++            bits -= here.bits;
++            here = lcode[hold &amp; lmask];
++            if (here.op == 0) {                 /* literal */
++                Tracevv((stderr, here.val &gt;= 0x20 &amp;&amp; here.val &lt; 0x7f ?
++                        &#34;inflate:    2nd  literal &#39;%c&#39;\n&#34; :
++                        &#34;inflate:    2nd  literal 0x%02x\n&#34;, here.val));
++                *out++ = (unsigned char)(here.val);
++                hold &gt;&gt;= here.bits;
++                bits -= here.bits;
++                here = lcode[hold &amp; lmask];
++            }
++        }
++#endif
+       dolen:
+         op = (unsigned)(here.bits);
+         hold &gt;&gt;= op;
+@@ -175,33 +204,25 @@ unsigned start;         /* inflate()&#39;s starting value for strm-&gt;avail_out */
+             len = (unsigned)(here.val);
+             op &amp;= 15;                           /* number of extra bits */
+             if (op) {
++#ifndef INFLATE_CHUNK_READ_64LE
+                 if (bits &lt; op) {
+-#ifdef INFLATE_CHUNK_READ_64LE
+-                    hold |= read64le(in) &lt;&lt; bits;
+-                    in += 6;
+-                    bits += 48;
+-#else
+                     hold += (unsigned long)(*in++) &lt;&lt; bits;
+                     bits += 8;
+-#endif
+                 }
++#endif
+                 len += (unsigned)hold &amp; ((1U &lt;&lt; op) - 1);
+                 hold &gt;&gt;= op;
+                 bits -= op;
+             }
+             Tracevv((stderr, &#34;inflate:         length %u\n&#34;, len));
++#ifndef INFLATE_CHUNK_READ_64LE
+             if (bits &lt; 15) {
+-#ifdef INFLATE_CHUNK_READ_64LE
+-                hold |= read64le(in) &lt;&lt; bits;
+-                in += 6;
+-                bits += 48;
+-#else
+                 hold += (unsigned long)(*in++) &lt;&lt; bits;
+                 bits += 8;
+                 hold += (unsigned long)(*in++) &lt;&lt; bits;
+                 bits += 8;
+-#endif
+             }
++#endif
+             here = dcode[hold &amp; dmask];
+           dodist:
+             op = (unsigned)(here.bits);
+@@ -213,9 +234,7 @@ unsigned start;         /* inflate()&#39;s starting value for strm-&gt;avail_out */
+                 op &amp;= 15;                       /* number of extra bits */
+                 if (bits &lt; op) {
+ #ifdef INFLATE_CHUNK_READ_64LE
+-                    hold |= read64le(in) &lt;&lt; bits;
+-                    in += 6;
+-                    bits += 48;
++                    REFILL();
+ #else
+                     hold += (unsigned long)(*in++) &lt;&lt; bits;
+                     bits += 8;
+diff --git a/inffast_chunk.h b/inffast_chunk.h
+index 5d6025a..aadfd70 100644
+--- a/inffast_chunk.h
++++ b/inffast_chunk.h
+@@ -33,16 +33,23 @@
+ 
+ #include &#34;inffast.h&#34;
+ 
+-/* INFLATE_FAST_MIN_INPUT: the minimum number of input bytes needed so that
+-   we can safely call inflate_fast() with only one up-front bounds check. One
++/* INFLATE_FAST_MIN_INPUT:
++   The minimum number of input bytes needed so that we can safely call
++   inflate_fast() with only one up-front bounds check. One
+    length/distance code pair (15 bits for the length code, 5 bits for length
+    extra, 15 bits for the distance code, 13 bits for distance extra) requires
+-   reading up to 48 input bits (6 bytes). The wide input data reading option
+-   requires a little endian machine, and reads 64 input bits (8 bytes).
++   reading up to 48 input bits. Additionally, in the same iteration, we may
++   decode two literals from the root table (requiring 258 + 2 output bytes).
++
++   The wide refill reads eight bytes and advances the input pointer by up to
++   seven bytes, maintaining at least 56 bits in the bit buffer. In the worst
++   case it refills twice in one iteration, requiring 8 + 7 input bytes.
+ */
+ #ifdef INFLATE_CHUNK_READ_64LE
+ #undef INFLATE_FAST_MIN_INPUT
+-#define INFLATE_FAST_MIN_INPUT 8
++#define INFLATE_FAST_MIN_INPUT 15
++#undef INFLATE_FAST_MIN_OUTPUT
++#define INFLATE_FAST_MIN_OUTPUT 260
+ #endif
+ 
+ void ZLIB_INTERNAL inflate_fast_chunk_(z_streamp strm, unsigned start);
+-- 
+2.55.0
+
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

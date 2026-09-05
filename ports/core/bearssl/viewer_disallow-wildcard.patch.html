@@ -1,0 +1,68 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: disallow-wildcard.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/core/bearssl/viewer_disallow-wildcard.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="games">games</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>210</strong> total ports</span> <span><strong>8</strong> updated this week</span> <span><strong>15</strong> categories</span> <span><strong>53</strong> building failed</span> <span>last update: 2026-09-05 22:46 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>core/bearssl/disallow-wildcard.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat disallow-wildcard.patch</pre><pre class="terminal-content">From 7077cb239f9405b02b4db968dff0d2fa16698893 Mon Sep 17 00:00:00 2001
+From: Michael Forney &lt;mforney@mforney.org&gt;
+Date: Sat, 13 Nov 2021 11:28:29 -0800
+Subject: [PATCH] Disallow empty wildcards and wildcards at TLD level
+
+---
+ src/x509/x509_minimal.c  | 10 +++++++++-
+ src/x509/x509_minimal.t0 | 10 +++++++++-
+ 2 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/src/x509/x509_minimal.c b/src/x509/x509_minimal.c
+index 04f149b..fc5fa6b 100644
+--- a/src/x509/x509_minimal.c
++++ b/src/x509/x509_minimal.c
+@@ -1474,13 +1474,21 @@ br_x509_minimal_run(void *t0ctx)
+ 	if (n2 &gt;= 2 &amp;&amp; CTX-&gt;pad[1] == &#39;*&#39; &amp;&amp; CTX-&gt;pad[2] == &#39;.&#39;) {
+ 		size_t u;
+ 
++		u = 3;
++		while (u &lt;= n2 &amp;&amp; CTX-&gt;pad[u] != &#39;.&#39;) {
++			u ++;
++		}
++		if (u &gt; n2) {
++			T0_PUSH(0);
++			T0_RET();
++		}
+ 		u = 0;
+ 		while (u &lt; n1 &amp;&amp; CTX-&gt;server_name[u] != &#39;.&#39;) {
+ 			u ++;
+ 		}
+ 		u ++;
+ 		n1 -= u;
+-		if ((n2 - 2) == n1
++		if (u &gt; 1 &amp;&amp; (n2 - 2) == n1
+ 			&amp;&amp; eqnocase(&amp;CTX-&gt;pad[3], CTX-&gt;server_name + u, n1))
+ 		{
+ 			T0_PUSHi(-1);
+diff --git a/src/x509/x509_minimal.t0 b/src/x509/x509_minimal.t0
+index 80a3701..d3d01da 100644
+--- a/src/x509/x509_minimal.t0
++++ b/src/x509/x509_minimal.t0
+@@ -778,13 +778,21 @@ cc: match-server-name ( -- bool ) {
+ 	if (n2 &gt;= 2 &amp;&amp; CTX-&gt;pad[1] == &#39;*&#39; &amp;&amp; CTX-&gt;pad[2] == &#39;.&#39;) {
+ 		size_t u;
+ 
++		u = 3;
++		while (u &lt;= n2 &amp;&amp; CTX-&gt;pad[u] != &#39;.&#39;) {
++			u ++;
++		}
++		if (u &gt; n2) {
++			T0_PUSH(0);
++			T0_RET();
++		}
+ 		u = 0;
+ 		while (u &lt; n1 &amp;&amp; CTX-&gt;server_name[u] != &#39;.&#39;) {
+ 			u ++;
+ 		}
+ 		u ++;
+ 		n1 -= u;
+-		if ((n2 - 2) == n1
++		if (u &gt; 1 &amp;&amp; (n2 - 2) == n1
+ 			&amp;&amp; eqnocase(&amp;CTX-&gt;pad[3], CTX-&gt;server_name + u, n1))
+ 		{
+ 			T0_PUSHi(-1);
+-- 
+2.49.0
+
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

@@ -1,0 +1,38 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: notdoc - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/doc/scdoc/viewer_notdoc.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="games">games</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>210</strong> total ports</span> <span><strong>8</strong> updated this week</span> <span><strong>15</strong> categories</span> <span><strong>53</strong> building failed</span> <span>last update: 2026-09-05 22:46 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>doc/scdoc/notdoc</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat notdoc</pre><pre class="terminal-content">#!/bin/sh
+# shell script to emit mdoc from scf files, using lowdown
+
+set -eu
+
+if [ &#34;$#&#34; -ne 0 ]; then
+	printf &#39;%s\n&#39; &#39;usage: scdoc &lt; input.scd &gt; output.roff&#39; &gt;&amp;2
+	exit 1
+fi
+
+if ! command -v lowdown &gt;/dev/null 2&gt;&amp;1; then
+	printf &#39;%s\n&#39; &#39;notdoc: lowdown is required&#39; &gt;&amp;2
+	exit 127
+fi
+
+_tmp=$(mktemp &#34;${TMPDIR:-/tmp}/notdoc.XXXXXXXX&#34;)
+trap &#39;rm -f &#34;$_tmp&#34;&#39; EXIT HUP INT TERM
+
+_input=$(mktemp &#34;${TMPDIR:-/tmp}/notdoc-in.XXXXXXXX&#34;)
+trap &#39;rm -f &#34;$_tmp&#34; &#34;$_input&#34;&#39; EXIT HUP INT TERM
+cat &gt;&#34;$_input&#34;
+
+# metadata line and remove commnents
+sed -e &#39;1s/^/% /&#39; \
+	-e &#39;/^; /d&#39; \
+	&#34;$_input&#34; &gt;&#34;$_tmp&#34;
+
+if [ -n &#34;${SOURCE_DATE_EPOCH:-}&#34; ]; then
+	_date=$(date -u -d &#34;@${SOURCE_DATE_EPOCH}&#34; +%Y-%m-%d) || {
+		printf &#39;%s\n&#39; &#39;scdoc: could not convert SOURCE_DATE_EPOCH&#39; &gt;&amp;2
+		exit 1
+	}
+else
+	_date=$(date -u +%Y-%m-%d)
+fi
+
+lowdown -s -t mdoc -M &#34;date=${_date}&#34; --roff-manpage &#34;$_tmp&#34;
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

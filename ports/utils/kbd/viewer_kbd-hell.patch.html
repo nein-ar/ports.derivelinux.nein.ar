@@ -1,0 +1,542 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: kbd-hell.patch - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/utils/kbd/viewer_kbd-hell.patch.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="games">games</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>210</strong> total ports</span> <span><strong>8</strong> updated this week</span> <span><strong>15</strong> categories</span> <span><strong>53</strong> building failed</span> <span>last update: 2026-09-05 22:46 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>utils/kbd/kbd-hell.patch</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat kbd-hell.patch</pre><pre class="terminal-content">diff --git a/Makefile.common b/Makefile.common
+index 0c0b6b2..087c3ae 100644
+--- a/Makefile.common
++++ b/Makefile.common
+@@ -3,11 +3,28 @@
+ # Copyright (C) 2024  Alexey Gladkov &lt;gladkov.alexey@gmail.com&gt;
+ #
+ 
++KEYMAPDIR ?= keymaps
++UNIMAPDIR ?= unimaps
++TRANSDIR ?= consoletrans
++VIDEOMODEDIR ?= videomodes
++FONTDIR ?= consolefonts
++PARTIALDIR ?= partialfonts
++ZLIB_LIBS ?= -lz
++BZIP2_LIBS ?= -lbz2
++LZMA_LIBS ?= -llzma
++ZSTD_LIBS ?= -lzstd
++
+ DEFINE_PATHS = \
+ 	-DDATADIR=\&#34;$(datadir)\&#34; \
+ 	-DLOCALEDIR=\&#34;$(localedir)\&#34; \
+ 	-DDEFMAP=\&#34;$(DEFKEYMAP)\&#34; \
+-	-DKERNDIR=\&#34;$(KERNELDIR)\&#34;
++	-DKERNDIR=\&#34;$(KERNELDIR)\&#34; \
++	-DKEYMAPDIR=\&#34;$(KEYMAPDIR)\&#34; \
++	-DUNIMAPDIR=\&#34;$(UNIMAPDIR)\&#34; \
++	-DTRANSDIR=\&#34;$(TRANSDIR)\&#34; \
++	-DVIDEOMODEDIR=\&#34;$(VIDEOMODEDIR)\&#34; \
++	-DFONTDIR=\&#34;$(FONTDIR)\&#34; \
++	-DPARTIALDIR=\&#34;$(PARTIALDIR)\&#34;
+ 
+ AM_CPPFLAGS = \
+ 	$(CODE_COVERAGE_CPPFLAGS) \
+diff --git a/aminclude_static.am b/aminclude_static.am
+new file mode 100644
+index 0000000..afdec8c
+--- /dev/null
++++ b/aminclude_static.am
+@@ -0,0 +1 @@
++# Empty for hell/satan builds.
+diff --git a/data/Makefile.am b/data/Makefile.am
+index 8cd3610..4f47af4 100644
+--- a/data/Makefile.am
++++ b/data/Makefile.am
+@@ -1,7 +1,7 @@
+ EXTRA_DIST = consolefonts consoletrans keymaps partialfonts unimaps \
+ 	     compress.sh
+ 
+-IGNORE_KEYMAPS = i386/mk_modmap README */README */*/README
++IGNORE_KEYMAPS = i386/mk_modmap README
+ 
+ COMPRESS = $(COMPRESS_PROG) -f -9
+ LOCAL_CLEANUPDIRS =
+@@ -61,6 +61,7 @@ install-keymaps: $(SRC_KEYMAPDIR)
+ 	cp -dPR -- $(SRC_KEYMAPDIR)/* $(DESTDIR)$(datadir)/$(KEYMAPDIR)/
+ 	cd &#34;$(DESTDIR)$(datadir)/$(KEYMAPDIR)&#34;; \
+ 	  for f in $(IGNORE_KEYMAPS); do ! test -e &#34;$$f&#34; || rm -f -- &#34;$$f&#34;; done
++	find &#34;$(DESTDIR)$(datadir)/$(KEYMAPDIR)&#34; -name README -type f -exec rm -f -- {} +
+ 	rm -f $(DESTDIR)$(datadir)/$(KEYMAPDIR)/ppc
+ 	$(LN_S) mac $(DESTDIR)$(datadir)/$(KEYMAPDIR)/ppc
+ 	@if [ -f $(DESTDIR)$(datadir)/$(OLDKEYMAPDIR) ]; then \
+diff --git a/src/libkbdfile/Makefile.am b/src/libkbdfile/Makefile.am
+index 2511064..ef15113 100644
+--- a/src/libkbdfile/Makefile.am
++++ b/src/libkbdfile/Makefile.am
+@@ -13,31 +13,15 @@ libkbdfile_la_SOURCES = \
+ 	elf-note.h \
+ 	elf-note.c \
+ 	init.c \
+-	kbdfile.c
++	kbdfile.c \
++	kbdfile-zlib.c \
++	kbdfile-bzip2.c \
++	kbdfile-lzma.c \
++	kbdfile-zstd.c
+ 
+ libkbdfile_la_LIBADD =
+ libkbdfile_la_CFLAGS = $(AM_CFLAGS)
+ 
+-if USE_ZLIB
+-libkbdfile_la_SOURCES += kbdfile-zlib.c
+-libkbdfile_la_CFLAGS += $(ZLIB_CFLAGS)
+-endif
+-
+-if USE_BZIP2
+-libkbdfile_la_SOURCES += kbdfile-bzip2.c
+-libkbdfile_la_CFLAGS += $(BZIP2_CFLAGS)
+-endif
+-
+-if USE_LZMA
+-libkbdfile_la_SOURCES += kbdfile-lzma.c
+-libkbdfile_la_CFLAGS += $(LZMA_CFLAGS)
+-endif
+-
+-if USE_ZSTD
+-libkbdfile_la_SOURCES += kbdfile-zstd.c
+-libkbdfile_la_CFLAGS += $(ZSTD_CFLAGS)
+-endif
+-
+ KBDFILE_CURRENT  = 1
+ KBDFILE_REVISION = 0
+ KBDFILE_AGE      = 0
+diff --git a/src/libkeymap/Makefile.am b/src/libkeymap/Makefile.am
+index aace6f3..2e36418 100644
+--- a/src/libkeymap/Makefile.am
++++ b/src/libkeymap/Makefile.am
+@@ -35,7 +35,18 @@ SYMS = \
+   syms.cp1250.h/cp1250/128 \
+   syms.koi8.h/koi8-u/128
+ 
+-ksyms_gen_headers = $(call charset_headers)
++ksyms_gen_headers = \
++	syms.latin1.h \
++	syms.latin2.h \
++	syms.latin3.h \
++	syms.latin4.h \
++	syms.iso8859_5.h \
++	syms.iso8859_7.h \
++	syms.iso8859_8.h \
++	syms.iso8859_9.h \
++	syms.iso8859_15.h \
++	syms.cp1250.h \
++	syms.koi8.h
+ ksyms_headers = \
+ 	$(ksyms_gen_headers) \
+ 	syms.ktyp.h \
+@@ -70,8 +81,8 @@ noinst_LTLIBRARIES = libkeymap.la
+ endif
+ 
+ AM_YFLAGS = -Wno-yacc
+-AM_LFLAGS = --header-file=$(CURDIR)/analyze.h
+-BUILT_SOURCES = parser.c analyze.c parser.h analyze.h $(ksyms_gen_headers)
++AM_LFLAGS =
++BUILT_SOURCES = parser.c analyze.c parser.h $(ksyms_gen_headers)
+ CLEANFILES += $(BUILT_SOURCES)
+ 
+ TRANS_DIR = $(top_srcdir)/data/consoletrans
+@@ -82,12 +93,30 @@ V_GEN_SYMS_  = $(V_GEN_SYMS_$(AM_DEFAULT_VERBOSITY))
+ V_GEN_SYMS_0 = @echo &#34;  CHARSET &#34; $@;
+ V_GEN_SYMS_1 =
+ 
+-charset_headers = $(foreach x,$(SYMS),$(word 1,$(subst /, ,$(x))))
+-charset_trans   = $(TRANS_DIR)/$(word 2,$(subst /, ,$(filter syms.$(1).h/%,$(SYMS))))_to_uni.trans
+-charset_start   = $(word 3,$(subst /, ,$(filter syms.$(1).h/%,$(SYMS))))
+-
+-parser.h: parser.c ; @true
+-analyze.h: analyze.c ; @true
+-
+-syms.%.h:
+-	$(V_GEN_SYMS)$(GEN_SYMS) -n $*_syms -s $(call charset_start,$*) &lt;$(call charset_trans,$*) &gt;$(builddir)/$@
++parser.h: parser.c
++	@true
++analyze.c: analyze.l
++	reflex -o analyze.c analyze.l
++
++syms.latin1.h:
++	../../contrib/gen_charset_syms.pl -n latin1_syms -s 160 &lt;../../data/consoletrans/8859-1_to_uni.trans &gt;$(builddir)/$@
++syms.latin2.h:
++	../../contrib/gen_charset_syms.pl -n latin2_syms -s 160 &lt;../../data/consoletrans/8859-2_to_uni.trans &gt;$(builddir)/$@
++syms.latin3.h:
++	../../contrib/gen_charset_syms.pl -n latin3_syms -s 160 &lt;../../data/consoletrans/8859-3_to_uni.trans &gt;$(builddir)/$@
++syms.latin4.h:
++	../../contrib/gen_charset_syms.pl -n latin4_syms -s 160 &lt;../../data/consoletrans/8859-4_to_uni.trans &gt;$(builddir)/$@
++syms.iso8859_5.h:
++	../../contrib/gen_charset_syms.pl -n iso8859_5_syms -s 160 &lt;../../data/consoletrans/8859-5_to_uni.trans &gt;$(builddir)/$@
++syms.iso8859_7.h:
++	../../contrib/gen_charset_syms.pl -n iso8859_7_syms -s 160 &lt;../../data/consoletrans/8859-7_to_uni.trans &gt;$(builddir)/$@
++syms.iso8859_8.h:
++	../../contrib/gen_charset_syms.pl -n iso8859_8_syms -s 160 &lt;../../data/consoletrans/8859-8_to_uni.trans &gt;$(builddir)/$@
++syms.iso8859_9.h:
++	../../contrib/gen_charset_syms.pl -n iso8859_9_syms -s 160 &lt;../../data/consoletrans/8859-9_to_uni.trans &gt;$(builddir)/$@
++syms.iso8859_15.h:
++	../../contrib/gen_charset_syms.pl -n iso8859_15_syms -s 160 &lt;../../data/consoletrans/8859-15_to_uni.trans &gt;$(builddir)/$@
++syms.cp1250.h:
++	../../contrib/gen_charset_syms.pl -n cp1250_syms -s 128 &lt;../../data/consoletrans/cp1250_to_uni.trans &gt;$(builddir)/$@
++syms.koi8.h:
++	../../contrib/gen_charset_syms.pl -n koi8_syms -s 128 &lt;../../data/consoletrans/koi8-u_to_uni.trans &gt;$(builddir)/$@
+diff --git a/src/libkeymap/analyze.h b/src/libkeymap/analyze.h
+new file mode 100644
+index 0000000..23d11f5
+--- /dev/null
++++ b/src/libkeymap/analyze.h
+@@ -0,0 +1,7 @@
++#ifndef KBD_ANALYZE_H
++#define KBD_ANALYZE_H
++
++int yylex(void);
++extern int yylineno;
++
++#endif
+diff --git a/src/libkeymap/analyze.l b/src/libkeymap/analyze.l
+index ce04602..551457a 100644
+--- a/src/libkeymap/analyze.l
++++ b/src/libkeymap/analyze.l
+@@ -1,37 +1,37 @@
+ %{
+ #include &#34;config.h&#34;
+ 
++#include &lt;errno.h&gt;
+ #include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
+ #include &lt;unistd.h&gt; /* readlink */
+ 
+ #include &lt;kbdfile.h&gt;
+ 
++#include &#34;keymap.h&#34;
+ #include &#34;contextP.h&#34;
+ #include &#34;ksyms.h&#34;
+ 
+ #include &#34;parser.h&#34;
+-%}
+-
+-%top {
+-#include &#34;keymap.h&#34;
+-int stack_push(struct lk_ctx *ctx, struct kbdfile *fp, void *scanner);
+-int stack_pop(struct lk_ctx *ctx, void *scanner);
+-}
+ 
+-%option reentrant
+-%option bison-bridge
++extern struct lk_ctx *lk_ctx_global;
++int stack_push(struct lk_ctx *ctx, struct kbdfile *fp);
++int stack_pop(struct lk_ctx *ctx);
++%}
+ %option stack
+ %option never-interactive
+ %option noyywrap
+ %option nounput
+ %option noinput
+ %option noyy_top_state
++%option yylineno
+ 
+-%option extra-type=&#34;struct lk_ctx *&#34;
+ 
+ %{
++static YY_BUFFER_STATE buffer_stack[MAX_INCLUDE_DEPTH];
++
+ int
+-stack_push(struct lk_ctx *ctx, struct kbdfile *fp, void *scanner)
++stack_push(struct lk_ctx *ctx, struct kbdfile *fp)
+ {
+ 	int i = 0;
+ 
+@@ -44,12 +44,13 @@ stack_push(struct lk_ctx *ctx, struct kbdfile *fp, void *scanner)
+ 
+ 	ctx-&gt;stack[i] = fp;
+ 
+-	yypush_buffer_state(yy_create_buffer(kbdfile_get_file(fp), YY_BUF_SIZE, scanner), scanner);
++	buffer_stack[i] = yy_create_buffer(kbdfile_get_file(fp), YY_BUF_SIZE);
++	yy_switch_to_buffer(buffer_stack[i]);
+ 	return 0;
+ }
+ 
+ int
+-stack_pop(struct lk_ctx *ctx, void *scanner)
++stack_pop(struct lk_ctx *ctx)
+ {
+ 	int i = 0;
+ 
+@@ -66,7 +67,13 @@ stack_pop(struct lk_ctx *ctx, void *scanner)
+ 	}
+ 	ctx-&gt;stack[i] = NULL;
+ 
+-	yypop_buffer_state(scanner);
++	if (buffer_stack[i]) {
++		yy_delete_buffer(buffer_stack[i]);
++		buffer_stack[i] = NULL;
++	}
++	if (i &gt; 0 &amp;&amp; buffer_stack[i - 1]) {
++		yy_switch_to_buffer(buffer_stack[i - 1]);
++	}
+ 	return 0;
+ }
+ 
+@@ -381,70 +388,70 @@ To                      to|To|TO
+ %%
+ 
+ {Include}		{
+-				yy_push_state(INCLSTR, yyscanner);
++				yy_push_state(INCLSTR);
+ 			}
+ &lt;INCLSTR&gt;\&#34;[^\&#34;\n]+\&#34;	{
+ 				struct kbdfile *fp;
+ 
+ 				char *filename = strndup(yytext + 1, strlen(yytext) - 2);
+ 				if (filename == NULL) {
+-					ERR(yyextra, _(&#34;out of memory&#34;));
++					ERR(lk_ctx_global, _(&#34;out of memory&#34;));
+ 					return(ERROR);
+ 				}
+ 
+-				fp = open_include(yyextra, filename);
++				fp = open_include(lk_ctx_global, filename);
+ 				free(filename);
+ 
+ 				if (!fp)
+ 					return(ERROR);
+ 
+-				stack_push(yyextra, fp, yyscanner);
++				stack_push(lk_ctx_global, fp);
+ 
+-				while (((struct yyguts_t*)yyscanner)-&gt;yy_start_stack_ptr) {
+-					yy_pop_state(yyscanner);
++				while (yy_start_stack_ptr) {
++					yy_pop_state();
+ 				}
+ 			}
+ &lt;INCLSTR&gt;[^&#34;]|\&#34;\&#34;|\&#34;[^&#34;\n]*{Eol}	{
+-				ERR(yyextra, _(&#34;expected filename between quotes&#34;));
++				ERR(lk_ctx_global, _(&#34;expected filename between quotes&#34;));
+ 				return(ERROR);
+ 			}
+ &lt;&lt;EOF&gt;&gt;			{
+-				stack_pop(yyextra, yyscanner);
++				stack_pop(lk_ctx_global);
+ 				if (!YY_CURRENT_BUFFER)
+ 					yyterminate();
+ 			}
+ {Continuation}		{
+-				yyset_lineno(yyget_lineno(yyscanner) + 1, yyscanner);
++				yylineno++;
+ 			}
+ {Eol}			{
+-				yyset_lineno(yyget_lineno(yyscanner) + 1, yyscanner);
++				yylineno++;
+ 
+-				while (((struct yyguts_t*)yyscanner)-&gt;yy_start_stack_ptr) {
+-					yy_pop_state(yyscanner);
++				while (yy_start_stack_ptr) {
++					yy_pop_state();
+ 				}
+ 				return(EOL);
+ 			}
+ {Blank}+		; /* do nothing */
+ {Comment}.*/{Eol}	; /* do nothing */
+ {Equals}		{
+-				yy_push_state(RVALUE, yyscanner);
+-				lk_array_empty(yyextra-&gt;key_line);
++				yy_push_state(RVALUE);
++				lk_array_empty(lk_ctx_global-&gt;key_line);
+ 				return(EQUALS);
+ 			}
+ {String}		{
+-				yy_push_state(RVALUE, yyscanner);
++				yy_push_state(RVALUE);
+ 				return(STRING);
+ 			}
+ {To}			{
+-				yy_push_state(RVALUE, yyscanner);
++				yy_push_state(RVALUE);
+ 				return(TO);
+ 			}
+ {Unicode}		{
+-				if (parse_int(yyextra, yytext, yytext + 1, 16, &amp;(yylval-&gt;num)) &lt; 0)
++				if (parse_int(lk_ctx_global, yytext, yytext + 1, 16, &amp;(yylval.num)) &lt; 0)
+ 					return(ERROR);
+ 
+-				if (yylval-&gt;num &gt;= UNICODE_MASK) {
+-					ERR(yyextra, _(&#34;unicode keysym out of range: %s&#34;),
++				if (yylval.num &gt;= UNICODE_MASK) {
++					ERR(lk_ctx_global, _(&#34;unicode keysym out of range: %s&#34;),
+ 						yytext);
+ 					return(ERROR);
+ 				}
+@@ -452,12 +459,12 @@ To                      to|To|TO
+ 				return(UNUMBER);
+ 			}
+ {Decimal}|{Octal}|{Hex}	{
+-				if (parse_int(yyextra, yytext, yytext, 0, &amp;(yylval-&gt;num)) &lt; 0)
++				if (parse_int(lk_ctx_global, yytext, yytext, 0, &amp;(yylval.num)) &lt; 0)
+ 					return(ERROR);
+ 
+ 				return(NUMBER);
+ 			}
+-&lt;RVALUE&gt;{Literal}	{	return((yylval-&gt;num = ksymtocode(yyextra, yytext, TO_AUTO)) == -1 ? ERROR : LITERAL);	}
++&lt;RVALUE&gt;{Literal}	{	return((yylval.num = ksymtocode(lk_ctx_global, yytext, TO_AUTO)) == -1 ? ERROR : LITERAL);	}
+ \-			{	return(DASH);		}
+ \,			{	return(COMMA);		}
+ \+			{	return(PLUS);		}
+@@ -482,57 +489,57 @@ To                      to|To|TO
+ {On}			{	return(ON);		}
+ {For}			{	return(FOR);		}
+ &#39;\\{Octa}&#39;              {
+-				if (parse_int(yyextra, yytext, yytext + 2, 8, &amp;(yylval-&gt;num)) &lt; 0)
++				if (parse_int(lk_ctx_global, yytext, yytext + 2, 8, &amp;(yylval.num)) &lt; 0)
+ 					return(ERROR);
+ 
+ 				return(CCHAR);
+ 			}
+ &#39;\\.&#39;                   {
+-				yylval-&gt;num = (unsigned char) yytext[2];
++				yylval.num = (unsigned char) yytext[2];
+ 				return(CCHAR);
+ 			}
+ &#39;.&#39;                     {
+-				yylval-&gt;num = (unsigned char) yytext[1];
++				yylval.num = (unsigned char) yytext[1];
+ 				return(CCHAR);
+ 			}
+ \&#34;			{
+-				yylval-&gt;str.str_data[0] = &#39;\0&#39;;
+-				yylval-&gt;str.str_len = 0;
++				yylval.str.str_data[0] = &#39;\0&#39;;
++				yylval.str.str_len = 0;
+ 
+-				yy_push_state(STR, yyscanner);
++				yy_push_state(STR);
+ 			}
+ &lt;STR&gt;\\{Octa}		{
+ 				unsigned char ch;
+ 
+-				if (parse_uchar(yyextra, yytext, yytext + 1, 8, &amp;ch) &lt; 0)
++				if (parse_uchar(lk_ctx_global, yytext, yytext + 1, 8, &amp;ch) &lt; 0)
+ 					return(ERROR);
+ 
+-				if (strdata_append(yyextra, &amp;yylval-&gt;str, (char *) &amp;ch, 1) &lt; 0)
++				if (strdata_append(lk_ctx_global, &amp;yylval.str, (char *) &amp;ch, 1) &lt; 0)
+ 					return(ERROR);
+ 			}
+ &lt;STR&gt;\\\&#34;               {
+-				if (strdata_append(yyextra, &amp;yylval-&gt;str, &#34;\&#34;&#34;, 1) &lt; 0)
++				if (strdata_append(lk_ctx_global, &amp;yylval.str, &#34;\&#34;&#34;, 1) &lt; 0)
+ 					return(ERROR);
+ 			}
+ &lt;STR&gt;\\\\               {
+-				if (strdata_append(yyextra, &amp;yylval-&gt;str, &#34;\\&#34;, 1) &lt; 0)
++				if (strdata_append(lk_ctx_global, &amp;yylval.str, &#34;\\&#34;, 1) &lt; 0)
+ 					return(ERROR);
+ 			}
+ &lt;STR&gt;\\n		{
+-				if (strdata_append(yyextra, &amp;yylval-&gt;str, &#34;\n&#34;, 1) &lt; 0)
++				if (strdata_append(lk_ctx_global, &amp;yylval.str, &#34;\n&#34;, 1) &lt; 0)
+ 					return(ERROR);
+ 			}
+ &lt;STR&gt;[^\&#34;\\]*		{
+ 				size_t len = strlen(yytext);
+ 
+-				if (strdata_append(yyextra, &amp;yylval-&gt;str, yytext, len) &lt; 0)
++				if (strdata_append(lk_ctx_global, &amp;yylval.str, yytext, len) &lt; 0)
+ 					return(ERROR);
+ 			}
+ &lt;STR&gt;\&#34;			{
+-				strdata_append(yyextra, &amp;yylval-&gt;str, &#34;\0&#34;, 0);
++				strdata_append(lk_ctx_global, &amp;yylval.str, &#34;\0&#34;, 0);
+ 
+-				while (((struct yyguts_t*)yyscanner)-&gt;yy_start_stack_ptr) {
+-					yy_pop_state(yyscanner);
++				while (yy_start_stack_ptr) {
++					yy_pop_state();
+ 				}
+ 				return(STRLITERAL);
+ 			}
+diff --git a/src/libkeymap/parser.y b/src/libkeymap/parser.y
+index 2cd509f..3f7b7ff 100644
+--- a/src/libkeymap/parser.y
++++ b/src/libkeymap/parser.y
+@@ -13,12 +13,17 @@
+ #include &#34;config.h&#34;
+ #include &#34;array_size.h&#34;
+ 
++#include &lt;string.h&gt;
++
+ #include &#34;contextP.h&#34;
+ #include &#34;ksyms.h&#34;
+ #include &#34;modifiers.h&#34;
+ 
+ #include &#34;parser.h&#34;
+ #include &#34;analyze.h&#34;
++
++int stack_push(struct lk_ctx *ctx, struct kbdfile *fp);
++int stack_pop(struct lk_ctx *ctx);
+ %}
+ 
+ %code requires {
+@@ -35,18 +40,7 @@ struct string {
+ #endif
+ }
+ 
+-%language &#34;C&#34;
+-%defines
+ %debug
+-%define parse.error verbose
+-
+-/* Pure yylex.  */
+-%define api.pure
+-%lex-param { yyscan_t scanner }
+-
+-/* Pure yyparse.  */
+-%parse-param { void *scanner }
+-%parse-param { struct lk_ctx *ctx }
+ 
+ %token EOL NUMBER LITERAL CHARSET KEYMAPS KEYCODE EQUALS
+ %token PLAIN SHIFT CONTROL ALT ALTGR SHIFTL SHIFTR CTRLL CTRLR CAPSSHIFT
+@@ -67,11 +61,13 @@ struct string {
+ %type &lt;num&gt;  rvalue
+ 
+ %{
++struct lk_ctx *lk_ctx_global;
++struct lk_ctx *ctx;
++
+ static int
+-yyerror(yyscan_t scanner KBD_ATTR_UNUSED,
+-        struct lk_ctx *ctx, const char *s)
++yyerror(const char *s)
+ {
+-	ERR(ctx, &#34;%s&#34;, s);
++	ERR(lk_ctx_global, &#34;%s&#34;, s);
+ 	return 0;
+ }
+ 
+@@ -391,22 +387,19 @@ rvalue		: NUMBER	{ $$ = convert_code(ctx, $1, TO_AUTO);		}
+ %%
+ 
+ int
+-lk_parse_keymap(struct lk_ctx *ctx, struct kbdfile *fp)
++lk_parse_keymap(struct lk_ctx *ctx_in, struct kbdfile *fp)
+ {
+-	yyscan_t scanner;
+ 	int ret = 0;
+ 
+-	INFO(ctx, _(&#34;Loading %s&#34;), kbdfile_get_pathname(fp));
++	INFO(ctx_in, _(&#34;Loading %s&#34;), kbdfile_get_pathname(fp));
+ 
++	ctx = ctx_in;
+ 	ctx-&gt;mod = 0;
++	lk_ctx_global = ctx_in;
+ 
+-	yylex_init_extra(ctx, &amp;scanner);
+-
+-	ret = ret ?: stack_push(ctx, fp, scanner);
+-	ret = ret ?: yyparse(scanner, ctx);
+-
+-	stack_pop(ctx, scanner);
+-	yylex_destroy(scanner);
++	ret = ret ?: stack_push(ctx, fp);
++	ret = ret ?: yyparse();
++	stack_pop(ctx);
+ 
+ 	return (ret ? -1 : 0);
+ }
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

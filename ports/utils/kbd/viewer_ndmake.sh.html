@@ -1,0 +1,55 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/utils/kbd/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="games">games</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>210</strong> total ports</span> <span><strong>8</strong> updated this week</span> <span><strong>15</strong> categories</span> <span><strong>53</strong> building failed</span> <span>last update: 2026-09-05 22:46 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>utils/kbd/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=kbd
+VERSION=git
+RELEASE=1
+SOURCE=&#34;https://github.com/legionus/kbd.git
+	kbd-hell.patch&#34;
+BUILD_STYLE=hell
+BUILD_OPT=&#34;-DCHECK_PKG= -DEXTRA_PKG= -DCHECK_LIB= \
+	-DPAM_LIBS= -DPAM_MISC_LIBS= -DCOND_VLOCK=0 \
+	-DLDFLAGS=\&#34;$LDFLAGS\&#34;&#34;
+
+prebuild() {
+	sed -i \
+		-e &#39;s#libcommon/libcommon\.a#$(top_builddir)/src/libcommon/libcommon.a#g&#39; \
+		-e &#39;/^COMMON_LIBS[[:space:]]*=[[:space:]]*\\/,/^\$(CODE_COVERAGE_LIBS)[[:space:]]*$/ { /^\t@INTLLIBS@[[:space:]]*\\$/i\
+\t$(ZLIB_LIBS) \\
+\t$(BZIP2_LIBS) \\
+\t$(LZMA_LIBS) \\
+\t$(ZSTD_LIBS) \\
+}&#39; \
+		-e &#39;s#^resizecons_LDADD[[:space:]]*=.*#resizecons_LDADD      = $(top_builddir)/src/libkbdfile/libkbdfile.a $(COMMON_LIBS)#&#39; \
+		-e &#39;s#^clrunimap_LDADD[[:space:]]*=.*#clrunimap_LDADD       = $(top_builddir)/src/libkfont/libkfont.a $(top_builddir)/src/libkbdfile/libkbdfile.a $(COMMON_LIBS)#&#39; \
+		-e &#39;s#^getunimap_LDADD[[:space:]]*=.*#getunimap_LDADD       = $(top_builddir)/src/libkfont/libkfont.a $(top_builddir)/src/libkbdfile/libkbdfile.a $(COMMON_LIBS)#&#39; \
+		-e &#39;s#^loadunimap_LDADD[[:space:]]*=.*#loadunimap_LDADD      = $(top_builddir)/src/libkfont/libkfont.a $(top_builddir)/src/libkbdfile/libkbdfile.a $(COMMON_LIBS)#&#39; \
+		-e &#39;s#^mapscrn_LDADD[[:space:]]*=.*#mapscrn_LDADD         = $(top_builddir)/src/libkfont/libkfont.a $(top_builddir)/src/libkbdfile/libkbdfile.a $(COMMON_LIBS)#&#39; \
+		-e &#39;s#^psfxtable_LDADD[[:space:]]*=.*#psfxtable_LDADD       = $(top_builddir)/src/libkfont/libkfont.a $(top_builddir)/src/libkbdfile/libkbdfile.a $(COMMON_LIBS)#&#39; \
+		-e &#39;s#^setfont_LDADD[[:space:]]*=.*#setfont_LDADD         = $(top_builddir)/src/libkfont/libkfont.a $(top_builddir)/src/libkbdfile/libkbdfile.a $(COMMON_LIBS)#&#39; \
+		-e &#39;s#^showconsolefont_LDADD[[:space:]]*=.*#showconsolefont_LDADD = $(top_builddir)/src/libkfont/libkfont.a $(top_builddir)/src/libkbdfile/libkbdfile.a $(COMMON_LIBS)#&#39; \
+		-e &#39;s#^dumpkeys_LDADD[[:space:]]*=.*#dumpkeys_LDADD        = $(top_builddir)/src/libkeymap/libkeymap.a $(top_builddir)/src/libkbdfile/libkbdfile.a $(COMMON_LIBS)#&#39; \
+		-e &#39;s#^loadkeys_LDADD[[:space:]]*=.*#loadkeys_LDADD        = $(top_builddir)/src/libkeymap/libkeymap.a $(top_builddir)/src/libkbdfile/libkbdfile.a $(COMMON_LIBS)#&#39; \
+		src/Makefile.am
+}
+
+build() {
+	msg &#34;configuring with demiurge...&#34;
+	demiurge || msg &#34;demiurge failed&#34;
+	
+	msg &#34;generating with satan...&#34;
+	satan gen ${BUILD_OPT} PREFIX=&#34;$PREFIX&#34; DESTDIR=&#34;$PKG&#34; || die &#34;satan gen failed&#34;
+
+	sed -i \
+		-e &#39;s# libcommon/libcommon\.a# src/libcommon/libcommon.a#g&#39; \
+		-e &#39;s# libkeymap/libkeymap\.a# src/libkeymap/libkeymap.a#g&#39; \
+		-e &#39;s# libkbdfile/libkbdfile\.a# src/libkbdfile/libkbdfile.a#g&#39; \
+		-e &#39;s# libkfont/libkfont\.a# src/libkfont/libkfont.a#g&#39; \
+		-e &#39;s#src/libkfont/libkfont\.a src/libcommon/libcommon\.a#src/libkfont/libkfont.a src/libkbdfile/libkbdfile.a src/libcommon/libcommon.a#g&#39; \
+		-e &#39;s#\\./src/libkfont/libkfont\.a \\./src/libcommon/libcommon\.a#./src/libkfont/libkfont.a ./src/libkbdfile/libkbdfile.a ./src/libcommon/libcommon.a#g&#39; \
+		src/build.ninja
+
+	samu || die &#34;samu build failed&#34;
+	samu install || die &#34;samu install failed&#34;
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

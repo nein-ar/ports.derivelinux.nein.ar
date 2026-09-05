@@ -1,0 +1,95 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/libbsd/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="games">games</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>210</strong> total ports</span> <span><strong>8</strong> updated this week</span> <span><strong>15</strong> categories</span> <span><strong>53</strong> building failed</span> <span>last update: 2026-09-05 22:46 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/libbsd/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=libbsd
+VERSION=0.12.2
+RELEASE=1
+SOURCE=&#34;https://gitlab.freedesktop.org/libbsd/libbsd/-/archive/${VERSION}/libbsd-${VERSION}.tar.gz&#34;
+BUILD_OPT=&#34;
+	-DCOND_ABI_ARC4RANDOM=1
+	-DCOND_ABI_BSD_GETOPT=1
+	-DCOND_ABI_FREEZERO=1
+	-DCOND_ABI_PROGNAME=1
+	-DCOND_ABI_READPASSPHRASE=1
+	-DDEF_LIBBSD_ABI_ARC4RANDOM=1
+	-DDEF_LIBBSD_ABI_BSD_GETOPT=1
+	-DDEF_LIBBSD_ABI_FREEZERO=1
+	-DDEF_LIBBSD_ABI_PROGNAME=1
+	-DDEF_LIBBSD_ABI_READPASSPHRASE=1
+	-DUNDEF_HAVE___REGISTER_ATFORK=1
+	-DEXTRA_LDLIBS=-pthread
+&#34;
+
+build() {
+	demiurge . || die &#34;demiurge failed&#34;
+
+	msg &#34;fixing demiurge AS_TR_CPP output...&#34;
+	: &gt; .demiurge.tmp || die &#34;failed to create .demiurge.tmp&#34;
+	while IFS= read -r line; do
+		case &#34;$line&#34; in
+		COND_AS_TR_CPP*)
+			key=$(printf &#39;%s\n&#39; &#34;$line&#34; | sed -n &#39;s/^COND_AS_TR_CPP(\[\([A-Za-z0-9_][A-Za-z0-9_]*\)\])=.*/\1/p&#39;) || die &#34;failed to parse condition key&#34;
+			[ -n &#34;$key&#34; ] || { printf &#39;%s\n&#39; &#34;$line&#34; &gt;&gt; .demiurge.tmp || die &#34;failed to write .demiurge.tmp&#34;; continue; }
+			val=${line#*=}
+			key_upper=$(printf &#39;%s&#39; &#34;$key&#34; | tr &#39;[:lower:]&#39; &#39;[:upper:]&#39;) || die &#34;failed to uppercase key&#34;
+			printf &#39;COND_%s=%s\n&#39; &#34;$key_upper&#34; &#34;$val&#34; &gt;&gt; .demiurge.tmp || die &#34;failed to write .demiurge.tmp&#34;
+			;;
+		DEF_AS_TR_CPP*)
+			key=$(printf &#39;%s\n&#39; &#34;$line&#34; | sed -n &#39;s/^DEF_AS_TR_CPP(\[\([A-Za-z0-9_][A-Za-z0-9_]*\)\])=.*/\1/p&#39;) || die &#34;failed to parse define key&#34;
+			[ -n &#34;$key&#34; ] || { printf &#39;%s\n&#39; &#34;$line&#34; &gt;&gt; .demiurge.tmp || die &#34;failed to write .demiurge.tmp&#34;; continue; }
+			val=${line#*=}
+			key_upper=$(printf &#39;%s&#39; &#34;$key&#34; | tr &#39;[:lower:]&#39; &#39;[:upper:]&#39;) || die &#34;failed to uppercase key&#34;
+			printf &#39;DEF_%s=%s\n&#39; &#34;$key_upper&#34; &#34;$val&#34; &gt;&gt; .demiurge.tmp || die &#34;failed to write .demiurge.tmp&#34;
+			;;
+		*)
+			printf &#39;%s\n&#39; &#34;$line&#34; &gt;&gt; .demiurge.tmp || die &#34;failed to write .demiurge.tmp&#34;
+			;;
+		esac
+	done &lt; .demiurge || die &#34;failed to read .demiurge&#34;
+	mv .demiurge.tmp .demiurge || die &#34;failed to replace .demiurge&#34;
+
+	[ ! -f .satan ] &amp;&amp; echo &#34;LDFLAGS=${LDFLAGS}&#34; &gt; .satan
+	satan gen ${BUILD_OPT} PREFIX=&#34;$PREFIX&#34; DESTDIR=&#34;$PKG&#34; . || die &#34;satan gen failed&#34;
+
+	has_cmd samu || die &#34;samu not found&#34;
+	samu || die &#34;samu build failed&#34;
+	DESTDIR=&#34;$PKG&#34; samu install || die &#34;samu install failed&#34;
+}
+
+postbuild() {
+	msg &#34;installing libbsd pkg-config file...&#34;
+	install -d &#34;$PKG/$PREFIX/lib/pkgconfig&#34; &#34;$PKG/$PREFIX/include/bsd&#34; || die &#34;failed to create install dirs&#34;
+	install -m 644 include/bsd/readpassphrase.h &#34;$PKG/$PREFIX/include/bsd/readpassphrase.h&#34; || die &#34;failed to install readpassphrase.h&#34;
+	cat &gt; &#34;$PKG/$PREFIX/lib/pkgconfig/libbsd.pc&#34; &lt;&lt;-EOF
+prefix=$PREFIX
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: libbsd
+Description: Utility functions from BSD systems
+Version: $VERSION
+URL: https://libbsd.freedesktop.org/
+Libs: -L\${libdir} -lbsd
+Libs.private: -pthread -lmd
+Cflags: -I\${includedir}
+EOF
+	[ -f &#34;$PKG/$PREFIX/lib/pkgconfig/libbsd.pc&#34; ] || die &#34;failed to write libbsd.pc&#34;
+	cat &gt; &#34;$PKG/$PREFIX/lib/pkgconfig/libbsd-overlay.pc&#34; &lt;&lt;-EOF
+prefix=$PREFIX
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: libbsd
+Description: Utility functions from BSD systems (overlay)
+Version: $VERSION
+URL: https://libbsd.freedesktop.org/
+Libs: -L\${libdir} -lbsd
+Libs.private: -pthread -lmd
+# We use -isystem instead of -I due the overlay via #include_next usage.
+Cflags: -isystem \${includedir}/bsd -DLIBBSD_OVERLAY
+EOF
+	[ -f &#34;$PKG/$PREFIX/lib/pkgconfig/libbsd-overlay.pc&#34; ] || die &#34;failed to write libbsd-overlay.pc&#34;
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>

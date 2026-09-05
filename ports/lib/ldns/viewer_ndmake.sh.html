@@ -1,0 +1,85 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>File Viewer: ndmake.sh - dérive linux ports</title><link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/ldns/viewer_ndmake.sh.html"><link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"><link rel="stylesheet" href="../../../assets/derive_red.css"><link rel="stylesheet" href="../../../assets/styles.css"><script src="../../../assets/app.js"></script><script src="../../../assets/search.js"></script><script src="../../../assets/commits.js"></script><script src="../../../assets/fortunes.js"></script></head><body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url=""><header><div class="top-bar"><a href="https://wayland.fyi">wl.fyi</a> <span>|</span> <a href="https://9larp.net">9larp</a> <span>|</span> <a href="https://derivelinux.org">main</a> <span>|</span> <a href="https://pkg.derivelinux.org">pkg</a></div><a href="../../.." class="site-mark" aria-label="dérive linux ports"><img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"></a></header><nav><a href="../../..">Home</a><a href="../../../categories">Categories</a><a href="../../../commits">Recent Commits</a><a href="../../../search">Search</a><a href="../../../stats">Statistics</a></nav><div class="search-section"><form class="search-box" action="../../../search/index.html" method="GET" id=""><input type="text" name="q" placeholder="search ports..." id=""> <select name="cat" id=""><option value="">all categories</option> <option value="core">core</option><option value="daemon">daemon</option><option value="devel">devel</option><option value="doc">doc</option><option value="editors">editors</option><option value="fonts">fonts</option><option value="games">games</option><option value="lang">lang</option><option value="lib">lib</option><option value="net">net</option><option value="old">old</option><option value="shells">shells</option><option value="userspace">userspace</option><option value="utils">utils</option><option value="wl">wl</option></select> <input type="submit" value="search"></form></div><div class="stats"><span><strong>210</strong> total ports</span> <span><strong>8</strong> updated this week</span> <span><strong>15</strong> categories</span> <span><strong>53</strong> building failed</span> <span>last update: 2026-09-05 22:46 UTC</span></div><main class="main-content"><div id="viewer-shell"><div id="viewer-header"><span>lib/ldns/ndmake.sh</span></div><div id="viewer-viewport">  <div class="static-viewer"><pre class="terminal-cmd">$ cat ndmake.sh</pre><pre class="terminal-content">#!/bin/sh -ue
+NAME=ldns
+VERSION=git
+RELEASE=1
+SOURCE=&#34;https://github.com/NLnetLabs/ldns&#34;
+
+build() {
+	ver_major=$(sed -n &#39;s/^m4_define(\[VERSION_MAJOR\],\[\([0-9][0-9]*\)\]).*/\1/p&#39; configure.ac)
+	ver_minor=$(sed -n &#39;s/^m4_define(\[VERSION_MINOR\],\[\([0-9][0-9]*\)\]).*/\1/p&#39; configure.ac)
+	ver_micro=$(sed -n &#39;s/^m4_define(\[VERSION_MICRO\],\[\([0-9][0-9]*\)\]).*/\1/p&#39; configure.ac)
+	[ -n &#34;$ver_major&#34; ] || die &#34;failed to parse VERSION_MAJOR&#34;
+	[ -n &#34;$ver_minor&#34; ] || die &#34;failed to parse VERSION_MINOR&#34;
+	[ -n &#34;$ver_micro&#34; ] || die &#34;failed to parse VERSION_MICRO&#34;
+	ver=&#34;$ver_major.$ver_minor.$ver_micro&#34;
+
+	msg &#34;configuring ldns with demiurge...&#34;
+	demiurge . || die &#34;demiurge failed&#34;
+	[ ! -f .satan ] &amp;&amp; echo &#34;LDFLAGS=${LDFLAGS}&#34; &gt; .satan
+
+	msg &#34;generating ldns makefiles with satan...&#34;
+	satan gen -c \
+		-DSHELL=/bin/sh \
+		-Dlibtool=libtool \
+		-DVERSION=&#34;$ver&#34; \
+		-DPACKAGE_VERSION=&#34;$ver&#34; \
+		-DDEF_PACKAGE_VERSION=&#34;\&#34;$ver\&#34;&#34; \
+		-DDEF_PACKAGE_STRING=&#34;\&#34;ldns $ver\&#34;&#34; \
+		-DDEF_VERSION=&#34;\&#34;$ver\&#34;&#34; \
+		-DDRILL=drill \
+		-DINSTALL_DRILL=install-drill \
+		-DUNINSTALL_DRILL=uninstall-drill \
+		-DCLEAN_DRILL=clean-drill \
+		-DLINT_DRILL=lint-drill \
+		-DINSTALL_CONFIG=install-config \
+		-DINSTALL_CONFIG_MANPAGE=install-config-manpage \
+		-DUNINSTALL_CONFIG=uninstall-config \
+		-DUNINSTALL_CONFIG_MANPAGE=uninstall-config-manpage \
+		-DPYLDNS= \
+		-DPYLDNSX= \
+		-DPYLDNSINST= \
+		-DPYLDNSUNINST= \
+		-DPYLDNSXINST= \
+		-DPYLDNSXUNINST= \
+		-Dswig= \
+		-DSWIGPY3= \
+		-DDEF_HAVE_SWIG=0 \
+		-DDEF_USE_SHA2=0 \
+		-DDEF_USE_GOST=0 \
+		-DDEF_USE_ECDSA=0 \
+		-DDEF_USE_ED25519=0 \
+		-DDEF_USE_ED448=0 \
+		-DDEF_USE_DANE=0 \
+		-DDEF_USE_DANE_VERIFY=0 \
+		-DDEF_USE_DANE_TA_USAGE=0 \
+		-Dldns_build_config_use_dane=0 \
+		-Dldns_build_config_use_dane_verify=0 \
+		-Dldns_build_config_use_dane_ta_usage=0 \
+		-Dldns_build_config_use_ed25519=0 \
+		-Dldns_build_config_use_ed448=0 \
+		-Dldns_build_config_have_ssl=0 \
+		-Dldns_build_config_have_inttypes_h=1 \
+		-Dldns_build_config_have_socklen_t=1 \
+		-DLIBSSL_CPPFLAGS= \
+		-DLIBSSL_LDFLAGS= \
+		-DLIBSSL_LIBS= \
+		-DLIBSSL_SSL_LIBS= \
+		-DCHECK_LIB= \
+		-DDEF_HAVE_LIBPCAP=0 \
+		PREFIX=&#34;$PREFIX&#34; DESTDIR=&#34;$PKG&#34; . || die &#34;satan gen failed&#34;
+
+	msg &#34;materializing missing ldns/config.h...&#34;
+	rm -f config.h ldns/config.h || die &#34;failed to remove broken config.h links&#34;
+	install -m 644 &#34;$PORTDIR/files/config.h&#34; ldns/config.h || die &#34;failed to install ldns/config.h&#34;
+	ln -sf ldns/config.h config.h || die &#34;failed to symlink config.h&#34;
+
+	msg &#34;building ldns...&#34;
+	make -j&#34;$NPROC&#34; INSTALL=install libtool=&#39;slibtool -all-static&#39; LIBOBJS=&#39;compat/b64_pton.o compat/b64_ntop.o&#39; || die &#34;make failed&#34;
+
+	msg &#34;installing ldns...&#34;
+	install -d &#34;$PKG/$PREFIX/lib/pkgconfig&#34; &#34;$PKG/$PREFIX/bin&#34; &#34;$PKG/$PREFIX/share/man/man1&#34; || die &#34;failed to create install dirs&#34;
+	make -j1 INSTALL=install libtool=&#39;slibtool -all-static&#39; LIBOBJS=&#39;compat/b64_pton.o compat/b64_ntop.o&#39; DESTDIR=&#34;$PKG&#34; install || die &#34;make install failed&#34;
+}
+
+. ${0%/*}/../../libsh/libdmake.sh
+</pre></div></div></div></main><footer>dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br>derive is public domain software. all software listed is under it's respective license.</footer></body></html>
