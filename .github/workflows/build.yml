@@ -1,0 +1,185 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ master ]
+
+  schedule:
+    - cron: '0,30 * * * *'
+
+  workflow_dispatch:
+    inputs:
+      skip_restore_cache:
+        description: "Do not restore cache"
+        type: boolean
+        default: false
+
+      skip_save_cache:
+        description: "Do not save cache"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.26.1"
+  CACHE_VERSION: v9
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync submodules
+        run: |
+          set -eu
+
+          git submodule update --init --recursive --force
+
+          git submodule foreach --recursive '
+            set -eu
+
+            remote=origin
+
+            branch=$(git config -f "$toplevel/.gitmodules" "submodule.$name.branch" || true)
+
+            git fetch --prune "$remote"
+
+            if [ -n "$branch" ]; then
+              target="$remote/$branch"
+            else
+              head=$(git remote show "$remote" | sed -n "s/.*HEAD branch: //p")
+              target="$remote/$head"
+            fi
+
+            git checkout -f
+            git reset --hard "$target"
+            git clean -fdx
+          '
+
+          if git status --porcelain | grep '^ M '; then
+            git add .
+            git commit -m "submodule: sync to upstream"
+            git push origin master
+          fi
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+
+      - name: Restore Go cache
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_restore_cache != true }}
+        uses: actions/cache/restore@v6
+        with:
+          lookup-only: false
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: |
+            go-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
+          restore-keys: |
+            go-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}-
+            go-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-
+            go-${{ env.CACHE_VERSION }}-${{ runner.os }}-
+
+      - name: Restore SSG and ports cache
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_restore_cache != true }}
+        uses: actions/cache/restore@v6
+        with:
+          lookup-only: false
+          path: |
+            .cache
+            content
+            data
+            ports
+          key: |
+            ssg-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            ssg-${{ env.CACHE_VERSION }}-${{ runner.os }}-
+
+      - name: Fetch/update ports repo
+        run: |
+          set -eu
+
+          if [ -d ports/.git ]; then
+            git -C ports remote set-url origin https://codeberg.org/derivelinux/ports \
+              || git -C ports remote set-url origin https://git.sr.ht/~shrub900/ports
+
+            if [ "$(git -C ports rev-parse --is-shallow-repository)" = "true" ]; then
+              git -C ports fetch --unshallow --prune origin
+            else
+              git -C ports fetch --prune origin
+            fi
+
+            git -C ports reset --hard origin/HEAD
+            git -C ports clean -fdx
+          else
+            git clone https://codeberg.org/derivelinux/ports ports \
+              || git clone https://git.sr.ht/~shrub900/ports ports
+          fi
+
+      - name: Generate site
+        run: |
+          set -eu
+
+          export GOBIN="$HOME/go/bin"
+          export PATH="$GOBIN:$PATH"
+
+          wget -O ci_status.json https://pkg.derivelinux.org/ci_status.json \
+            || echo "warn: ci_status fetch failed"
+
+          cd portsMaster
+
+          go build -o ./portsMaster .
+          ./portsMaster --config ../config.toml
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          publish_branch: www
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: Update site
+          disable_nojekyll: true
+
+      - name: Save Go cache
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_save_cache != true }}
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: |
+            go-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
+
+      - name: Save SSG and ports cache
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_save_cache != true }}
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            .cache
+            content
+            data
+            ports
+          key: |
+            ssg-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ github.run_id }}
