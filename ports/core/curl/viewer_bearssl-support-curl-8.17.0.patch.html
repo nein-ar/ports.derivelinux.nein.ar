@@ -1,0 +1,2160 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="shrub">
+<head>
+	<meta charset="UTF-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<title>File Viewer: bearssl-support-curl-8.17.0.patch - dérive linux ports</title>
+	
+	<link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/core/curl/viewer_bearssl-support-curl-8.17.0.patch.html"/>
+	
+	
+	<link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"/>
+	
+	<link rel="stylesheet" href="../../../assets/theme-switch.css"/>
+	<link rel="stylesheet" data-theme-css="shrub" media="all" href="../../../assets/shrub/vars.css"/>
+	<link rel="stylesheet" data-theme-css="shrub" media="all" href="../../../assets/shrub/site.css"/>
+	<link rel="stylesheet" data-theme-css="xplshn" media="not all" href="../../../assets/xplshn/vars.css"/>
+	<link rel="stylesheet" data-theme-css="xplshn" media="not all" href="../../../assets/xplshn/site.css"/>
+	<script>
+	
+	(function () {
+		try {
+			var t = localStorage.getItem("ports-theme");
+			if (t !== "shrub" && t !== "xplshn") { return; }
+			document.documentElement.dataset.theme = t;
+			var links = document.querySelectorAll("link[data-theme-css]");
+			for (var i = 0; i < links.length; i++) {
+				links[i].media = links[i].getAttribute("data-theme-css") === t ? "all" : "not all";
+			}
+		} catch (e) {}
+	})();
+	</script>
+	
+	<script src="../../../assets/theme-switch.js"></script>
+	<script src="../../../assets/app.js"></script>
+	
+	<script src="../../../assets/search.js"></script>
+	
+	<script src="../../../assets/commits.js"></script>
+	
+	<script src="../../../assets/fortunes.js"></script>
+	
+</head>
+<body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url="">
+	<header>
+		<div class="top-bar">
+			<a href="https://wayland.fyi">wl.fyi</a>
+			<span>|</span>
+			<a href="https://9larp.net">9larp</a>
+			<span>|</span>
+			<a href="https://derivelinux.org">main</a>
+			<span>|</span>
+			<a href="https://pkg.derivelinux.org">pkg</a>
+		</div>
+		<a href="../../../index.html" class="site-mark" aria-label="dérive linux ports">
+			<img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"/>
+		</a>
+	</header>
+
+	<nav>
+		
+		<a href="../../../index.html">Home</a>
+		
+		<a href="../../../categories">Categories</a>
+		
+		<a href="../../../commits">Recent Commits</a>
+		
+		<a href="../../../search">Search</a>
+		
+		<a href="../../../stats">Statistics</a>
+		
+	</nav>
+
+	<div class="search-section">
+		<form class="search-box" action="../../../search/index.html" method="GET">
+	<input type="text" name="q" placeholder="search ports..."/>
+	<select name="cat">
+		<option value="">all categories</option>
+		
+		
+		<option value="core">core</option>
+		
+		<option value="daemon">daemon</option>
+		
+		<option value="devel">devel</option>
+		
+		<option value="doc">doc</option>
+		
+		<option value="editors">editors</option>
+		
+		<option value="fonts">fonts</option>
+		
+		<option value="games">games</option>
+		
+		<option value="lang">lang</option>
+		
+		<option value="lib">lib</option>
+		
+		<option value="net">net</option>
+		
+		<option value="old">old</option>
+		
+		<option value="shells">shells</option>
+		
+		<option value="userspace">userspace</option>
+		
+		<option value="utils">utils</option>
+		
+		<option value="wl">wl</option>
+		
+		
+	</select>
+	<input type="submit" value="search"/>
+</form>
+
+	</div>
+
+	
+	<div class="stats">
+		<span><strong>210</strong> total ports</span>
+		<span><strong>0</strong> updated this week</span>
+		<span><strong>15</strong> categories</span>
+		<span><strong>53</strong> building failed</span>
+		<span>last update: 2026-11-14 16:57 UTC</span>
+	</div>
+	
+
+	<main class="main-content">
+		
+
+
+
+
+
+<div id="viewer-shell">
+	<div id="viewer-header">
+		<span>core/curl/bearssl-support-curl-8.17.0.patch</span>
+	</div>
+	<div id="viewer-viewport">
+		
+		<div class="static-viewer">
+			<pre class="terminal-cmd">$ cat bearssl-support-curl-8.17.0.patch</pre>
+			<pre class="terminal-content">From 56dcc1a0f326525405b0134fb190433e362cb5d7 Mon Sep 17 00:00:00 2001
+From: shrub &lt;maybeshrub@gmail.com&gt;
+Date: Tue, 17 Mar 2026 19:51:18 &#43;0000
+Subject: [PATCH 1/2] tls: restore BearSSL backend support
+
+---
+ CMake/FindBearSSL.cmake |   58 &#43;&#43;
+ CMakeLists.txt          |   20 &#43;-
+ Makefile.am             |    1 &#43;
+ configure.ac            |   41 &#43;-
+ lib/CMakeLists.txt      |    2 &#43;
+ lib/Makefile.inc        |    2 &#43;
+ lib/curl_config.h.cmake |    3 &#43;
+ lib/curl_setup.h        |    2 &#43;
+ lib/vtls/bearssl.c      | 1104 &#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;
+ lib/vtls/bearssl.h      |   34 &#43;&#43;
+ lib/vtls/cipher_suite.c |   24 &#43;-
+ lib/vtls/cipher_suite.h |    6 &#43;-
+ lib/vtls/vtls.c         |    6 &#43;
+ m4/curl-bearssl.m4      |  111 &#43;&#43;&#43;&#43;
+ 14 files changed, 1401 insertions(&#43;), 13 deletions(-)
+ create mode 100644 CMake/FindBearSSL.cmake
+ create mode 100644 lib/vtls/bearssl.c
+ create mode 100644 lib/vtls/bearssl.h
+ create mode 100644 m4/curl-bearssl.m4
+
+diff --git a/CMake/FindBearSSL.cmake b/CMake/FindBearSSL.cmake
+new file mode 100644
+index 0000000000..ff55be0f22
+--- /dev/null
+&#43;&#43;&#43; b/CMake/FindBearSSL.cmake
+@@ -0,0 &#43;1,58 @@
+&#43;#***************************************************************************
+&#43;#                                  _   _ ____  _
+&#43;#  Project                     ___| | | |  _ \| |
+&#43;#                             / __| | | | |_) | |
+&#43;#                            | (__| |_| |  _ &lt;| |___
+&#43;#                             \___|\___/|_| \_\_____|
+&#43;#
+&#43;# Copyright (C) Daniel Stenberg, &lt;daniel@haxx.se&gt;, et al.
+&#43;#
+&#43;# This software is licensed as described in the file COPYING, which
+&#43;# you should have received as part of this distribution. The terms
+&#43;# are also available at https://curl.se/docs/copyright.html.
+&#43;#
+&#43;# You may opt to use, copy, modify, merge, publish, distribute and/or sell
+&#43;# copies of the Software, and permit persons to whom the Software is
+&#43;# furnished to do so, under the terms of the COPYING file.
+&#43;#
+&#43;# This software is distributed on an &#34;AS IS&#34; basis, WITHOUT WARRANTY OF ANY
+&#43;# KIND, either express or implied.
+&#43;#
+&#43;# SPDX-License-Identifier: curl
+&#43;#
+&#43;###########################################################################
+&#43;# Find the BearSSL library
+&#43;#
+&#43;# Input variables:
+&#43;#
+&#43;# - `BEARSSL_INCLUDE_DIR`:   The BearSSL include directory.
+&#43;# - `BEARSSL_LIBRARY`:       Path to `bearssl` library.
+&#43;#
+&#43;# Result variables:
+&#43;#
+&#43;# - `BEARSSL_FOUND`:         System has BearSSL.
+&#43;# - `BEARSSL_INCLUDE_DIRS`:  The BearSSL include directories.
+&#43;# - `BEARSSL_LIBRARIES`:     The BearSSL library names.
+&#43;
+&#43;if(DEFINED BEARSSL_INCLUDE_DIRS AND NOT DEFINED BEARSSL_INCLUDE_DIR)
+&#43;  message(WARNING &#34;BEARSSL_INCLUDE_DIRS is deprecated, use BEARSSL_INCLUDE_DIR instead.&#34;)
+&#43;  set(BEARSSL_INCLUDE_DIR &#34;${BEARSSL_INCLUDE_DIRS}&#34;)
+&#43;  unset(BEARSSL_INCLUDE_DIRS)
+&#43;endif()
+&#43;
+&#43;find_path(BEARSSL_INCLUDE_DIR NAMES &#34;bearssl.h&#34;)
+&#43;find_library(BEARSSL_LIBRARY NAMES &#34;bearssl&#34;)
+&#43;
+&#43;include(FindPackageHandleStandardArgs)
+&#43;find_package_handle_standard_args(BearSSL
+&#43;  REQUIRED_VARS
+&#43;    BEARSSL_INCLUDE_DIR
+&#43;    BEARSSL_LIBRARY
+&#43;)
+&#43;
+&#43;if(BEARSSL_FOUND)
+&#43;  set(BEARSSL_INCLUDE_DIRS ${BEARSSL_INCLUDE_DIR})
+&#43;  set(BEARSSL_LIBRARIES    ${BEARSSL_LIBRARY})
+&#43;endif()
+&#43;
+&#43;mark_as_advanced(BEARSSL_INCLUDE_DIR BEARSSL_LIBRARY)
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4772a6219a..f7928e8563 100644
+--- a/CMakeLists.txt
+&#43;&#43;&#43; b/CMakeLists.txt
+@@ -712,6 &#43;712,7 @@ else()
+   set(CURL_WINDOWS_SSPI OFF)
+ endif()
+ cmake_dependent_option(CURL_USE_MBEDTLS &#34;Enable mbedTLS for SSL/TLS&#34; OFF CURL_ENABLE_SSL OFF)
+&#43;cmake_dependent_option(CURL_USE_BEARSSL &#34;Enable BearSSL for SSL/TLS&#34; OFF CURL_ENABLE_SSL OFF)
+ cmake_dependent_option(CURL_USE_WOLFSSL &#34;Enable wolfSSL for SSL/TLS&#34; OFF CURL_ENABLE_SSL OFF)
+ cmake_dependent_option(CURL_USE_GNUTLS &#34;Enable GnuTLS for SSL/TLS&#34; OFF CURL_ENABLE_SSL OFF)
+ cmake_dependent_option(CURL_USE_RUSTLS &#34;Enable Rustls for SSL/TLS&#34; OFF CURL_ENABLE_SSL OFF)
+@@ -719,6 &#43;720,7 @@ cmake_dependent_option(CURL_USE_RUSTLS &#34;Enable Rustls for SSL/TLS&#34; OFF CURL_ENAB
+ if(WIN32 OR
+    CURL_USE_SCHANNEL OR
+    CURL_USE_MBEDTLS OR
+&#43;   CURL_USE_BEARSSL OR
+    CURL_USE_WOLFSSL OR
+    CURL_USE_GNUTLS OR
+    CURL_USE_RUSTLS)
+@@ -738,6 &#43;740,7 @@ curl_count_true(_enabled_ssl_options_count
+   CURL_USE_SCHANNEL
+   CURL_USE_OPENSSL
+   CURL_USE_MBEDTLS
+&#43;  CURL_USE_BEARSSL
+   CURL_USE_WOLFSSL
+   CURL_USE_GNUTLS
+   CURL_USE_RUSTLS
+@@ -882,6 &#43;885,19 @@ if(CURL_USE_MBEDTLS)
+   endif()
+ endif()
+ 
+&#43;if(CURL_USE_BEARSSL)
+&#43;  find_package(BearSSL REQUIRED)
+&#43;  set(_ssl_enabled ON)
+&#43;  set(USE_BEARSSL ON)
+&#43;  list(APPEND CURL_LIBS ${BEARSSL_LIBRARIES})
+&#43;  include_directories(SYSTEM ${BEARSSL_INCLUDE_DIRS})
+&#43;
+&#43;  if(CURL_DEFAULT_SSL_BACKEND AND CURL_DEFAULT_SSL_BACKEND STREQUAL &#34;bearssl&#34;)
+&#43;    set(_valid_default_ssl_backend TRUE)
+&#43;  endif()
+&#43;  set(_curl_ca_bundle_supported TRUE)
+&#43;endif()
+&#43;
+ if(CURL_USE_WOLFSSL)
+   find_package(WolfSSL REQUIRED)
+   set(_ssl_enabled ON)
+@@ -2097,6 &#43;2113,7 @@ endmacro()
+ if(NOT CURL_DISABLE_NTLM AND
+    ((USE_OPENSSL AND HAVE_DES_ECB_ENCRYPT) OR
+     (USE_MBEDTLS AND HAVE_MBEDTLS_DES_CRYPT_ECB) OR
+&#43;    USE_BEARSSL OR
+     USE_GNUTLS OR
+     USE_WIN32_CRYPTO OR
+     (USE_WOLFSSL AND HAVE_WOLFSSL_DES_ECB_ENCRYPT)))
+@@ -2178,7 &#43;2195,7 @@ curl_add_if(&#34;HTTP2&#34;         USE_NGHTTP2)
+ curl_add_if(&#34;HTTP3&#34;         USE_NGTCP2 OR USE_QUICHE OR USE_OPENSSL_QUIC)
+ curl_add_if(&#34;MultiSSL&#34;      CURL_WITH_MULTI_SSL)
+ curl_add_if(&#34;HTTPS-proxy&#34;   NOT CURL_DISABLE_PROXY AND _ssl_enabled AND (USE_OPENSSL OR USE_GNUTLS
+-                            OR USE_SCHANNEL OR USE_RUSTLS OR USE_MBEDTLS OR
+&#43;                            OR USE_SCHANNEL OR USE_RUSTLS OR USE_BEARSSL OR USE_MBEDTLS OR
+                             (USE_WOLFSSL AND HAVE_WOLFSSL_BIO_NEW)))
+ curl_add_if(&#34;Unicode&#34;       ENABLE_UNICODE)
+ curl_add_if(&#34;threadsafe&#34;    HAVE_ATOMIC OR
+@@ -2209,6 &#43;2226,7 @@ curl_add_if(&#34;Schannel&#34;         _ssl_enabled AND USE_SCHANNEL)
+ curl_add_if(&#34;${_openssl}&#34;      _ssl_enabled AND USE_OPENSSL AND OPENSSL_VERSION VERSION_LESS 3.0.0)
+ curl_add_if(&#34;${_openssl} v3&#43;&#34;  _ssl_enabled AND USE_OPENSSL AND OPENSSL_VERSION VERSION_GREATER_EQUAL 3.0.0)
+ curl_add_if(&#34;mbedTLS&#34;          _ssl_enabled AND USE_MBEDTLS)
+&#43;curl_add_if(&#34;BearSSL&#34;          _ssl_enabled AND USE_BEARSSL)
+ curl_add_if(&#34;wolfSSL&#34;          _ssl_enabled AND USE_WOLFSSL)
+ curl_add_if(&#34;GnuTLS&#34;           _ssl_enabled AND USE_GNUTLS)
+ curl_add_if(&#34;Rustls&#34;           _ssl_enabled AND USE_RUSTLS)
+diff --git a/Makefile.am b/Makefile.am
+index 7b2f05f92e..52c75622e0 100644
+--- a/Makefile.am
+&#43;&#43;&#43; b/Makefile.am
+@@ -32,6 &#43;32,7 @@ CMAKE_DIST =                                    \
+  CMake/curl-config.cmake.in                     \
+  CMake/CurlSymbolHiding.cmake                   \
+  CMake/CurlTests.c                              \
+&#43; CMake/FindBearSSL.cmake                        \
+  CMake/FindBrotli.cmake                         \
+  CMake/FindCares.cmake                          \
+  CMake/FindGnuTLS.cmake                         \
+diff --git a/configure.ac b/configure.ac
+index cc16f4120a..2b136cc190 100644
+--- a/configure.ac
+&#43;&#43;&#43; b/configure.ac
+@@ -141,7 &#43;141,7 @@ AC_SUBST(VERSIONNUM)
+ 
+ dnl
+ dnl initialize all the info variables
+-    curl_ssl_msg=&#34;no      (--with-{openssl,gnutls,mbedtls,wolfssl,schannel,amissl,rustls} )&#34;
+&#43;    curl_ssl_msg=&#34;no      (--with-{openssl,gnutls,mbedtls,wolfssl,schannel,secure-transport,amissl,bearssl,rustls} )&#34;
+     curl_ssh_msg=&#34;no      (--with-{libssh,libssh2})&#34;
+    curl_zlib_msg=&#34;no      (--with-zlib)&#34;
+  curl_brotli_msg=&#34;no      (--with-brotli)&#34;
+@@ -210,6 &#43;210,13 @@ AS_HELP_STRING([--with-schannel],[enable Windows native SSL/TLS]),
+   OPT_SCHANNEL=$withval
+   TLSCHOICE=&#34;Schannel&#34;)
+ 
+&#43;OPT_SECURETRANSPORT=no
+&#43;AC_ARG_WITH(secure-transport,dnl
+&#43;AS_HELP_STRING([--with-secure-transport],[enable Apple OS native SSL/TLS]),[
+&#43;  OPT_SECURETRANSPORT=$withval
+&#43;  TLSCHOICE=&#34;${TLSCHOICE:&#43;$TLSCHOICE, }Secure-Transport&#34;
+&#43;])
+&#43;
+ OPT_AMISSL=no
+ AC_ARG_WITH(amissl,dnl
+ AS_HELP_STRING([--with-amissl],[enable Amiga native SSL/TLS (AmiSSL)]),[
+@@ -267,6 &#43;274,15 @@ AS_HELP_STRING([--with-wolfssl=PATH],[where to look for wolfSSL, PATH points to
+   fi
+ ])
+ 
+&#43;OPT_BEARSSL=no
+&#43;AC_ARG_WITH(bearssl,dnl
+&#43;AS_HELP_STRING([--with-bearssl=PATH],[where to look for BearSSL, PATH points to the installation root]),[
+&#43;  OPT_BEARSSL=$withval
+&#43;  if test X&#34;$withval&#34; != Xno; then
+&#43;    TLSCHOICE=&#34;${TLSCHOICE:&#43;$TLSCHOICE, }BearSSL&#34;
+&#43;  fi
+&#43;])
+&#43;
+ OPT_RUSTLS=no
+ AC_ARG_WITH(rustls,dnl
+ AS_HELP_STRING([--with-rustls=PATH],[where to look for Rustls, PATH points to the installation root]),[
+@@ -435,11 &#43;451,13 @@ if test -z &#34;$TLSCHOICE&#34;; then
+ Select from these:
+ 
+   --with-amissl
+&#43;  --with-bearssl
+   --with-gnutls
+   --with-mbedtls
+   --with-openssl (also works for BoringSSL and LibreSSL)
+   --with-rustls
+   --with-schannel
+&#43;  --with-secure-transport
+   --with-wolfssl
+ ])
+   fi
+@@ -1989,11 &#43;2007,13 @@ case &#34;$DEFAULT_SSL_BACKEND&#34; in
+ esac
+ 
+ CURL_WITH_SCHANNEL
+&#43;CURL_WITH_SECURETRANSPORT
+ CURL_WITH_AMISSL
+ CURL_WITH_OPENSSL
+ CURL_WITH_GNUTLS
+ CURL_WITH_MBEDTLS
+ CURL_WITH_WOLFSSL
+&#43;CURL_WITH_BEARSSL
+ CURL_WITH_RUSTLS
+ CURL_WITH_APPLE_SECTRUST
+ 
+@@ -2010,10 &#43;2030,10 @@ if test &#34;x$curl_cv_native_windows&#34; = &#34;xyes&#34; -a &#34;$curl_cv_wince&#34; = &#39;no&#39;; then
+   LIBS=&#34;-lbcrypt $LIBS&#34;
+ fi
+ 
+-case &#34;x$SSL_DISABLED$OPENSSL_ENABLED$GNUTLS_ENABLED$MBEDTLS_ENABLED$WOLFSSL_ENABLED$SCHANNEL_ENABLED$RUSTLS_ENABLED&#34; in
+&#43;case &#34;x$SSL_DISABLED$OPENSSL_ENABLED$GNUTLS_ENABLED$MBEDTLS_ENABLED$WOLFSSL_ENABLED$SCHANNEL_ENABLED$SECURETRANSPORT_ENABLED$BEARSSL_ENABLED$RUSTLS_ENABLED&#34; in
+   x)
+     AC_MSG_ERROR([TLS not detected, you will not be able to use HTTPS, FTPS, NTLM and more.
+-Use --with-openssl, --with-gnutls, --with-wolfssl, --with-mbedtls, --with-schannel, --with-amissl or --with-rustls to address this.])
+&#43;Use --with-openssl, --with-gnutls, --with-wolfssl, --with-mbedtls, --with-schannel, --with-secure-transport, --with-amissl, --with-bearssl or --with-rustls to address this.])
+     ;;
+   x1)
+     # one SSL backend is enabled
+@@ -2025,7 &#43;2045,7 @@ Use --with-openssl, --with-gnutls, --with-wolfssl, --with-mbedtls, --with-schann
+     ;;
+   xD*)
+     AC_MSG_ERROR([--without-ssl has been set together with an explicit option to use an ssl library
+-(e.g. --with-openssl, --with-gnutls, --with-wolfssl, --with-mbedtls, --with-schannel, --with-amissl, --with-rustls).
+&#43;(e.g. --with-openssl, --with-gnutls, --with-wolfssl, --with-mbedtls, --with-schannel, --with-secure-transport, --with-amissl, --with-bearssl, --with-rustls).
+ Since these are conflicting parameters, verify which is the desired one and drop the other.])
+     ;;
+   *)
+@@ -2723,6 &#43;2743,8 @@ AS_HELP_STRING([--disable-versioned-symbols], [Disable versioned symbols in shar
+         versioned_symbols_flavour=&#34;OPENSSL_&#34;
+       elif test &#34;x$MBEDTLS_ENABLED&#34; = &#34;x1&#34;; then
+         versioned_symbols_flavour=&#34;MBEDTLS_&#34;
+&#43;      elif test &#34;x$BEARSSL_ENABLED&#34; = &#34;x1&#34;; then
+&#43;        versioned_symbols_flavour=&#34;BEARSSL_&#34;
+       elif test &#34;x$WOLFSSL_ENABLED&#34; = &#34;x1&#34;; then
+         versioned_symbols_flavour=&#34;WOLFSSL_&#34;
+       elif test &#34;x$GNUTLS_ENABLED&#34; = &#34;x1&#34;; then
+@@ -5254,6 &#43;5276,7 @@ use_curl_ntlm_core=no
+ if test &#34;x$CURL_DISABLE_NTLM&#34; != &#34;x1&#34;; then
+   if test &#34;x$HAVE_DES_ECB_ENCRYPT&#34; = &#34;x1&#34; \
+       -o &#34;x$GNUTLS_ENABLED&#34; = &#34;x1&#34; \
+&#43;      -o &#34;x$SECURETRANSPORT_ENABLED&#34; = &#34;x1&#34; \
+       -o &#34;x$USE_WIN32_CRYPTO&#34; = &#34;x1&#34; \
+       -o &#34;x$HAVE_WOLFSSL_DES_ECB_ENCRYPT&#34; = &#34;x1&#34; \
+       -o &#34;x$HAVE_MBEDTLS_DES_CRYPT_ECB&#34; = &#34;x1&#34;; then
+@@ -5292,7 &#43;5315,9 @@ if test &#34;x$CURL_DISABLE_HTTP&#34; != &#34;x1&#34;; then
+   if test &#34;x$https_proxy&#34; != &#34;xno&#34;; then
+     if test &#34;x$OPENSSL_ENABLED&#34; = &#34;x1&#34; \
+         -o &#34;x$GNUTLS_ENABLED&#34; = &#34;x1&#34; \
+&#43;        -o &#34;x$SECURETRANSPORT_ENABLED&#34; = &#34;x1&#34; \
+         -o &#34;x$RUSTLS_ENABLED&#34; = &#34;x1&#34; \
+&#43;        -o &#34;x$BEARSSL_ENABLED&#34; = &#34;x1&#34; \
+         -o &#34;x$SCHANNEL_ENABLED&#34; = &#34;x1&#34; \
+         -o &#34;x$GNUTLS_ENABLED&#34; = &#34;x1&#34; \
+         -o &#34;x$MBEDTLS_ENABLED&#34; = &#34;x1&#34;; then
+@@ -5597,6 &#43;5622,14 @@ AC_MSG_NOTICE([Configured to build curl/libcurl:
+   Features:         ${SUPPORT_FEATURES}
+ ])
+ 
+&#43;# grep -o would simplify this, but is nonportable
+&#43;[non13=`echo &#34;$TLSCHOICE&#34; | $AWK &#39;{split(&#34;bearssl secure-transport&#34;, a); for (i in a) if(match(tolower($0), a[i])) print a[i];}&#39;`]
+&#43;if test -n &#34;$non13&#34;; then
+&#43;  for a in $non13; do
+&#43;    AC_MSG_WARN([$a is enabled for TLS but it does not support TLS 1.3])
+&#43;  done
+&#43;fi
+&#43;
+ if test -n &#34;$experimental&#34;; then
+   for a in $experimental; do
+     AC_MSG_WARN([$a is enabled but marked EXPERIMENTAL. Use with caution!])
+diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
+index d9857a50c2..7be484684a 100644
+--- a/lib/CMakeLists.txt
+&#43;&#43;&#43; b/lib/CMakeLists.txt
+@@ -266,6 &#43;266,8 @@ if(BUILD_SHARED_LIBS)
+         set(CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX &#34;OPENSSL_&#34;)
+       elseif(CURL_USE_MBEDTLS)
+         set(CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX &#34;MBEDTLS_&#34;)
+&#43;      elseif(CURL_USE_BEARSSL)
+&#43;        set(CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX &#34;BEARSSL_&#34;)
+       elseif(CURL_USE_WOLFSSL)
+         set(CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX &#34;WOLFSSL_&#34;)
+       elseif(CURL_USE_GNUTLS)
+diff --git a/lib/Makefile.inc b/lib/Makefile.inc
+index 8b506febcf..fcdca6056d 100644
+--- a/lib/Makefile.inc
+&#43;&#43;&#43; b/lib/Makefile.inc
+@@ -79,6 &#43;79,7 @@ LIB_VAUTH_HFILES =      \
+   vauth/vauth.h
+ 
+ LIB_VTLS_CFILES =           \
+&#43;  vtls/bearssl.c            \
+   vtls/apple.c              \
+   vtls/cipher_suite.c       \
+   vtls/gtls.c               \
+@@ -97,6 &#43;98,7 @@ LIB_VTLS_CFILES =           \
+   vtls/x509asn1.c
+ 
+ LIB_VTLS_HFILES =           \
+&#43;  vtls/bearssl.h            \
+   vtls/apple.h              \
+   vtls/cipher_suite.h       \
+   vtls/gtls.h               \
+diff --git a/lib/curl_config.h.cmake b/lib/curl_config.h.cmake
+index 88b991d7ef..68f3ff7c9e 100644
+--- a/lib/curl_config.h.cmake
+&#43;&#43;&#43; b/lib/curl_config.h.cmake
+@@ -676,6 &#43;676,9 @@ ${SIZEOF_TIME_T_CODE}
+ /* if mbedTLS &lt;4 has the mbedtls_des_crypt_ecb function. */
+ #cmakedefine HAVE_MBEDTLS_DES_CRYPT_ECB 1
+ 
+&#43;/* if BearSSL is enabled */
+&#43;#cmakedefine USE_BEARSSL 1
+&#43;
+ /* if Rustls is enabled */
+ #cmakedefine USE_RUSTLS 1
+ 
+diff --git a/lib/curl_setup.h b/lib/curl_setup.h
+index 7c033623c5..2d904d80d6 100644
+--- a/lib/curl_setup.h
+&#43;&#43;&#43; b/lib/curl_setup.h
+@@ -722,6 &#43;722,7 @@
+ 
+ #if defined(USE_GNUTLS) || defined(USE_OPENSSL) || defined(USE_MBEDTLS) || \
+   defined(USE_WOLFSSL) || defined(USE_SCHANNEL) || \
+&#43;  defined(USE_BEARSSL) || \
+   defined(USE_RUSTLS)
+ #define USE_SSL    /* SSL support has been enabled */
+ #endif
+@@ -759,6 &#43;760,7 @@
+ #  if (defined(USE_OPENSSL) &amp;&amp; defined(HAVE_DES_ECB_ENCRYPT)) ||        \
+   defined(USE_GNUTLS) ||                                                \
+   (defined(USE_MBEDTLS) &amp;&amp; defined(HAVE_MBEDTLS_DES_CRYPT_ECB)) ||      \
+&#43;  defined(USE_BEARSSL) ||                                               \
+   defined(USE_OS400CRYPTO) || defined(USE_WIN32_CRYPTO) ||              \
+   (defined(USE_WOLFSSL) &amp;&amp; defined(HAVE_WOLFSSL_DES_ECB_ENCRYPT))
+ #    define USE_CURL_NTLM_CORE
+diff --git a/lib/vtls/bearssl.c b/lib/vtls/bearssl.c
+new file mode 100644
+index 0000000000..4b65244451
+--- /dev/null
+&#43;&#43;&#43; b/lib/vtls/bearssl.c
+@@ -0,0 &#43;1,1104 @@
+&#43;/***************************************************************************
+&#43; *                                  _   _ ____  _
+&#43; *  Project                     ___| | | |  _ \| |
+&#43; *                             / __| | | | |_) | |
+&#43; *                            | (__| |_| |  _ &lt;| |___
+&#43; *                             \___|\___/|_| \_\_____|
+&#43; *
+&#43; * Copyright (C) Michael Forney, &lt;mforney@mforney.org&gt;
+&#43; *
+&#43; * This software is licensed as described in the file COPYING, which
+&#43; * you should have received as part of this distribution. The terms
+&#43; * are also available at https://curl.se/docs/copyright.html.
+&#43; *
+&#43; * You may opt to use, copy, modify, merge, publish, distribute and/or sell
+&#43; * copies of the Software, and permit persons to whom the Software is
+&#43; * furnished to do so, under the terms of the COPYING file.
+&#43; *
+&#43; * This software is distributed on an &#34;AS IS&#34; basis, WITHOUT WARRANTY OF ANY
+&#43; * KIND, either express or implied.
+&#43; *
+&#43; * SPDX-License-Identifier: curl
+&#43; *
+&#43; ***************************************************************************/
+&#43;#include &#34;../curl_setup.h&#34;
+&#43;
+&#43;#ifdef USE_BEARSSL
+&#43;
+&#43;#include &lt;bearssl.h&gt;
+&#43;
+&#43;#include &#34;bearssl.h&#34;
+&#43;#include &#34;cipher_suite.h&#34;
+&#43;#include &#34;../urldata.h&#34;
+&#43;#include &#34;../sendf.h&#34;
+&#43;#include &#34;../curlx/inet_pton.h&#34;
+&#43;#include &#34;vtls.h&#34;
+&#43;#include &#34;vtls_int.h&#34;
+&#43;#include &#34;vtls_scache.h&#34;
+&#43;#include &#34;../connect.h&#34;
+&#43;#include &#34;../select.h&#34;
+&#43;#include &#34;../multiif.h&#34;
+&#43;#include &#34;../curl_printf.h&#34;
+&#43;
+&#43;/* The last #include files should be: */
+&#43;#include &#34;../curl_memory.h&#34;
+&#43;#include &#34;../memdebug.h&#34;
+&#43;
+&#43;struct x509_context {
+&#43;  const br_x509_class *vtable;
+&#43;  br_x509_minimal_context minimal;
+&#43;  br_x509_decoder_context decoder;
+&#43;  bool verifyhost;
+&#43;  bool verifypeer;
+&#43;  int cert_num;
+&#43;};
+&#43;
+&#43;struct bearssl_ssl_backend_data {
+&#43;  br_ssl_client_context ctx;
+&#43;  struct x509_context x509;
+&#43;  unsigned char buf[BR_SSL_BUFSIZE_BIDI];
+&#43;  br_x509_trust_anchor *anchors;
+&#43;  size_t anchors_len;
+&#43;  const char *protocols[ALPN_ENTRIES_MAX];
+&#43;  /* SSL client context is active */
+&#43;  bool active;
+&#43;  /* size of pending write, yet to be flushed */
+&#43;  size_t pending_write;
+&#43;  BIT(sent_shutdown);
+&#43;};
+&#43;
+&#43;struct cafile_parser {
+&#43;  CURLcode err;
+&#43;  bool in_cert;
+&#43;  br_x509_decoder_context xc;
+&#43;  /* array of trust anchors loaded from CAfile */
+&#43;  br_x509_trust_anchor *anchors;
+&#43;  size_t anchors_len;
+&#43;  /* buffer for DN data */
+&#43;  unsigned char dn[1024];
+&#43;  size_t dn_len;
+&#43;};
+&#43;
+&#43;#define CAFILE_SOURCE_PATH 1
+&#43;#define CAFILE_SOURCE_BLOB 2
+&#43;struct cafile_source {
+&#43;  int type;
+&#43;  const char *data;
+&#43;  size_t len;
+&#43;};
+&#43;
+&#43;static void append_dn(void *ctx, const void *buf, size_t len)
+&#43;{
+&#43;  struct cafile_parser *ca = ctx;
+&#43;
+&#43;  if(ca-&gt;err != CURLE_OK || !ca-&gt;in_cert)
+&#43;    return;
+&#43;  if(sizeof(ca-&gt;dn) - ca-&gt;dn_len &lt; len) {
+&#43;    ca-&gt;err = CURLE_FAILED_INIT;
+&#43;    return;
+&#43;  }
+&#43;  memcpy(ca-&gt;dn &#43; ca-&gt;dn_len, buf, len);
+&#43;  ca-&gt;dn_len &#43;= len;
+&#43;}
+&#43;
+&#43;static void x509_push(void *ctx, const void *buf, size_t len)
+&#43;{
+&#43;  struct cafile_parser *ca = ctx;
+&#43;
+&#43;  if(ca-&gt;in_cert)
+&#43;    br_x509_decoder_push(&amp;ca-&gt;xc, buf, len);
+&#43;}
+&#43;
+&#43;static CURLcode load_cafile(struct cafile_source *source,
+&#43;                            br_x509_trust_anchor **anchors,
+&#43;                            size_t *anchors_len)
+&#43;{
+&#43;  struct cafile_parser ca;
+&#43;  br_pem_decoder_context pc;
+&#43;  br_x509_trust_anchor *ta;
+&#43;  size_t ta_size;
+&#43;  br_x509_trust_anchor *new_anchors;
+&#43;  size_t new_anchors_len;
+&#43;  br_x509_pkey *pkey;
+&#43;  FILE *fp = 0;
+&#43;  unsigned char buf[BUFSIZ];
+&#43;  const unsigned char *p = NULL;
+&#43;  const char *name;
+&#43;  size_t n = 0, i, pushed;
+&#43;
+&#43;  DEBUGASSERT(source-&gt;type == CAFILE_SOURCE_PATH
+&#43;              || source-&gt;type == CAFILE_SOURCE_BLOB);
+&#43;
+&#43;  if(source-&gt;type == CAFILE_SOURCE_PATH) {
+&#43;    fp = fopen(source-&gt;data, &#34;rb&#34;);
+&#43;    if(!fp)
+&#43;      return CURLE_SSL_CACERT_BADFILE;
+&#43;  }
+&#43;
+&#43;  if(source-&gt;type == CAFILE_SOURCE_BLOB &amp;&amp; source-&gt;len &gt; (size_t)INT_MAX)
+&#43;    return CURLE_SSL_CACERT_BADFILE;
+&#43;
+&#43;  ca.err = CURLE_OK;
+&#43;  ca.in_cert = FALSE;
+&#43;  ca.anchors = NULL;
+&#43;  ca.anchors_len = 0;
+&#43;  br_pem_decoder_init(&amp;pc);
+&#43;  br_pem_decoder_setdest(&amp;pc, x509_push, &amp;ca);
+&#43;  do {
+&#43;    if(source-&gt;type == CAFILE_SOURCE_PATH) {
+&#43;      n = fread(buf, 1, sizeof(buf), fp);
+&#43;      if(n == 0)
+&#43;        break;
+&#43;      p = buf;
+&#43;    }
+&#43;    else if(source-&gt;type == CAFILE_SOURCE_BLOB) {
+&#43;      n = source-&gt;len;
+&#43;      p = (const unsigned char *) source-&gt;data;
+&#43;    }
+&#43;    while(n) {
+&#43;      pushed = br_pem_decoder_push(&amp;pc, p, n);
+&#43;      if(ca.err)
+&#43;        goto fail;
+&#43;      p &#43;= pushed;
+&#43;      n -= pushed;
+&#43;
+&#43;      switch(br_pem_decoder_event(&amp;pc)) {
+&#43;      case 0:
+&#43;        break;
+&#43;      case BR_PEM_BEGIN_OBJ:
+&#43;        name = br_pem_decoder_name(&amp;pc);
+&#43;        if(strcmp(name, &#34;CERTIFICATE&#34;) &amp;&amp; strcmp(name, &#34;X509 CERTIFICATE&#34;))
+&#43;          break;
+&#43;        br_x509_decoder_init(&amp;ca.xc, append_dn, &amp;ca);
+&#43;        ca.in_cert = TRUE;
+&#43;        ca.dn_len = 0;
+&#43;        break;
+&#43;      case BR_PEM_END_OBJ:
+&#43;        if(!ca.in_cert)
+&#43;          break;
+&#43;        ca.in_cert = FALSE;
+&#43;        if(br_x509_decoder_last_error(&amp;ca.xc)) {
+&#43;          ca.err = CURLE_SSL_CACERT_BADFILE;
+&#43;          goto fail;
+&#43;        }
+&#43;        /* add trust anchor */
+&#43;        if(ca.anchors_len == SIZE_MAX / sizeof(ca.anchors[0])) {
+&#43;          ca.err = CURLE_OUT_OF_MEMORY;
+&#43;          goto fail;
+&#43;        }
+&#43;        new_anchors_len = ca.anchors_len &#43; 1;
+&#43;        new_anchors = realloc(ca.anchors,
+&#43;                              new_anchors_len * sizeof(ca.anchors[0]));
+&#43;        if(!new_anchors) {
+&#43;          ca.err = CURLE_OUT_OF_MEMORY;
+&#43;          goto fail;
+&#43;        }
+&#43;        ca.anchors = new_anchors;
+&#43;        ca.anchors_len = new_anchors_len;
+&#43;        ta = &amp;ca.anchors[ca.anchors_len - 1];
+&#43;        ta-&gt;dn.data = NULL;
+&#43;        ta-&gt;flags = 0;
+&#43;        if(br_x509_decoder_isCA(&amp;ca.xc))
+&#43;          ta-&gt;flags |= BR_X509_TA_CA;
+&#43;        pkey = br_x509_decoder_get_pkey(&amp;ca.xc);
+&#43;        if(!pkey) {
+&#43;          ca.err = CURLE_SSL_CACERT_BADFILE;
+&#43;          goto fail;
+&#43;        }
+&#43;        ta-&gt;pkey = *pkey;
+&#43;
+&#43;        /* calculate space needed for trust anchor data */
+&#43;        ta_size = ca.dn_len;
+&#43;        switch(pkey-&gt;key_type) {
+&#43;        case BR_KEYTYPE_RSA:
+&#43;          ta_size &#43;= pkey-&gt;key.rsa.nlen &#43; pkey-&gt;key.rsa.elen;
+&#43;          break;
+&#43;        case BR_KEYTYPE_EC:
+&#43;          ta_size &#43;= pkey-&gt;key.ec.qlen;
+&#43;          break;
+&#43;        default:
+&#43;          ca.err = CURLE_FAILED_INIT;
+&#43;          goto fail;
+&#43;        }
+&#43;
+&#43;        /* fill in trust anchor DN and public key data */
+&#43;        ta-&gt;dn.data = malloc(ta_size);
+&#43;        if(!ta-&gt;dn.data) {
+&#43;          ca.err = CURLE_OUT_OF_MEMORY;
+&#43;          goto fail;
+&#43;        }
+&#43;        memcpy(ta-&gt;dn.data, ca.dn, ca.dn_len);
+&#43;        ta-&gt;dn.len = ca.dn_len;
+&#43;        switch(pkey-&gt;key_type) {
+&#43;        case BR_KEYTYPE_RSA:
+&#43;          ta-&gt;pkey.key.rsa.n = ta-&gt;dn.data &#43; ta-&gt;dn.len;
+&#43;          memcpy(ta-&gt;pkey.key.rsa.n, pkey-&gt;key.rsa.n, pkey-&gt;key.rsa.nlen);
+&#43;          ta-&gt;pkey.key.rsa.e = ta-&gt;pkey.key.rsa.n &#43; ta-&gt;pkey.key.rsa.nlen;
+&#43;          memcpy(ta-&gt;pkey.key.rsa.e, pkey-&gt;key.rsa.e, pkey-&gt;key.rsa.elen);
+&#43;          break;
+&#43;        case BR_KEYTYPE_EC:
+&#43;          ta-&gt;pkey.key.ec.q = ta-&gt;dn.data &#43; ta-&gt;dn.len;
+&#43;          memcpy(ta-&gt;pkey.key.ec.q, pkey-&gt;key.ec.q, pkey-&gt;key.ec.qlen);
+&#43;          break;
+&#43;        }
+&#43;        break;
+&#43;      default:
+&#43;        ca.err = CURLE_SSL_CACERT_BADFILE;
+&#43;        goto fail;
+&#43;      }
+&#43;    }
+&#43;  } while(source-&gt;type != CAFILE_SOURCE_BLOB);
+&#43;  if(fp &amp;&amp; ferror(fp))
+&#43;    ca.err = CURLE_READ_ERROR;
+&#43;  else if(ca.in_cert)
+&#43;    ca.err = CURLE_SSL_CACERT_BADFILE;
+&#43;
+&#43;fail:
+&#43;  if(fp)
+&#43;    fclose(fp);
+&#43;  if(ca.err == CURLE_OK) {
+&#43;    *anchors = ca.anchors;
+&#43;    *anchors_len = ca.anchors_len;
+&#43;  }
+&#43;  else {
+&#43;    for(i = 0; i &lt; ca.anchors_len; &#43;&#43;i)
+&#43;      free(ca.anchors[i].dn.data);
+&#43;    free(ca.anchors);
+&#43;  }
+&#43;
+&#43;  return ca.err;
+&#43;}
+&#43;
+&#43;static void x509_start_chain(const br_x509_class **ctx,
+&#43;                             const char *server_name)
+&#43;{
+&#43;  struct x509_context *x509 = (struct x509_context *)ctx;
+&#43;
+&#43;  if(!x509-&gt;verifypeer) {
+&#43;    x509-&gt;cert_num = 0;
+&#43;    return;
+&#43;  }
+&#43;
+&#43;  if(!x509-&gt;verifyhost)
+&#43;    server_name = NULL;
+&#43;  x509-&gt;minimal.vtable-&gt;start_chain(&amp;x509-&gt;minimal.vtable, server_name);
+&#43;}
+&#43;
+&#43;static void x509_start_cert(const br_x509_class **ctx, uint32_t length)
+&#43;{
+&#43;  struct x509_context *x509 = (struct x509_context *)ctx;
+&#43;
+&#43;  if(!x509-&gt;verifypeer) {
+&#43;    /* Only decode the first cert in the chain to obtain the public key */
+&#43;    if(x509-&gt;cert_num == 0)
+&#43;      br_x509_decoder_init(&amp;x509-&gt;decoder, NULL, NULL);
+&#43;    return;
+&#43;  }
+&#43;
+&#43;  x509-&gt;minimal.vtable-&gt;start_cert(&amp;x509-&gt;minimal.vtable, length);
+&#43;}
+&#43;
+&#43;static void x509_append(const br_x509_class **ctx, const unsigned char *buf,
+&#43;                        size_t len)
+&#43;{
+&#43;  struct x509_context *x509 = (struct x509_context *)ctx;
+&#43;
+&#43;  if(!x509-&gt;verifypeer) {
+&#43;    if(x509-&gt;cert_num == 0)
+&#43;      br_x509_decoder_push(&amp;x509-&gt;decoder, buf, len);
+&#43;    return;
+&#43;  }
+&#43;
+&#43;  x509-&gt;minimal.vtable-&gt;append(&amp;x509-&gt;minimal.vtable, buf, len);
+&#43;}
+&#43;
+&#43;static void x509_end_cert(const br_x509_class **ctx)
+&#43;{
+&#43;  struct x509_context *x509 = (struct x509_context *)ctx;
+&#43;
+&#43;  if(!x509-&gt;verifypeer) {
+&#43;    x509-&gt;cert_num&#43;&#43;;
+&#43;    return;
+&#43;  }
+&#43;
+&#43;  x509-&gt;minimal.vtable-&gt;end_cert(&amp;x509-&gt;minimal.vtable);
+&#43;}
+&#43;
+&#43;static unsigned x509_end_chain(const br_x509_class **ctx)
+&#43;{
+&#43;  struct x509_context *x509 = (struct x509_context *)ctx;
+&#43;
+&#43;  if(!x509-&gt;verifypeer) {
+&#43;    return (unsigned)br_x509_decoder_last_error(&amp;x509-&gt;decoder);
+&#43;  }
+&#43;
+&#43;  return x509-&gt;minimal.vtable-&gt;end_chain(&amp;x509-&gt;minimal.vtable);
+&#43;}
+&#43;
+&#43;static const br_x509_pkey *x509_get_pkey(const br_x509_class *const *ctx,
+&#43;                                         unsigned *usages)
+&#43;{
+&#43;  struct x509_context *x509 = (struct x509_context *)CURL_UNCONST(ctx);
+&#43;
+&#43;  if(!x509-&gt;verifypeer) {
+&#43;    /* Nothing in the chain is verified, just return the public key of the
+&#43;       first certificate and allow its usage for both TLS_RSA_* and
+&#43;       TLS_ECDHE_* */
+&#43;    if(usages)
+&#43;      *usages = BR_KEYTYPE_KEYX | BR_KEYTYPE_SIGN;
+&#43;    return br_x509_decoder_get_pkey(&amp;x509-&gt;decoder);
+&#43;  }
+&#43;
+&#43;  return x509-&gt;minimal.vtable-&gt;get_pkey(&amp;x509-&gt;minimal.vtable, usages);
+&#43;}
+&#43;
+&#43;static const br_x509_class x509_vtable = {
+&#43;  sizeof(struct x509_context),
+&#43;  x509_start_chain,
+&#43;  x509_start_cert,
+&#43;  x509_append,
+&#43;  x509_end_cert,
+&#43;  x509_end_chain,
+&#43;  x509_get_pkey
+&#43;};
+&#43;
+&#43;static CURLcode
+&#43;bearssl_set_ssl_version_min_max(struct Curl_easy *data,
+&#43;                                br_ssl_engine_context *ssl_eng,
+&#43;                                struct ssl_primary_config *conn_config)
+&#43;{
+&#43;  unsigned version_min, version_max;
+&#43;
+&#43;  switch(conn_config-&gt;version) {
+&#43;  case CURL_SSLVERSION_DEFAULT:
+&#43;  case CURL_SSLVERSION_TLSv1:
+&#43;  case CURL_SSLVERSION_TLSv1_0:
+&#43;    version_min = BR_TLS10;
+&#43;    break;
+&#43;  case CURL_SSLVERSION_TLSv1_1:
+&#43;    version_min = BR_TLS11;
+&#43;    break;
+&#43;  case CURL_SSLVERSION_TLSv1_2:
+&#43;    version_min = BR_TLS12;
+&#43;    break;
+&#43;  case CURL_SSLVERSION_TLSv1_3:
+&#43;    failf(data, &#34;BearSSL: does not support TLS 1.3&#34;);
+&#43;    return CURLE_SSL_CONNECT_ERROR;
+&#43;  default:
+&#43;    failf(data, &#34;BearSSL: unsupported minimum TLS version value&#34;);
+&#43;    return CURLE_SSL_CONNECT_ERROR;
+&#43;  }
+&#43;
+&#43;  switch(conn_config-&gt;version_max) {
+&#43;  case CURL_SSLVERSION_MAX_DEFAULT:
+&#43;  case CURL_SSLVERSION_MAX_NONE:
+&#43;  case CURL_SSLVERSION_MAX_TLSv1_3:
+&#43;  case CURL_SSLVERSION_MAX_TLSv1_2:
+&#43;    version_max = BR_TLS12;
+&#43;    break;
+&#43;  case CURL_SSLVERSION_MAX_TLSv1_1:
+&#43;    version_max = BR_TLS11;
+&#43;    break;
+&#43;  case CURL_SSLVERSION_MAX_TLSv1_0:
+&#43;    version_max = BR_TLS10;
+&#43;    break;
+&#43;  default:
+&#43;    failf(data, &#34;BearSSL: unsupported maximum TLS version value&#34;);
+&#43;    return CURLE_SSL_CONNECT_ERROR;
+&#43;  }
+&#43;
+&#43;  br_ssl_engine_set_versions(ssl_eng, version_min, version_max);
+&#43;
+&#43;  return CURLE_OK;
+&#43;}
+&#43;
+&#43;static const uint16_t ciphertable[] = {
+&#43;  /* RFC 2246 TLS 1.0 */
+&#43;  BR_TLS_RSA_WITH_3DES_EDE_CBC_SHA,                        /* 0x000A */
+&#43;
+&#43;  /* RFC 3268 TLS 1.0 AES */
+&#43;  BR_TLS_RSA_WITH_AES_128_CBC_SHA,                         /* 0x002F */
+&#43;  BR_TLS_RSA_WITH_AES_256_CBC_SHA,                         /* 0x0035 */
+&#43;
+&#43;  /* RFC 5246 TLS 1.2 */
+&#43;  BR_TLS_RSA_WITH_AES_128_CBC_SHA256,                      /* 0x003C */
+&#43;  BR_TLS_RSA_WITH_AES_256_CBC_SHA256,                      /* 0x003D */
+&#43;
+&#43;  /* RFC 5288 TLS 1.2 AES GCM */
+&#43;  BR_TLS_RSA_WITH_AES_128_GCM_SHA256,                      /* 0x009C */
+&#43;  BR_TLS_RSA_WITH_AES_256_GCM_SHA384,                      /* 0x009D */
+&#43;
+&#43;  /* RFC 4492 TLS 1.0 ECC */
+&#43;  BR_TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,                 /* 0xC003 */
+&#43;  BR_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,                  /* 0xC004 */
+&#43;  BR_TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,                  /* 0xC005 */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,                /* 0xC008 */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,                 /* 0xC009 */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,                 /* 0xC00A */
+&#43;  BR_TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,                   /* 0xC00D */
+&#43;  BR_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,                    /* 0xC00E */
+&#43;  BR_TLS_ECDH_RSA_WITH_AES_256_CBC_SHA,                    /* 0xC00F */
+&#43;  BR_TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,                  /* 0xC012 */
+&#43;  BR_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,                   /* 0xC013 */
+&#43;  BR_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,                   /* 0xC014 */
+&#43;
+&#43;  /* RFC 5289 TLS 1.2 ECC HMAC SHA256/384 */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,              /* 0xC023 */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,              /* 0xC024 */
+&#43;  BR_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,               /* 0xC025 */
+&#43;  BR_TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384,               /* 0xC026 */
+&#43;  BR_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,                /* 0xC027 */
+&#43;  BR_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,                /* 0xC028 */
+&#43;  BR_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256,                 /* 0xC029 */
+&#43;  BR_TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384,                 /* 0xC02A */
+&#43;
+&#43;  /* RFC 5289 TLS 1.2 GCM */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,              /* 0xC02B */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,              /* 0xC02C */
+&#43;  BR_TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256,               /* 0xC02D */
+&#43;  BR_TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384,               /* 0xC02E */
+&#43;  BR_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,                /* 0xC02F */
+&#43;  BR_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,                /* 0xC030 */
+&#43;  BR_TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256,                 /* 0xC031 */
+&#43;  BR_TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384,                 /* 0xC032 */
+&#43;
+&#43;#ifdef BR_TLS_RSA_WITH_AES_128_CCM
+&#43;  /* RFC 6655 TLS 1.2 CCM
+&#43;     Supported since BearSSL 0.6 */
+&#43;  BR_TLS_RSA_WITH_AES_128_CCM,                             /* 0xC09C */
+&#43;  BR_TLS_RSA_WITH_AES_256_CCM,                             /* 0xC09D */
+&#43;  BR_TLS_RSA_WITH_AES_128_CCM_8,                           /* 0xC0A0 */
+&#43;  BR_TLS_RSA_WITH_AES_256_CCM_8,                           /* 0xC0A1 */
+&#43;
+&#43;  /* RFC 7251 TLS 1.2 ECC CCM
+&#43;     Supported since BearSSL 0.6 */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_AES_128_CCM,                     /* 0xC0AC */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_AES_256_CCM,                     /* 0xC0AD */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,                   /* 0xC0AE */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8,                   /* 0xC0AF */
+&#43;#endif
+&#43;
+&#43;  /* RFC 7905 TLS 1.2 ChaCha20-Poly1305
+&#43;     Supported since BearSSL 0.2 */
+&#43;  BR_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,          /* 0xCCA8 */
+&#43;  BR_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,        /* 0xCCA9 */
+&#43;};
+&#43;
+&#43;#define NUM_OF_CIPHERS CURL_ARRAYSIZE(ciphertable)
+&#43;
+&#43;static CURLcode bearssl_set_selected_ciphers(struct Curl_easy *data,
+&#43;                                             br_ssl_engine_context *ssl_eng,
+&#43;                                             const char *ciphers)
+&#43;{
+&#43;  uint16_t selected[NUM_OF_CIPHERS];
+&#43;  size_t count = 0, i;
+&#43;  const char *ptr, *end;
+&#43;
+&#43;  for(ptr = ciphers; ptr[0] != &#39;\0&#39; &amp;&amp; count &lt; NUM_OF_CIPHERS; ptr = end) {
+&#43;    uint16_t id = Curl_cipher_suite_walk_str(&amp;ptr, &amp;end);
+&#43;
+&#43;    /* Check if cipher is supported */
+&#43;    if(id) {
+&#43;      for(i = 0; i &lt; NUM_OF_CIPHERS &amp;&amp; ciphertable[i] != id; i&#43;&#43;);
+&#43;      if(i == NUM_OF_CIPHERS)
+&#43;        id = 0;
+&#43;    }
+&#43;    if(!id) {
+&#43;      if(ptr[0] != &#39;\0&#39;)
+&#43;        infof(data, &#34;BearSSL: unknown cipher in list: \&#34;%.*s\&#34;&#34;,
+&#43;              (int) (end - ptr), ptr);
+&#43;      continue;
+&#43;    }
+&#43;
+&#43;    /* No duplicates allowed */
+&#43;    for(i = 0; i &lt; count &amp;&amp; selected[i] != id; i&#43;&#43;);
+&#43;    if(i &lt; count) {
+&#43;      infof(data, &#34;BearSSL: duplicate cipher in list: \&#34;%.*s\&#34;&#34;,
+&#43;            (int) (end - ptr), ptr);
+&#43;      continue;
+&#43;    }
+&#43;
+&#43;    selected[count&#43;&#43;] = id;
+&#43;  }
+&#43;
+&#43;  if(count == 0) {
+&#43;    failf(data, &#34;BearSSL: no supported cipher in list&#34;);
+&#43;    return CURLE_SSL_CIPHER;
+&#43;  }
+&#43;
+&#43;  br_ssl_engine_set_suites(ssl_eng, selected, count);
+&#43;  return CURLE_OK;
+&#43;}
+&#43;
+&#43;static CURLcode bearssl_connect_step1(struct Curl_cfilter *cf,
+&#43;                                      struct Curl_easy *data)
+&#43;{
+&#43;  struct ssl_connect_data *connssl = cf-&gt;ctx;
+&#43;  struct bearssl_ssl_backend_data *backend =
+&#43;    (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+&#43;  struct ssl_primary_config *conn_config = Curl_ssl_cf_get_primary_config(cf);
+&#43;  struct ssl_config_data *ssl_config = Curl_ssl_cf_get_config(cf, data);
+&#43;  const struct curl_blob *ca_info_blob = conn_config-&gt;ca_info_blob;
+&#43;  const char * const ssl_cafile =
+&#43;    /* CURLOPT_CAINFO_BLOB overrides CURLOPT_CAINFO */
+&#43;    (ca_info_blob ? NULL : conn_config-&gt;CAfile);
+&#43;  const char *hostname = connssl-&gt;peer.hostname;
+&#43;  const bool verifypeer = conn_config-&gt;verifypeer;
+&#43;  const bool verifyhost = conn_config-&gt;verifyhost;
+&#43;  CURLcode ret;
+&#43;  int session_set = 0;
+&#43;
+&#43;  DEBUGASSERT(backend);
+&#43;  CURL_TRC_CF(data, cf, &#34;connect_step1&#34;);
+&#43;
+&#43;  if(verifypeer) {
+&#43;    if(ca_info_blob) {
+&#43;      struct cafile_source source;
+&#43;      source.type = CAFILE_SOURCE_BLOB;
+&#43;      source.data = ca_info_blob-&gt;data;
+&#43;      source.len = ca_info_blob-&gt;len;
+&#43;
+&#43;      CURL_TRC_CF(data, cf, &#34;connect_step1, load ca_info_blob&#34;);
+&#43;      ret = load_cafile(&amp;source, &amp;backend-&gt;anchors, &amp;backend-&gt;anchors_len);
+&#43;      if(ret != CURLE_OK) {
+&#43;        failf(data, &#34;error importing CA certificate blob&#34;);
+&#43;        return ret;
+&#43;      }
+&#43;    }
+&#43;
+&#43;    if(ssl_cafile) {
+&#43;      struct cafile_source source;
+&#43;      source.type = CAFILE_SOURCE_PATH;
+&#43;      source.data = ssl_cafile;
+&#43;      source.len = 0;
+&#43;
+&#43;      CURL_TRC_CF(data, cf, &#34;connect_step1, load cafile&#34;);
+&#43;      ret = load_cafile(&amp;source, &amp;backend-&gt;anchors, &amp;backend-&gt;anchors_len);
+&#43;      if(ret != CURLE_OK) {
+&#43;        failf(data, &#34;error setting certificate verify locations.&#34;
+&#43;              &#34; CAfile: %s&#34;, ssl_cafile);
+&#43;        return ret;
+&#43;      }
+&#43;    }
+&#43;  }
+&#43;
+&#43;  /* initialize SSL context */
+&#43;  br_ssl_client_init_full(&amp;backend-&gt;ctx, &amp;backend-&gt;x509.minimal,
+&#43;                          backend-&gt;anchors, backend-&gt;anchors_len);
+&#43;
+&#43;  ret = bearssl_set_ssl_version_min_max(data, &amp;backend-&gt;ctx.eng, conn_config);
+&#43;  if(ret != CURLE_OK)
+&#43;    return ret;
+&#43;
+&#43;  br_ssl_engine_set_buffer(&amp;backend-&gt;ctx.eng, backend-&gt;buf,
+&#43;                           sizeof(backend-&gt;buf), 1);
+&#43;
+&#43;  if(conn_config-&gt;cipher_list) {
+&#43;    /* Override the ciphers as specified. For the default cipher list see the
+&#43;       BearSSL source code of br_ssl_client_init_full() */
+&#43;    CURL_TRC_CF(data, cf, &#34;connect_step1, set ciphers&#34;);
+&#43;    ret = bearssl_set_selected_ciphers(data, &amp;backend-&gt;ctx.eng,
+&#43;                                       conn_config-&gt;cipher_list);
+&#43;    if(ret)
+&#43;      return ret;
+&#43;  }
+&#43;
+&#43;  /* initialize X.509 context */
+&#43;  backend-&gt;x509.vtable = &amp;x509_vtable;
+&#43;  backend-&gt;x509.verifypeer = verifypeer;
+&#43;  backend-&gt;x509.verifyhost = verifyhost;
+&#43;  br_ssl_engine_set_x509(&amp;backend-&gt;ctx.eng, &amp;backend-&gt;x509.vtable);
+&#43;
+&#43;  if(ssl_config-&gt;primary.cache_session) {
+&#43;    struct Curl_ssl_session *sc_session = NULL;
+&#43;
+&#43;    ret = Curl_ssl_scache_take(cf, data, connssl-&gt;peer.scache_key,
+&#43;                               &amp;sc_session);
+&#43;    if(!ret &amp;&amp; sc_session &amp;&amp; sc_session-&gt;sdata &amp;&amp; sc_session-&gt;sdata_len) {
+&#43;      const br_ssl_session_parameters *session;
+&#43;      session = (const br_ssl_session_parameters *)sc_session-&gt;sdata;
+&#43;      br_ssl_engine_set_session_parameters(&amp;backend-&gt;ctx.eng, session);
+&#43;      session_set = 1;
+&#43;      infof(data, &#34;BearSSL: reusing session ID&#34;);
+&#43;      /* single use of sessions */
+&#43;      Curl_ssl_scache_return(cf, data, connssl-&gt;peer.scache_key, sc_session);
+&#43;    }
+&#43;  }
+&#43;
+&#43;  if(connssl-&gt;alpn) {
+&#43;    struct alpn_proto_buf proto;
+&#43;    size_t i;
+&#43;
+&#43;    for(i = 0; i &lt; connssl-&gt;alpn-&gt;count; &#43;&#43;i) {
+&#43;      backend-&gt;protocols[i] = connssl-&gt;alpn-&gt;entries[i];
+&#43;    }
+&#43;    br_ssl_engine_set_protocol_names(&amp;backend-&gt;ctx.eng, backend-&gt;protocols,
+&#43;                                     connssl-&gt;alpn-&gt;count);
+&#43;    Curl_alpn_to_proto_str(&amp;proto, connssl-&gt;alpn);
+&#43;    infof(data, VTLS_INFOF_ALPN_OFFER_1STR, proto.data);
+&#43;  }
+&#43;
+&#43;  if(connssl-&gt;peer.type != CURL_SSL_PEER_DNS) {
+&#43;    if(verifyhost) {
+&#43;      failf(data, &#34;BearSSL: &#34;
+&#43;            &#34;host verification of IP address is not supported&#34;);
+&#43;      return CURLE_PEER_FAILED_VERIFICATION;
+&#43;    }
+&#43;    hostname = NULL;
+&#43;  }
+&#43;  else {
+&#43;    if(!connssl-&gt;peer.sni) {
+&#43;      failf(data, &#34;Failed to set SNI&#34;);
+&#43;      return CURLE_SSL_CONNECT_ERROR;
+&#43;    }
+&#43;    hostname = connssl-&gt;peer.sni;
+&#43;    CURL_TRC_CF(data, cf, &#34;connect_step1, SNI set&#34;);
+&#43;  }
+&#43;
+&#43;  /* give application a chance to interfere with SSL set up. */
+&#43;  if(data-&gt;set.ssl.fsslctx) {
+&#43;    Curl_set_in_callback(data, TRUE);
+&#43;    ret = (*data-&gt;set.ssl.fsslctx)(data, &amp;backend-&gt;ctx,
+&#43;                                   data-&gt;set.ssl.fsslctxp);
+&#43;    Curl_set_in_callback(data, FALSE);
+&#43;    if(ret) {
+&#43;      failf(data, &#34;BearSSL: error signaled by ssl ctx callback&#34;);
+&#43;      return ret;
+&#43;    }
+&#43;  }
+&#43;
+&#43;  if(!br_ssl_client_reset(&amp;backend-&gt;ctx, hostname, session_set))
+&#43;    return CURLE_FAILED_INIT;
+&#43;  backend-&gt;active = TRUE;
+&#43;
+&#43;  connssl-&gt;connecting_state = ssl_connect_2;
+&#43;
+&#43;  return CURLE_OK;
+&#43;}
+&#43;
+&#43;static CURLcode bearssl_run_until(struct Curl_cfilter *cf,
+&#43;                                  struct Curl_easy *data,
+&#43;                                  unsigned target)
+&#43;{
+&#43;  struct ssl_connect_data *connssl = cf-&gt;ctx;
+&#43;  struct bearssl_ssl_backend_data *backend =
+&#43;    (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+&#43;  unsigned state;
+&#43;  unsigned char *buf;
+&#43;  size_t len;
+&#43;  ssize_t ret;
+&#43;  CURLcode result;
+&#43;  int err;
+&#43;
+&#43;  DEBUGASSERT(backend);
+&#43;
+&#43;  connssl-&gt;io_need = CURL_SSL_IO_NEED_NONE;
+&#43;  for(;;) {
+&#43;    state = br_ssl_engine_current_state(&amp;backend-&gt;ctx.eng);
+&#43;    if(state &amp; BR_SSL_CLOSED) {
+&#43;      err = br_ssl_engine_last_error(&amp;backend-&gt;ctx.eng);
+&#43;      switch(err) {
+&#43;      case BR_ERR_OK:
+&#43;        /* TLS close notify */
+&#43;        if(connssl-&gt;state != ssl_connection_complete) {
+&#43;          failf(data, &#34;SSL: connection closed during handshake&#34;);
+&#43;          return CURLE_SSL_CONNECT_ERROR;
+&#43;        }
+&#43;        return CURLE_OK;
+&#43;      case BR_ERR_X509_EXPIRED:
+&#43;        failf(data, &#34;SSL: X.509 verification: &#34;
+&#43;              &#34;certificate is expired or not yet valid&#34;);
+&#43;        return CURLE_PEER_FAILED_VERIFICATION;
+&#43;      case BR_ERR_X509_BAD_SERVER_NAME:
+&#43;        failf(data, &#34;SSL: X.509 verification: &#34;
+&#43;              &#34;expected server name was not found in the chain&#34;);
+&#43;        return CURLE_PEER_FAILED_VERIFICATION;
+&#43;      case BR_ERR_X509_NOT_TRUSTED:
+&#43;        failf(data, &#34;SSL: X.509 verification: &#34;
+&#43;              &#34;chain could not be linked to a trust anchor&#34;);
+&#43;        return CURLE_PEER_FAILED_VERIFICATION;
+&#43;      default:;
+&#43;      }
+&#43;      failf(data, &#34;BearSSL: connection error 0x%04x&#34;, err);
+&#43;      /* X.509 errors are documented to have the range 32..63 */
+&#43;      if(err &gt;= 32 &amp;&amp; err &lt; 64)
+&#43;        return CURLE_PEER_FAILED_VERIFICATION;
+&#43;      return CURLE_SSL_CONNECT_ERROR;
+&#43;    }
+&#43;    if(state &amp; target)
+&#43;      return CURLE_OK;
+&#43;    if(state &amp; BR_SSL_SENDREC) {
+&#43;      buf = br_ssl_engine_sendrec_buf(&amp;backend-&gt;ctx.eng, &amp;len);
+&#43;      ret = Curl_conn_cf_send(cf-&gt;next, data, (const char *)buf, len, FALSE,
+&#43;                              &amp;result);
+&#43;      CURL_TRC_CF(data, cf, &#34;ssl_send(len=%zu) -&gt; %zd, %d&#34;, len, ret, result);
+&#43;      if(ret &lt;= 0) {
+&#43;        if(result == CURLE_AGAIN)
+&#43;          connssl-&gt;io_need |= CURL_SSL_IO_NEED_SEND;
+&#43;        return result;
+&#43;      }
+&#43;      br_ssl_engine_sendrec_ack(&amp;backend-&gt;ctx.eng, ret);
+&#43;    }
+&#43;    else if(state &amp; BR_SSL_RECVREC) {
+&#43;      buf = br_ssl_engine_recvrec_buf(&amp;backend-&gt;ctx.eng, &amp;len);
+&#43;      ret = Curl_conn_cf_recv(cf-&gt;next, data, (char *)buf, len, &amp;result);
+&#43;      CURL_TRC_CF(data, cf, &#34;ssl_recv(len=%zu) -&gt; %zd, %d&#34;, len, ret, result);
+&#43;      if(ret == 0) {
+&#43;        failf(data, &#34;SSL: EOF without close notify&#34;);
+&#43;        return CURLE_RECV_ERROR;
+&#43;      }
+&#43;      if(ret &lt;= 0) {
+&#43;        if(result == CURLE_AGAIN)
+&#43;          connssl-&gt;io_need |= CURL_SSL_IO_NEED_RECV;
+&#43;        return result;
+&#43;      }
+&#43;      br_ssl_engine_recvrec_ack(&amp;backend-&gt;ctx.eng, ret);
+&#43;    }
+&#43;  }
+&#43;}
+&#43;
+&#43;static CURLcode bearssl_connect_step2(struct Curl_cfilter *cf,
+&#43;                                      struct Curl_easy *data)
+&#43;{
+&#43;  struct ssl_connect_data *connssl = cf-&gt;ctx;
+&#43;  struct bearssl_ssl_backend_data *backend =
+&#43;    (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+&#43;  br_ssl_session_parameters session;
+&#43;  char cipher_str[64];
+&#43;  CURLcode ret;
+&#43;
+&#43;  DEBUGASSERT(backend);
+&#43;  CURL_TRC_CF(data, cf, &#34;connect_step2&#34;);
+&#43;
+&#43;  ret = bearssl_run_until(cf, data, BR_SSL_SENDAPP | BR_SSL_RECVAPP);
+&#43;  if(ret == CURLE_AGAIN)
+&#43;    return CURLE_OK;
+&#43;  if(ret == CURLE_OK) {
+&#43;    unsigned int tver;
+&#43;    int subver = 0;
+&#43;
+&#43;    if(br_ssl_engine_current_state(&amp;backend-&gt;ctx.eng) == BR_SSL_CLOSED) {
+&#43;      failf(data, &#34;SSL: connection closed during handshake&#34;);
+&#43;      return CURLE_SSL_CONNECT_ERROR;
+&#43;    }
+&#43;    connssl-&gt;connecting_state = ssl_connect_3;
+&#43;    /* Informational message */
+&#43;    tver = br_ssl_engine_get_version(&amp;backend-&gt;ctx.eng);
+&#43;    switch(tver) {
+&#43;    case BR_TLS12:
+&#43;      subver = 2; /* 1.2 */
+&#43;      break;
+&#43;    case BR_TLS11:
+&#43;      subver = 1; /* 1.1 */
+&#43;      break;
+&#43;    case BR_TLS10: /* 1.0 */
+&#43;    default: /* unknown, leave it at zero */
+&#43;      break;
+&#43;    }
+&#43;    br_ssl_engine_get_session_parameters(&amp;backend-&gt;ctx.eng, &amp;session);
+&#43;    Curl_cipher_suite_get_str(session.cipher_suite, cipher_str,
+&#43;                              sizeof(cipher_str), TRUE);
+&#43;    infof(data, &#34;BearSSL: TLS v1.%d connection using %s&#34;, subver,
+&#43;          cipher_str);
+&#43;  }
+&#43;  return ret;
+&#43;}
+&#43;
+&#43;static CURLcode bearssl_connect_step3(struct Curl_cfilter *cf,
+&#43;                                      struct Curl_easy *data)
+&#43;{
+&#43;  struct ssl_connect_data *connssl = cf-&gt;ctx;
+&#43;  struct bearssl_ssl_backend_data *backend =
+&#43;    (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+&#43;  struct ssl_config_data *ssl_config = Curl_ssl_cf_get_config(cf, data);
+&#43;  CURLcode ret;
+&#43;
+&#43;  DEBUGASSERT(ssl_connect_3 == connssl-&gt;connecting_state);
+&#43;  DEBUGASSERT(backend);
+&#43;  CURL_TRC_CF(data, cf, &#34;connect_step3&#34;);
+&#43;
+&#43;  if(connssl-&gt;alpn) {
+&#43;    const char *proto;
+&#43;
+&#43;    proto = br_ssl_engine_get_selected_protocol(&amp;backend-&gt;ctx.eng);
+&#43;    Curl_alpn_set_negotiated(cf, data, connssl, (const unsigned char *)proto,
+&#43;                             proto ? strlen(proto) : 0);
+&#43;  }
+&#43;
+&#43;  if(ssl_config-&gt;primary.cache_session) {
+&#43;    struct Curl_ssl_session *sc_session;
+&#43;    br_ssl_session_parameters *session;
+&#43;
+&#43;    session = malloc(sizeof(*session));
+&#43;    if(!session)
+&#43;      return CURLE_OUT_OF_MEMORY;
+&#43;    br_ssl_engine_get_session_parameters(&amp;backend-&gt;ctx.eng, session);
+&#43;    ret = Curl_ssl_session_create((unsigned char *)session, sizeof(*session),
+&#43;                                  (int)session-&gt;version,
+&#43;                                  connssl-&gt;negotiated.alpn,
+&#43;                                  0, 0, &amp;sc_session);
+&#43;    if(!ret) {
+&#43;      ret = Curl_ssl_scache_put(cf, data, connssl-&gt;peer.scache_key,
+&#43;                                sc_session);
+&#43;      /* took ownership of `sc_session` */
+&#43;    }
+&#43;    if(ret)
+&#43;      return ret;
+&#43;  }
+&#43;
+&#43;  connssl-&gt;connecting_state = ssl_connect_done;
+&#43;
+&#43;  return CURLE_OK;
+&#43;}
+&#43;
+&#43;static ssize_t bearssl_send(struct Curl_cfilter *cf, struct Curl_easy *data,
+&#43;                            const void *buf, size_t len, CURLcode *err)
+&#43;{
+&#43;  struct ssl_connect_data *connssl = cf-&gt;ctx;
+&#43;  struct bearssl_ssl_backend_data *backend =
+&#43;    (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+&#43;  unsigned char *app;
+&#43;  size_t applen;
+&#43;
+&#43;  DEBUGASSERT(backend);
+&#43;
+&#43;  for(;;) {
+&#43;    *err = bearssl_run_until(cf, data, BR_SSL_SENDAPP);
+&#43;    if(*err)
+&#43;      return -1;
+&#43;    app = br_ssl_engine_sendapp_buf(&amp;backend-&gt;ctx.eng, &amp;applen);
+&#43;    if(!app) {
+&#43;      failf(data, &#34;SSL: connection closed during write&#34;);
+&#43;      *err = CURLE_SEND_ERROR;
+&#43;      return -1;
+&#43;    }
+&#43;    if(backend-&gt;pending_write) {
+&#43;      applen = backend-&gt;pending_write;
+&#43;      backend-&gt;pending_write = 0;
+&#43;      return applen;
+&#43;    }
+&#43;    if(applen &gt; len)
+&#43;      applen = len;
+&#43;    memcpy(app, buf, applen);
+&#43;    br_ssl_engine_sendapp_ack(&amp;backend-&gt;ctx.eng, applen);
+&#43;    br_ssl_engine_flush(&amp;backend-&gt;ctx.eng, 0);
+&#43;    backend-&gt;pending_write = applen;
+&#43;  }
+&#43;}
+&#43;
+&#43;static ssize_t bearssl_recv(struct Curl_cfilter *cf, struct Curl_easy *data,
+&#43;                            char *buf, size_t len, CURLcode *err)
+&#43;{
+&#43;  struct ssl_connect_data *connssl = cf-&gt;ctx;
+&#43;  struct bearssl_ssl_backend_data *backend =
+&#43;    (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+&#43;  unsigned char *app;
+&#43;  size_t applen;
+&#43;
+&#43;  DEBUGASSERT(backend);
+&#43;
+&#43;  *err = bearssl_run_until(cf, data, BR_SSL_RECVAPP);
+&#43;  if(*err != CURLE_OK)
+&#43;    return -1;
+&#43;  app = br_ssl_engine_recvapp_buf(&amp;backend-&gt;ctx.eng, &amp;applen);
+&#43;  if(!app)
+&#43;    return 0;
+&#43;  if(applen &gt; len)
+&#43;    applen = len;
+&#43;  memcpy(buf, app, applen);
+&#43;  br_ssl_engine_recvapp_ack(&amp;backend-&gt;ctx.eng, applen);
+&#43;
+&#43;  return applen;
+&#43;}
+&#43;
+&#43;static CURLcode bearssl_connect(struct Curl_cfilter *cf,
+&#43;                                struct Curl_easy *data,
+&#43;                                bool *done)
+&#43;{
+&#43;  CURLcode ret;
+&#43;  struct ssl_connect_data *connssl = cf-&gt;ctx;
+&#43;
+&#43;  CURL_TRC_CF(data, cf, &#34;connect()&#34;);
+&#43;  /* check if the connection has already been established */
+&#43;  if(ssl_connection_complete == connssl-&gt;state) {
+&#43;    CURL_TRC_CF(data, cf, &#34;connect_common, connected&#34;);
+&#43;    *done = TRUE;
+&#43;    return CURLE_OK;
+&#43;  }
+&#43;
+&#43;  *done = FALSE;
+&#43;  connssl-&gt;io_need = CURL_SSL_IO_NEED_NONE;
+&#43;
+&#43;  if(ssl_connect_1 == connssl-&gt;connecting_state) {
+&#43;    ret = bearssl_connect_step1(cf, data);
+&#43;    if(ret)
+&#43;      return ret;
+&#43;  }
+&#43;
+&#43;  if(ssl_connect_2 == connssl-&gt;connecting_state) {
+&#43;    ret = bearssl_connect_step2(cf, data);
+&#43;    if(ret)
+&#43;      return ret;
+&#43;  }
+&#43;
+&#43;  if(ssl_connect_3 == connssl-&gt;connecting_state) {
+&#43;    ret = bearssl_connect_step3(cf, data);
+&#43;    if(ret)
+&#43;      return ret;
+&#43;  }
+&#43;
+&#43;  if(ssl_connect_done == connssl-&gt;connecting_state) {
+&#43;    connssl-&gt;state = ssl_connection_complete;
+&#43;    *done = TRUE;
+&#43;  }
+&#43;
+&#43;  return CURLE_OK;
+&#43;}
+&#43;
+&#43;static size_t bearssl_version(char *buffer, size_t size)
+&#43;{
+&#43;  return msnprintf(buffer, size, &#34;BearSSL&#34;);
+&#43;}
+&#43;
+&#43;static bool bearssl_data_pending(struct Curl_cfilter *cf,
+&#43;                                 const struct Curl_easy *data)
+&#43;{
+&#43;  struct ssl_connect_data *ctx = cf-&gt;ctx;
+&#43;  struct bearssl_ssl_backend_data *backend;
+&#43;
+&#43;  (void)data;
+&#43;  DEBUGASSERT(ctx &amp;&amp; ctx-&gt;backend);
+&#43;  backend = (struct bearssl_ssl_backend_data *)ctx-&gt;backend;
+&#43;  return br_ssl_engine_current_state(&amp;backend-&gt;ctx.eng) &amp; BR_SSL_RECVAPP;
+&#43;}
+&#43;
+&#43;static CURLcode bearssl_random(struct Curl_easy *data UNUSED_PARAM,
+&#43;                               unsigned char *entropy, size_t length)
+&#43;{
+&#43;  static br_hmac_drbg_context ctx;
+&#43;  static bool seeded = FALSE;
+&#43;
+&#43;  if(!seeded) {
+&#43;    br_prng_seeder seeder;
+&#43;
+&#43;    br_hmac_drbg_init(&amp;ctx, &amp;br_sha256_vtable, NULL, 0);
+&#43;    seeder = br_prng_seeder_system(NULL);
+&#43;    if(!seeder || !seeder(&amp;ctx.vtable))
+&#43;      return CURLE_FAILED_INIT;
+&#43;    seeded = TRUE;
+&#43;  }
+&#43;  br_hmac_drbg_generate(&amp;ctx, entropy, length);
+&#43;
+&#43;  return CURLE_OK;
+&#43;}
+&#43;
+&#43;static void *bearssl_get_internals(struct ssl_connect_data *connssl,
+&#43;                                   CURLINFO info UNUSED_PARAM)
+&#43;{
+&#43;  struct bearssl_ssl_backend_data *backend =
+&#43;    (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+&#43;  DEBUGASSERT(backend);
+&#43;  return &amp;backend-&gt;ctx;
+&#43;}
+&#43;
+&#43;static CURLcode bearssl_shutdown(struct Curl_cfilter *cf,
+&#43;                                 struct Curl_easy *data,
+&#43;                                 bool send_shutdown, bool *done)
+&#43;{
+&#43;  struct ssl_connect_data *connssl = cf-&gt;ctx;
+&#43;  struct bearssl_ssl_backend_data *backend =
+&#43;    (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+&#43;  CURLcode result;
+&#43;
+&#43;  DEBUGASSERT(backend);
+&#43;  if(!backend-&gt;active || cf-&gt;shutdown) {
+&#43;    *done = TRUE;
+&#43;    return CURLE_OK;
+&#43;  }
+&#43;
+&#43;  *done = FALSE;
+&#43;  if(!backend-&gt;sent_shutdown) {
+&#43;    (void)send_shutdown; /* unknown how to suppress our close notify */
+&#43;    br_ssl_engine_close(&amp;backend-&gt;ctx.eng);
+&#43;    backend-&gt;sent_shutdown = TRUE;
+&#43;  }
+&#43;
+&#43;  result = bearssl_run_until(cf, data, BR_SSL_CLOSED);
+&#43;  if(result == CURLE_OK) {
+&#43;    *done = TRUE;
+&#43;  }
+&#43;  else if(result == CURLE_AGAIN) {
+&#43;    CURL_TRC_CF(data, cf, &#34;shutdown EAGAIN, io_need=%x&#34;, connssl-&gt;io_need);
+&#43;    result = CURLE_OK;
+&#43;  }
+&#43;  else
+&#43;    CURL_TRC_CF(data, cf, &#34;shutdown error: %d&#34;, result);
+&#43;
+&#43;  cf-&gt;shutdown = (result || *done);
+&#43;  return result;
+&#43;}
+&#43;
+&#43;static void bearssl_close(struct Curl_cfilter *cf, struct Curl_easy *data)
+&#43;{
+&#43;  struct ssl_connect_data *connssl = cf-&gt;ctx;
+&#43;  struct bearssl_ssl_backend_data *backend =
+&#43;    (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+&#43;  size_t i;
+&#43;
+&#43;  (void)data;
+&#43;  DEBUGASSERT(backend);
+&#43;
+&#43;  backend-&gt;active = FALSE;
+&#43;  if(backend-&gt;anchors) {
+&#43;    for(i = 0; i &lt; backend-&gt;anchors_len; &#43;&#43;i)
+&#43;      free(backend-&gt;anchors[i].dn.data);
+&#43;    Curl_safefree(backend-&gt;anchors);
+&#43;  }
+&#43;}
+&#43;
+&#43;static CURLcode bearssl_sha256sum(const unsigned char *input,
+&#43;                                  size_t inputlen,
+&#43;                                  unsigned char *sha256sum,
+&#43;                                  size_t sha256len UNUSED_PARAM)
+&#43;{
+&#43;  br_sha256_context ctx;
+&#43;
+&#43;  br_sha256_init(&amp;ctx);
+&#43;  br_sha256_update(&amp;ctx, input, inputlen);
+&#43;  br_sha256_out(&amp;ctx, sha256sum);
+&#43;  return CURLE_OK;
+&#43;}
+&#43;
+&#43;const struct Curl_ssl Curl_ssl_bearssl = {
+&#43;  { CURLSSLBACKEND_BEARSSL, &#34;bearssl&#34; }, /* info */
+&#43;
+&#43;  SSLSUPP_CAINFO_BLOB |
+&#43;  SSLSUPP_SSL_CTX |
+&#43;  SSLSUPP_HTTPS_PROXY |
+&#43;  SSLSUPP_CIPHER_LIST,
+&#43;
+&#43;  sizeof(struct bearssl_ssl_backend_data),
+&#43;
+&#43;  NULL,                            /* init */
+&#43;  NULL,                            /* cleanup */
+&#43;  bearssl_version,                 /* version */
+&#43;  bearssl_shutdown,                /* shutdown */
+&#43;  bearssl_data_pending,            /* data_pending */
+&#43;  bearssl_random,                  /* random */
+&#43;  NULL,                            /* cert_status_request */
+&#43;  bearssl_connect,                 /* connect */
+&#43;  Curl_ssl_adjust_pollset,         /* adjust_pollset */
+&#43;  bearssl_get_internals,           /* get_internals */
+&#43;  bearssl_close,                   /* close_one */
+&#43;  NULL,                            /* close_all */
+&#43;  NULL,                            /* set_engine */
+&#43;  NULL,                            /* set_engine_default */
+&#43;  NULL,                            /* engines_list */
+&#43;  NULL,                            /* false_start */
+&#43;  bearssl_sha256sum,               /* sha256sum */
+&#43;  bearssl_recv,                    /* recv decrypted data */
+&#43;  bearssl_send,                    /* send data to encrypt */
+&#43;  NULL,                            /* get_channel_binding */
+&#43;};
+&#43;
+&#43;#endif /* USE_BEARSSL */
+diff --git a/lib/vtls/bearssl.h b/lib/vtls/bearssl.h
+new file mode 100644
+index 0000000000..8bb254f7da
+--- /dev/null
+&#43;&#43;&#43; b/lib/vtls/bearssl.h
+@@ -0,0 &#43;1,34 @@
+&#43;#ifndef HEADER_CURL_BEARSSL_H
+&#43;#define HEADER_CURL_BEARSSL_H
+&#43;/***************************************************************************
+&#43; *                                  _   _ ____  _
+&#43; *  Project                     ___| | | |  _ \| |
+&#43; *                             / __| | | | |_) | |
+&#43; *                            | (__| |_| |  _ &lt;| |___
+&#43; *                             \___|\___/|_| \_\_____|
+&#43; *
+&#43; * Copyright (C) Michael Forney, &lt;mforney@mforney.org&gt;
+&#43; *
+&#43; * This software is licensed as described in the file COPYING, which
+&#43; * you should have received as part of this distribution. The terms
+&#43; * are also available at https://curl.se/docs/copyright.html.
+&#43; *
+&#43; * You may opt to use, copy, modify, merge, publish, distribute and/or sell
+&#43; * copies of the Software, and permit persons to whom the Software is
+&#43; * furnished to do so, under the terms of the COPYING file.
+&#43; *
+&#43; * This software is distributed on an &#34;AS IS&#34; basis, WITHOUT WARRANTY OF ANY
+&#43; * KIND, either express or implied.
+&#43; *
+&#43; * SPDX-License-Identifier: curl
+&#43; *
+&#43; ***************************************************************************/
+&#43;
+&#43;#include &#34;../curl_setup.h&#34;
+&#43;
+&#43;#ifdef USE_BEARSSL
+&#43;
+&#43;extern const struct Curl_ssl Curl_ssl_bearssl;
+&#43;
+&#43;#endif /* USE_BEARSSL */
+&#43;#endif /* HEADER_CURL_BEARSSL_H */
+diff --git a/lib/vtls/cipher_suite.c b/lib/vtls/cipher_suite.c
+index 23fb3a3c5d..47de782a49 100644
+--- a/lib/vtls/cipher_suite.c
+&#43;&#43;&#43; b/lib/vtls/cipher_suite.c
+@@ -23,7 &#43;23,7 @@
+  ***************************************************************************/
+ #include &#34;../curl_setup.h&#34;
+ 
+-#if defined(USE_MBEDTLS) || defined(USE_RUSTLS)
+&#43;#if defined(USE_MBEDTLS) || defined(USE_BEARSSL) || defined(USE_RUSTLS)
+ #include &#34;cipher_suite.h&#34;
+ #include &lt;string.h&gt;
+ 
+@@ -79,7 &#43;79,7 @@ static const char *cs_txt =
+   &#34;SHA&#34; &#34;\0&#34;
+   &#34;SHA256&#34; &#34;\0&#34;
+   &#34;SHA384&#34; &#34;\0&#34;
+-#ifdef USE_MBEDTLS
+&#43;#if defined(USE_MBEDTLS) || defined(USE_BEARSSL)
+   &#34;ARIA&#34; &#34;\0&#34;
+   &#34;ARIA128&#34; &#34;\0&#34;
+   &#34;ARIA256&#34; &#34;\0&#34;
+@@ -120,7 &#43;120,7 @@ enum {
+   CS_TXT_IDX_SHA,
+   CS_TXT_IDX_SHA256,
+   CS_TXT_IDX_SHA384,
+-#ifdef USE_MBEDTLS
+&#43;#if defined(USE_MBEDTLS) || defined(USE_BEARSSL)
+   CS_TXT_IDX_ARIA,
+   CS_TXT_IDX_ARIA128,
+   CS_TXT_IDX_ARIA256,
+@@ -159,7 &#43;159,7 @@ struct cs_entry {
+ /* !checksrc! disable COMMANOSPACE all */
+ static const struct cs_entry cs_list [] = {
+   /* TLS 1.3 ciphers */
+-#if defined(USE_MBEDTLS) || defined(USE_RUSTLS)
+&#43;#if defined(USE_MBEDTLS) || defined(USE_BEARSSL) || defined(USE_RUSTLS)
+   CS_ENTRY(0x1301, TLS,AES,128,GCM,SHA256,,,),
+   CS_ENTRY(0x1302, TLS,AES,256,GCM,SHA384,,,),
+   CS_ENTRY(0x1303, TLS,CHACHA20,POLY1305,SHA256,,,,),
+@@ -321,7 &#43;321,19 @@ static const struct cs_entry cs_list [] = {
+   CS_ENTRY(0xCCAB, TLS,PSK,WITH,CHACHA20,POLY1305,SHA256,,),
+   CS_ENTRY(0xCCAB, PSK,CHACHA20,POLY1305,,,,,),
+ #endif
+-#ifdef USE_MBEDTLS
+&#43;#ifdef USE_BEARSSL
+&#43;  CS_ENTRY(0x000A, TLS,RSA,WITH,3DES,EDE,CBC,SHA,),
+&#43;  CS_ENTRY(0x000A, DES,CBC3,SHA,,,,,),
+&#43;  CS_ENTRY(0xC003, TLS,ECDH,ECDSA,WITH,3DES,EDE,CBC,SHA),
+&#43;  CS_ENTRY(0xC003, ECDH,ECDSA,DES,CBC3,SHA,,,),
+&#43;  CS_ENTRY(0xC008, TLS,ECDHE,ECDSA,WITH,3DES,EDE,CBC,SHA),
+&#43;  CS_ENTRY(0xC008, ECDHE,ECDSA,DES,CBC3,SHA,,,),
+&#43;  CS_ENTRY(0xC00D, TLS,ECDH,RSA,WITH,3DES,EDE,CBC,SHA),
+&#43;  CS_ENTRY(0xC00D, ECDH,RSA,DES,CBC3,SHA,,,),
+&#43;  CS_ENTRY(0xC012, TLS,ECDHE,RSA,WITH,3DES,EDE,CBC,SHA),
+&#43;  CS_ENTRY(0xC012, ECDHE,RSA,DES,CBC3,SHA,,,),
+&#43;#endif
+&#43;#if defined(USE_MBEDTLS) || defined(USE_BEARSSL)
+   CS_ENTRY(0xC09C, TLS,RSA,WITH,AES,128,CCM,,),
+   CS_ENTRY(0xC09C, AES128,CCM,,,,,,),
+   CS_ENTRY(0xC09D, TLS,RSA,WITH,AES,256,CCM,,),
+@@ -707,4 &#43;719,4 @@ int Curl_cipher_suite_get_str(uint16_t id, char *buf, size_t buf_size,
+   return r;
+ }
+ 
+-#endif /* defined(USE_MBEDTLS) || defined(USE_RUSTLS) */
+&#43;#endif /* defined(USE_MBEDTLS) || defined(USE_BEARSSL) || defined(USE_RUSTLS) */
+diff --git a/lib/vtls/cipher_suite.h b/lib/vtls/cipher_suite.h
+index a1dcbc524f..cd556db10f 100644
+--- a/lib/vtls/cipher_suite.h
+&#43;&#43;&#43; b/lib/vtls/cipher_suite.h
+@@ -26,7 &#43;26,8 @@
+ 
+ #include &#34;../curl_setup.h&#34;
+ 
+-#if defined(USE_MBEDTLS) || defined(USE_RUSTLS)
+&#43;#if defined(USE_SECTRANSP) || defined(USE_MBEDTLS) || \
+&#43;    defined(USE_BEARSSL) || defined(USE_RUSTLS)
+ #include &lt;stdint.h&gt;
+ 
+ /* Lookup IANA id for cipher suite string, returns 0 if not recognized */
+@@ -42,5 &#43;43,6 @@ uint16_t Curl_cipher_suite_walk_str(const char **str, const char **end);
+ int Curl_cipher_suite_get_str(uint16_t id, char *buf, size_t buf_size,
+                               bool prefer_rfc);
+ 
+-#endif /* defined(USE_MBEDTLS) || defined(USE_RUSTLS) */
+&#43;#endif /* defined(USE_SECTRANSP) || defined(USE_MBEDTLS) || \
+&#43;          defined(USE_BEARSSL) || defined(USE_RUSTLS) */
+ #endif /* HEADER_CURL_CIPHER_SUITE_H */
+diff --git a/lib/vtls/vtls.c b/lib/vtls/vtls.c
+index df0449cbee..943a2e1420 100644
+--- a/lib/vtls/vtls.c
+&#43;&#43;&#43; b/lib/vtls/vtls.c
+@@ -56,6 &#43;56,7 @@
+ #include &#34;wolfssl.h&#34;        /* wolfSSL versions */
+ #include &#34;schannel.h&#34;       /* Schannel SSPI version */
+ #include &#34;mbedtls.h&#34;        /* mbedTLS versions */
+&#43;#include &#34;bearssl.h&#34;        /* BearSSL versions */
+ #include &#34;rustls.h&#34;         /* Rustls versions */
+ 
+ #include &#34;../slist.h&#34;
+@@ -1027,6 &#43;1028,8 @@ const struct Curl_ssl *Curl_ssl =
+   &amp;Curl_ssl_rustls;
+ #elif defined(USE_OPENSSL)
+   &amp;Curl_ssl_openssl;
+&#43;#elif defined(USE_BEARSSL)
+&#43;  &amp;Curl_ssl_bearssl;
+ #elif defined(USE_SCHANNEL)
+   &amp;Curl_ssl_schannel;
+ #else
+@@ -1049,6 &#43;1052,9 @@ static const struct Curl_ssl *available_backends[] = {
+ #ifdef USE_SCHANNEL
+   &amp;Curl_ssl_schannel,
+ #endif
+&#43;#ifdef USE_BEARSSL
+&#43;  &amp;Curl_ssl_bearssl,
+&#43;#endif
+ #ifdef USE_RUSTLS
+   &amp;Curl_ssl_rustls,
+ #endif
+diff --git a/m4/curl-bearssl.m4 b/m4/curl-bearssl.m4
+new file mode 100644
+index 0000000000..c7df036890
+--- /dev/null
+&#43;&#43;&#43; b/m4/curl-bearssl.m4
+@@ -0,0 &#43;1,111 @@
+&#43;#***************************************************************************
+&#43;#                                  _   _ ____  _
+&#43;#  Project                     ___| | | |  _ \| |
+&#43;#                             / __| | | | |_) | |
+&#43;#                            | (__| |_| |  _ &lt;| |___
+&#43;#                             \___|\___/|_| \_\_____|
+&#43;#
+&#43;# Copyright (C) Daniel Stenberg, &lt;daniel@haxx.se&gt;, et al.
+&#43;#
+&#43;# This software is licensed as described in the file COPYING, which
+&#43;# you should have received as part of this distribution. The terms
+&#43;# are also available at https://curl.se/docs/copyright.html.
+&#43;#
+&#43;# You may opt to use, copy, modify, merge, publish, distribute and/or sell
+&#43;# copies of the Software, and permit persons to whom the Software is
+&#43;# furnished to do so, under the terms of the COPYING file.
+&#43;#
+&#43;# This software is distributed on an &#34;AS IS&#34; basis, WITHOUT WARRANTY OF ANY
+&#43;# KIND, either express or implied.
+&#43;#
+&#43;# SPDX-License-Identifier: curl
+&#43;#
+&#43;#***************************************************************************
+&#43;
+&#43;AC_DEFUN([CURL_WITH_BEARSSL], [
+&#43;dnl ----------------------------------------------------
+&#43;dnl check for BearSSL
+&#43;dnl ----------------------------------------------------
+&#43;
+&#43;if test &#34;x$OPT_BEARSSL&#34; != xno; then
+&#43;  _cppflags=$CPPFLAGS
+&#43;  _ldflags=$LDFLAGS
+&#43;  _ldflagspc=$LDFLAGSPC
+&#43;  ssl_msg=
+&#43;
+&#43;  if test X&#34;$OPT_BEARSSL&#34; != Xno; then
+&#43;
+&#43;    if test &#34;$OPT_BEARSSL&#34; = &#34;yes&#34;; then
+&#43;      OPT_BEARSSL=&#34;&#34;
+&#43;    fi
+&#43;
+&#43;    if test -z &#34;$OPT_BEARSSL&#34; ; then
+&#43;      dnl check for lib first without setting any new path
+&#43;
+&#43;      AC_CHECK_LIB(bearssl, br_ssl_client_init_full,
+&#43;      dnl libbearssl found, set the variable
+&#43;      [
+&#43;        AC_DEFINE(USE_BEARSSL, 1, [if BearSSL is enabled])
+&#43;        BEARSSL_ENABLED=1
+&#43;        USE_BEARSSL=&#34;yes&#34;
+&#43;        ssl_msg=&#34;BearSSL&#34;
+&#43;        test bearssl != &#34;$DEFAULT_SSL_BACKEND&#34; || VALID_DEFAULT_SSL_BACKEND=yes
+&#43;      ], [], -lbearssl)
+&#43;    fi
+&#43;
+&#43;    addld=&#34;&#34;
+&#43;    addlib=&#34;&#34;
+&#43;    addcflags=&#34;&#34;
+&#43;    bearssllib=&#34;&#34;
+&#43;
+&#43;    if test &#34;x$USE_BEARSSL&#34; != &#34;xyes&#34;; then
+&#43;      dnl add the path and test again
+&#43;      addld=-L$OPT_BEARSSL/lib$libsuff
+&#43;      addcflags=-I$OPT_BEARSSL/include
+&#43;      bearssllib=$OPT_BEARSSL/lib$libsuff
+&#43;
+&#43;      LDFLAGS=&#34;$LDFLAGS $addld&#34;
+&#43;      LDFLAGSPC=&#34;$LDFLAGSPC $addld&#34;
+&#43;      if test &#34;$addcflags&#34; != &#34;-I/usr/include&#34;; then
+&#43;        CPPFLAGS=&#34;$CPPFLAGS $addcflags&#34;
+&#43;      fi
+&#43;
+&#43;      AC_CHECK_LIB(bearssl, br_ssl_client_init_full,
+&#43;        [
+&#43;        AC_DEFINE(USE_BEARSSL, 1, [if BearSSL is enabled])
+&#43;        BEARSSL_ENABLED=1
+&#43;        USE_BEARSSL=&#34;yes&#34;
+&#43;        ssl_msg=&#34;BearSSL&#34;
+&#43;        test bearssl != &#34;$DEFAULT_SSL_BACKEND&#34; || VALID_DEFAULT_SSL_BACKEND=yes
+&#43;        ],
+&#43;        [
+&#43;          CPPFLAGS=$_cppflags
+&#43;          LDFLAGS=$_ldflags
+&#43;          LDFLAGSPC=$_ldflagspc
+&#43;        ], -lbearssl)
+&#43;    fi
+&#43;
+&#43;    if test &#34;x$USE_BEARSSL&#34; = &#34;xyes&#34;; then
+&#43;      AC_MSG_NOTICE([detected BearSSL])
+&#43;      check_for_ca_bundle=1
+&#43;
+&#43;      LIBS=&#34;-lbearssl $LIBS&#34;
+&#43;
+&#43;      if test -n &#34;$bearssllib&#34;; then
+&#43;        dnl when shared libs were found in a path that the run-time
+&#43;        dnl linker doesn&#39;t search through, we need to add it to
+&#43;        dnl CURL_LIBRARY_PATH to prevent further configure tests to fail
+&#43;        dnl due to this
+&#43;        if test &#34;x$cross_compiling&#34; != &#34;xyes&#34;; then
+&#43;          CURL_LIBRARY_PATH=&#34;$CURL_LIBRARY_PATH:$bearssllib&#34;
+&#43;          export CURL_LIBRARY_PATH
+&#43;          AC_MSG_NOTICE([Added $bearssllib to CURL_LIBRARY_PATH])
+&#43;        fi
+&#43;      fi
+&#43;    fi
+&#43;
+&#43;  fi dnl BearSSL not disabled
+&#43;
+&#43;  test -z &#34;$ssl_msg&#34; || ssl_backends=&#34;${ssl_backends:&#43;$ssl_backends, }$ssl_msg&#34;
+&#43;fi
+&#43;])
+-- 
+2.53.0
+
+
+From cad2c9d2cc6db2ff4ab9046d997310cdf67268ae Mon Sep 17 00:00:00 2001
+From: shrub &lt;maybeshrub@gmail.com&gt;
+Date: Tue, 17 Mar 2026 20:37:54 &#43;0000
+Subject: [PATCH 2/2] bearssl: adapt vtls backend to 8.17 cfilter API
+
+---
+ CMakeLists.txt     |  1 -
+ lib/curl_setup.h   |  1 -
+ lib/vtls/bearssl.c | 73 &#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;--------------------
+ 3 files changed, 41 insertions(&#43;), 34 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f7928e8563..131ffac426 100644
+--- a/CMakeLists.txt
+&#43;&#43;&#43; b/CMakeLists.txt
+@@ -2113,7 &#43;2113,6 @@ endmacro()
+ if(NOT CURL_DISABLE_NTLM AND
+    ((USE_OPENSSL AND HAVE_DES_ECB_ENCRYPT) OR
+     (USE_MBEDTLS AND HAVE_MBEDTLS_DES_CRYPT_ECB) OR
+-    USE_BEARSSL OR
+     USE_GNUTLS OR
+     USE_WIN32_CRYPTO OR
+     (USE_WOLFSSL AND HAVE_WOLFSSL_DES_ECB_ENCRYPT)))
+diff --git a/lib/curl_setup.h b/lib/curl_setup.h
+index 2d904d80d6..89a35b759e 100644
+--- a/lib/curl_setup.h
+&#43;&#43;&#43; b/lib/curl_setup.h
+@@ -760,7 &#43;760,6 @@
+ #  if (defined(USE_OPENSSL) &amp;&amp; defined(HAVE_DES_ECB_ENCRYPT)) ||        \
+   defined(USE_GNUTLS) ||                                                \
+   (defined(USE_MBEDTLS) &amp;&amp; defined(HAVE_MBEDTLS_DES_CRYPT_ECB)) ||      \
+-  defined(USE_BEARSSL) ||                                               \
+   defined(USE_OS400CRYPTO) || defined(USE_WIN32_CRYPTO) ||              \
+   (defined(USE_WOLFSSL) &amp;&amp; defined(HAVE_WOLFSSL_DES_ECB_ENCRYPT))
+ #    define USE_CURL_NTLM_CORE
+diff --git a/lib/vtls/bearssl.c b/lib/vtls/bearssl.c
+index 4b65244451..9669706737 100644
+--- a/lib/vtls/bearssl.c
+&#43;&#43;&#43; b/lib/vtls/bearssl.c
+@@ -686,7 &#43;686,7 @@ static CURLcode bearssl_run_until(struct Curl_cfilter *cf,
+   unsigned state;
+   unsigned char *buf;
+   size_t len;
+-  ssize_t ret;
+&#43;  size_t ntransferred;
+   CURLcode result;
+   int err;
+ 
+@@ -729,30 &#43;729,33 @@ static CURLcode bearssl_run_until(struct Curl_cfilter *cf,
+       return CURLE_OK;
+     if(state &amp; BR_SSL_SENDREC) {
+       buf = br_ssl_engine_sendrec_buf(&amp;backend-&gt;ctx.eng, &amp;len);
+-      ret = Curl_conn_cf_send(cf-&gt;next, data, (const char *)buf, len, FALSE,
+-                              &amp;result);
+-      CURL_TRC_CF(data, cf, &#34;ssl_send(len=%zu) -&gt; %zd, %d&#34;, len, ret, result);
+-      if(ret &lt;= 0) {
+&#43;      result = Curl_conn_cf_send(cf-&gt;next, data, (const char *)buf, len, FALSE,
+&#43;                                 &amp;ntransferred);
+&#43;      CURL_TRC_CF(data, cf, &#34;ssl_send(len=%zu) -&gt; %d, %zu&#34;,
+&#43;                  len, result, ntransferred);
+&#43;      if(result) {
+         if(result == CURLE_AGAIN)
+           connssl-&gt;io_need |= CURL_SSL_IO_NEED_SEND;
+         return result;
+       }
+-      br_ssl_engine_sendrec_ack(&amp;backend-&gt;ctx.eng, ret);
+&#43;      br_ssl_engine_sendrec_ack(&amp;backend-&gt;ctx.eng, ntransferred);
+     }
+     else if(state &amp; BR_SSL_RECVREC) {
+       buf = br_ssl_engine_recvrec_buf(&amp;backend-&gt;ctx.eng, &amp;len);
+-      ret = Curl_conn_cf_recv(cf-&gt;next, data, (char *)buf, len, &amp;result);
+-      CURL_TRC_CF(data, cf, &#34;ssl_recv(len=%zu) -&gt; %zd, %d&#34;, len, ret, result);
+-      if(ret == 0) {
+&#43;      result = Curl_conn_cf_recv(cf-&gt;next, data, (char *)buf, len,
+&#43;                                 &amp;ntransferred);
+&#43;      CURL_TRC_CF(data, cf, &#34;ssl_recv(len=%zu) -&gt; %d, %zu&#34;,
+&#43;                  len, result, ntransferred);
+&#43;      if(!result &amp;&amp; !ntransferred) {
+         failf(data, &#34;SSL: EOF without close notify&#34;);
+         return CURLE_RECV_ERROR;
+       }
+-      if(ret &lt;= 0) {
+&#43;      if(result) {
+         if(result == CURLE_AGAIN)
+           connssl-&gt;io_need |= CURL_SSL_IO_NEED_RECV;
+         return result;
+       }
+-      br_ssl_engine_recvrec_ack(&amp;backend-&gt;ctx.eng, ret);
+&#43;      br_ssl_engine_recvrec_ack(&amp;backend-&gt;ctx.eng, ntransferred);
+     }
+   }
+ }
+@@ -851,31 &#43;854,32 @@ static CURLcode bearssl_connect_step3(struct Curl_cfilter *cf,
+   return CURLE_OK;
+ }
+ 
+-static ssize_t bearssl_send(struct Curl_cfilter *cf, struct Curl_easy *data,
+-                            const void *buf, size_t len, CURLcode *err)
+&#43;static CURLcode bearssl_send(struct Curl_cfilter *cf, struct Curl_easy *data,
+&#43;                             const void *buf, size_t len, size_t *pnwritten)
+ {
+   struct ssl_connect_data *connssl = cf-&gt;ctx;
+   struct bearssl_ssl_backend_data *backend =
+     (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+   unsigned char *app;
+   size_t applen;
+&#43;  CURLcode result;
+ 
+   DEBUGASSERT(backend);
+&#43;  *pnwritten = 0;
+ 
+   for(;;) {
+-    *err = bearssl_run_until(cf, data, BR_SSL_SENDAPP);
+-    if(*err)
+-      return -1;
+&#43;    result = bearssl_run_until(cf, data, BR_SSL_SENDAPP);
+&#43;    if(result)
+&#43;      return result;
+     app = br_ssl_engine_sendapp_buf(&amp;backend-&gt;ctx.eng, &amp;applen);
+     if(!app) {
+       failf(data, &#34;SSL: connection closed during write&#34;);
+-      *err = CURLE_SEND_ERROR;
+-      return -1;
+&#43;      return CURLE_SEND_ERROR;
+     }
+     if(backend-&gt;pending_write) {
+-      applen = backend-&gt;pending_write;
+&#43;      *pnwritten = backend-&gt;pending_write;
+       backend-&gt;pending_write = 0;
+-      return applen;
+&#43;      return CURLE_OK;
+     }
+     if(applen &gt; len)
+       applen = len;
+@@ -886,29 &#43;890,32 @@ static ssize_t bearssl_send(struct Curl_cfilter *cf, struct Curl_easy *data,
+   }
+ }
+ 
+-static ssize_t bearssl_recv(struct Curl_cfilter *cf, struct Curl_easy *data,
+-                            char *buf, size_t len, CURLcode *err)
+&#43;static CURLcode bearssl_recv(struct Curl_cfilter *cf, struct Curl_easy *data,
+&#43;                             char *buf, size_t len, size_t *pnread)
+ {
+   struct ssl_connect_data *connssl = cf-&gt;ctx;
+   struct bearssl_ssl_backend_data *backend =
+     (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+   unsigned char *app;
+   size_t applen;
+&#43;  CURLcode result;
+ 
+   DEBUGASSERT(backend);
+&#43;  *pnread = 0;
+ 
+-  *err = bearssl_run_until(cf, data, BR_SSL_RECVAPP);
+-  if(*err != CURLE_OK)
+-    return -1;
+&#43;  result = bearssl_run_until(cf, data, BR_SSL_RECVAPP);
+&#43;  if(result != CURLE_OK)
+&#43;    return result;
+   app = br_ssl_engine_recvapp_buf(&amp;backend-&gt;ctx.eng, &amp;applen);
+   if(!app)
+-    return 0;
+&#43;    return CURLE_OK;
+   if(applen &gt; len)
+     applen = len;
+   memcpy(buf, app, applen);
+   br_ssl_engine_recvapp_ack(&amp;backend-&gt;ctx.eng, applen);
+&#43;  *pnread = applen;
+ 
+-  return applen;
+&#43;  return CURLE_OK;
+ }
+ 
+ static CURLcode bearssl_connect(struct Curl_cfilter *cf,
+@@ -957,7 &#43;964,7 @@ static CURLcode bearssl_connect(struct Curl_cfilter *cf,
+ 
+ static size_t bearssl_version(char *buffer, size_t size)
+ {
+-  return msnprintf(buffer, size, &#34;BearSSL&#34;);
+&#43;  return curl_msnprintf(buffer, size, &#34;BearSSL&#34;);
+ }
+ 
+ static bool bearssl_data_pending(struct Curl_cfilter *cf,
+@@ -972,11 &#43;979,12 @@ static bool bearssl_data_pending(struct Curl_cfilter *cf,
+   return br_ssl_engine_current_state(&amp;backend-&gt;ctx.eng) &amp; BR_SSL_RECVAPP;
+ }
+ 
+-static CURLcode bearssl_random(struct Curl_easy *data UNUSED_PARAM,
+&#43;static CURLcode bearssl_random(struct Curl_easy *data,
+                                unsigned char *entropy, size_t length)
+ {
+   static br_hmac_drbg_context ctx;
+   static bool seeded = FALSE;
+&#43;  (void)data;
+ 
+   if(!seeded) {
+     br_prng_seeder seeder;
+@@ -993,10 &#43;1001,11 @@ static CURLcode bearssl_random(struct Curl_easy *data UNUSED_PARAM,
+ }
+ 
+ static void *bearssl_get_internals(struct ssl_connect_data *connssl,
+-                                   CURLINFO info UNUSED_PARAM)
+&#43;                                   CURLINFO info)
+ {
+   struct bearssl_ssl_backend_data *backend =
+     (struct bearssl_ssl_backend_data *)connssl-&gt;backend;
+&#43;  (void)info;
+   DEBUGASSERT(backend);
+   return &amp;backend-&gt;ctx;
+ }
+@@ -1059,9 &#43;1068,10 @@ static void bearssl_close(struct Curl_cfilter *cf, struct Curl_easy *data)
+ static CURLcode bearssl_sha256sum(const unsigned char *input,
+                                   size_t inputlen,
+                                   unsigned char *sha256sum,
+-                                  size_t sha256len UNUSED_PARAM)
+&#43;                                  size_t sha256len)
+ {
+   br_sha256_context ctx;
+&#43;  (void)sha256len;
+ 
+   br_sha256_init(&amp;ctx);
+   br_sha256_update(&amp;ctx, input, inputlen);
+@@ -1094,7 &#43;1104,6 @@ const struct Curl_ssl Curl_ssl_bearssl = {
+   NULL,                            /* set_engine */
+   NULL,                            /* set_engine_default */
+   NULL,                            /* engines_list */
+-  NULL,                            /* false_start */
+   bearssl_sha256sum,               /* sha256sum */
+   bearssl_recv,                    /* recv decrypted data */
+   bearssl_send,                    /* send data to encrypt */
+-- 
+2.53.0
+
+</pre>
+		</div>
+		
+	</div>
+</div>
+
+	</main>
+
+	<footer>
+		
+		
+		dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br/>
+		derive is public domain software. all software listed is under it's respective license.
+		<div id="theme-switcher" class="theme-switcher" hidden aria-live="polite"></div>
+	</footer>
+</body>
+</html>

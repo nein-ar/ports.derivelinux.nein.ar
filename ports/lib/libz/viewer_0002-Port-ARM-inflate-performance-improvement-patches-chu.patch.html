@@ -1,0 +1,1279 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="shrub">
+<head>
+	<meta charset="UTF-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<title>File Viewer: 0002-Port-ARM-inflate-performance-improvement-patches-chu.patch - dérive linux ports</title>
+	
+	<link rel="canonical" href="https://ports.derivelinux.nein.ar/ports/lib/libz/viewer_0002-Port-ARM-inflate-performance-improvement-patches-chu.patch.html"/>
+	
+	
+	<link rel="icon" type="image/svg+xml" href="../../../assets/favicon.png"/>
+	
+	<link rel="stylesheet" href="../../../assets/theme-switch.css"/>
+	<link rel="stylesheet" data-theme-css="shrub" media="all" href="../../../assets/shrub/vars.css"/>
+	<link rel="stylesheet" data-theme-css="shrub" media="all" href="../../../assets/shrub/site.css"/>
+	<link rel="stylesheet" data-theme-css="xplshn" media="not all" href="../../../assets/xplshn/vars.css"/>
+	<link rel="stylesheet" data-theme-css="xplshn" media="not all" href="../../../assets/xplshn/site.css"/>
+	<script>
+	
+	(function () {
+		try {
+			var t = localStorage.getItem("ports-theme");
+			if (t !== "shrub" && t !== "xplshn") { return; }
+			document.documentElement.dataset.theme = t;
+			var links = document.querySelectorAll("link[data-theme-css]");
+			for (var i = 0; i < links.length; i++) {
+				links[i].media = links[i].getAttribute("data-theme-css") === t ? "all" : "not all";
+			}
+		} catch (e) {}
+	})();
+	</script>
+	
+	<script src="../../../assets/theme-switch.js"></script>
+	<script src="../../../assets/app.js"></script>
+	
+	<script src="../../../assets/search.js"></script>
+	
+	<script src="../../../assets/commits.js"></script>
+	
+	<script src="../../../assets/fortunes.js"></script>
+	
+</head>
+<body data-source-code-url="https://codeberg.org/derivelinux/ports" data-base-url="">
+	<header>
+		<div class="top-bar">
+			<a href="https://wayland.fyi">wl.fyi</a>
+			<span>|</span>
+			<a href="https://9larp.net">9larp</a>
+			<span>|</span>
+			<a href="https://derivelinux.org">main</a>
+			<span>|</span>
+			<a href="https://pkg.derivelinux.org">pkg</a>
+		</div>
+		<a href="../../../index.html" class="site-mark" aria-label="dérive linux ports">
+			<img src="../../../assets/header.jpg" alt="dérive linux ports" class="site-mark-image"/>
+		</a>
+	</header>
+
+	<nav>
+		
+		<a href="../../../index.html">Home</a>
+		
+		<a href="../../../categories">Categories</a>
+		
+		<a href="../../../commits">Recent Commits</a>
+		
+		<a href="../../../search">Search</a>
+		
+		<a href="../../../stats">Statistics</a>
+		
+	</nav>
+
+	<div class="search-section">
+		<form class="search-box" action="../../../search/index.html" method="GET">
+	<input type="text" name="q" placeholder="search ports..."/>
+	<select name="cat">
+		<option value="">all categories</option>
+		
+		
+		<option value="core">core</option>
+		
+		<option value="daemon">daemon</option>
+		
+		<option value="devel">devel</option>
+		
+		<option value="doc">doc</option>
+		
+		<option value="editors">editors</option>
+		
+		<option value="fonts">fonts</option>
+		
+		<option value="games">games</option>
+		
+		<option value="lang">lang</option>
+		
+		<option value="lib">lib</option>
+		
+		<option value="net">net</option>
+		
+		<option value="old">old</option>
+		
+		<option value="shells">shells</option>
+		
+		<option value="userspace">userspace</option>
+		
+		<option value="utils">utils</option>
+		
+		<option value="wl">wl</option>
+		
+		
+	</select>
+	<input type="submit" value="search"/>
+</form>
+
+	</div>
+
+	
+	<div class="stats">
+		<span><strong>210</strong> total ports</span>
+		<span><strong>0</strong> updated this week</span>
+		<span><strong>15</strong> categories</span>
+		<span><strong>53</strong> building failed</span>
+		<span>last update: 2026-11-14 16:57 UTC</span>
+	</div>
+	
+
+	<main class="main-content">
+		
+
+
+
+
+
+<div id="viewer-shell">
+	<div id="viewer-header">
+		<span>lib/libz/0002-Port-ARM-inflate-performance-improvement-patches-chu.patch</span>
+	</div>
+	<div id="viewer-viewport">
+		
+		<div class="static-viewer">
+			<pre class="terminal-cmd">$ cat 0002-Port-ARM-inflate-performance-improvement-patches-chu.patch</pre>
+			<pre class="terminal-content">From 48f533726432ff3eb9c40ff087c13488fa604f54 Mon Sep 17 00:00:00 2001
+From: Janakarajan Natarajan &lt;68447808&#43;janaknat@users.noreply.github.com&gt;
+Date: Wed, 23 Sep 2020 12:31:13 -0500
+Subject: [PATCH 2/4] Port ARM inflate performance improvement patches (chunk
+ SIMD, read64le) (#22)
+
+* When windowBits is zero, the size of the sliding window comes from
+
+the zlib header.  The allowed values of the four-bit field are
+0..7, but when windowBits is zero, values greater than 7 are
+permitted and acted upon, resulting in large, mostly unused memory
+allocations.  This fix rejects such invalid zlib headers.
+
+* Add option to not compute or check check values.
+
+The undocumented (except in these commit comments) function
+inflateValidate(strm, check) can be called after an inflateInit(),
+inflateInit2(), or inflateReset2() with check equal to zero to
+turn off the check value (CRC-32 or Adler-32) computation and
+comparison. Calling with check not equal to zero turns checking
+back on. This should only be called immediately after the init or
+reset function. inflateReset() does not change the state, so a
+previous inflateValidate() setting will remain in effect.
+
+This also turns off validation of the gzip header CRC when
+present.
+
+This should only be used when a zlib or gzip stream has already
+been checked, and repeated decompressions of the same stream no
+longer need to be validated.
+
+* This verifies that the state has been initialized, that it is the
+
+expected type of state, deflate or inflate, and that at least the
+first several bytes of the internal state have not been clobbered.
+
+* Use macros to represent magic numbers
+
+This combines two patches which help in improving the readability and
+maintainability of the code by making magic numbers into #defines.
+
+Based on Chris Blume&#39;s (cblume@chromium) patches for zlib chromium:
+8888511 - &#34;Zlib: Use defines for inffast&#34;
+b9c1566 - &#34;Share inffast names in zlib&#34;
+
+These patches are needed when introducing chunk SIMD NEON enchancements.
+
+Signed-off-by: Janakarajan Natarajan &lt;janakan@amazon.com&gt;
+
+* Port inflate chunk SIMD NEON patches for cloudflare
+
+Based on 2 patches from zlib chromium fork:
+
+* Adenilson Cavalcanti (adenilson.cavalcanti@arm.com)
+  3060dcb - &#34;zlib: inflate using wider loads and stores&#34;
+
+* Noel Gordon (noel@chromium.org)
+  64ffef0 - &#34;Improve zlib inflate speed by using SSE2 chunk copy
+
+The two patches combined provide around 5-25% increase in inflate
+performance, based on the workload, when checked with a modified
+zpipe.c and the Silesia corpus.
+
+Signed-off-by: Janakarajan Natarajan &lt;janakan@amazon.com&gt;
+
+* Increase inflate speed: read decode input into a uint64_t
+
+Update the chunk-copy code with a wide input data reader, which consumes
+input in 64-bit (8 byte) chunks. Update inflate_fast_chunk_() to use the
+wide reader.
+
+Based on Noel Gordon&#39;s (noel@chromium.org) patch for the zlib chromium fork
+8a8edc1 - &#34;Increase inflate speed: read decoder input into a uint64_t&#34;
+
+This patch provides 7-10% inflate performance improvement when tested with a
+modified zpipe.c and the Silesia corpus.
+
+Signed-off-by: Janakarajan Natarajan &lt;janakan@amazon.com&gt;
+
+Co-authored-by: Mark Adler &lt;madler@alumni.caltech.edu&gt;
+---
+ Makefile.in     |   4 &#43;
+ chunkcopy.h     | 414 &#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;
+ infback.c       |   3 &#43;-
+ inffast.c       |  11 &#43;-
+ inffast.h       |   4 &#43;
+ inffast_chunk.c | 379 &#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;&#43;
+ inffast_chunk.h |  48 &#43;&#43;&#43;&#43;&#43;&#43;
+ inflate.c       |  38 &#43;&#43;&#43;&#43;-
+ 8 files changed, 895 insertions(&#43;), 6 deletions(-)
+ create mode 100644 chunkcopy.h
+ create mode 100644 inffast_chunk.c
+ create mode 100644 inffast_chunk.h
+
+diff --git a/Makefile.in b/Makefile.in
+index f661801..3647d90 100644
+--- a/Makefile.in
+&#43;&#43;&#43; b/Makefile.in
+@@ -37,6 &#43;37,10 @@ trees.o \
+ uncompr.o \
+ zutil.o \
+ 
+&#43;ifneq ($(findstring -DINFLATE_CHUNK_SIMD_NEON,$(CFLAGS)),)
+&#43;STATIC_OBJS &#43;= inffast_chunk.o
+&#43;endif
+&#43;
+ # TODO: What extension to use here?
+ SHARED_OBJS=$(STATIC_OBJS:.o=.lo)
+ 
+diff --git a/chunkcopy.h b/chunkcopy.h
+new file mode 100644
+index 0000000..217da52
+--- /dev/null
+&#43;&#43;&#43; b/chunkcopy.h
+@@ -0,0 &#43;1,414 @@
+&#43;/* chunkcopy.h -- fast chunk copy and set operations
+&#43; *
+&#43; * (C) 1995-2013 Jean-loup Gailly and Mark Adler
+&#43; *
+&#43; * This software is provided &#39;as-is&#39;, without any express or implied
+&#43; * warranty.  In no event will the authors be held liable for any damages
+&#43; * arising from the use of this software.
+&#43; *
+&#43; * Permission is granted to anyone to use this software for any purpose,
+&#43; * including commercial applications, and to alter it and redistribute it
+&#43; * freely, subject to the following restrictions:
+&#43; *
+&#43; * 1. The origin of this software must not be misrepresented; you must not
+&#43; *    claim that you wrote the original software. If you use this software
+&#43; *    in a product, an acknowledgment in the product documentation would be
+&#43; *    appreciated but is not required.
+&#43; * 2. Altered source versions must be plainly marked as such, and must not be
+&#43; *    misrepresented as being the original software.
+&#43; * 3. This notice may not be removed or altered from any source distribution.
+&#43; *
+&#43; * Jean-loup Gailly        Mark Adler
+&#43; * jloup@gzip.org          madler@alumni.caltech.edu
+&#43; *
+&#43; * Copyright (C) 2017 ARM, Inc.
+&#43; * Copyright 2017 The Chromium Authors. All rights reserved.
+&#43; * Use of this source code is governed by a BSD-style license that can be
+&#43; * found in the Chromium source repository LICENSE file.
+&#43; */
+&#43;
+&#43;#ifndef CHUNKCOPY_H
+&#43;#define CHUNKCOPY_H
+&#43;
+&#43;#include &lt;stdint.h&gt;
+&#43;#include &#34;zutil.h&#34;
+&#43;
+&#43;#define Z_STATIC_ASSERT(name, assert) typedef char name[(assert) ? 1 : -1]
+&#43;
+&#43;#if __STDC_VERSION__ &gt;= 199901L
+&#43;#define Z_RESTRICT restrict
+&#43;#else
+&#43;#define Z_RESTRICT
+&#43;#endif
+&#43;
+&#43;#if defined(__clang__) || defined(__GNUC__) || defined(__llvm__)
+&#43;#define Z_BUILTIN_MEMCPY __builtin_memcpy
+&#43;#else
+&#43;#define Z_BUILTIN_MEMCPY zmemcpy
+&#43;#endif
+&#43;
+&#43;#if defined(INFLATE_CHUNK_SIMD_NEON)
+&#43;#include &lt;arm_neon.h&gt;
+&#43;typedef uint8x16_t z_vec128i_t;
+&#43;#endif
+&#43;
+&#43;/*
+&#43; * chunk copy type: the z_vec128i_t type size should be exactly 128-bits
+&#43; * and equal to CHUNKCOPY_CHUNK_SIZE.
+&#43; */
+&#43;#define CHUNKCOPY_CHUNK_SIZE sizeof(z_vec128i_t)
+&#43;
+&#43;Z_STATIC_ASSERT(vector_128_bits_wide,
+&#43;                CHUNKCOPY_CHUNK_SIZE == sizeof(int8_t) * 16);
+&#43;
+&#43;/*
+&#43; * Ask the compiler to perform a wide, unaligned load with a machine
+&#43; * instruction appropriate for the z_vec128i_t type.
+&#43; */
+&#43;static inline z_vec128i_t loadchunk(
+&#43;    const unsigned char FAR* s) {
+&#43;  z_vec128i_t v;
+&#43;  Z_BUILTIN_MEMCPY(&amp;v, s, sizeof(v));
+&#43;  return v;
+&#43;}
+&#43;
+&#43;/*
+&#43; * Ask the compiler to perform a wide, unaligned store with a machine
+&#43; * instruction appropriate for the z_vec128i_t type.
+&#43; */
+&#43;static inline void storechunk(
+&#43;    unsigned char FAR* d,
+&#43;    const z_vec128i_t v) {
+&#43;  Z_BUILTIN_MEMCPY(d, &amp;v, sizeof(v));
+&#43;}
+&#43;
+&#43;/*
+&#43; * Perform a memcpy-like operation, assuming that length is non-zero and that
+&#43; * it&#39;s OK to overwrite at least CHUNKCOPY_CHUNK_SIZE bytes of output even if
+&#43; * the length is shorter than this.
+&#43; *
+&#43; * It also guarantees that it will properly unroll the data if the distance
+&#43; * between `out` and `from` is at least CHUNKCOPY_CHUNK_SIZE, which we rely on
+&#43; * in chunkcopy_relaxed().
+&#43; *
+&#43; * Aside from better memory bus utilisation, this means that short copies
+&#43; * (CHUNKCOPY_CHUNK_SIZE bytes or fewer) will fall straight through the loop
+&#43; * without iteration, which will hopefully make the branch prediction more
+&#43; * reliable.
+&#43; */
+&#43;static inline unsigned char FAR* chunkcopy_core(
+&#43;    unsigned char FAR* out,
+&#43;    const unsigned char FAR* from,
+&#43;    unsigned len) {
+&#43;  const int bump = (--len % CHUNKCOPY_CHUNK_SIZE) &#43; 1;
+&#43;  storechunk(out, loadchunk(from));
+&#43;  out &#43;= bump;
+&#43;  from &#43;= bump;
+&#43;  len /= CHUNKCOPY_CHUNK_SIZE;
+&#43;  while (len-- &gt; 0) {
+&#43;    storechunk(out, loadchunk(from));
+&#43;    out &#43;= CHUNKCOPY_CHUNK_SIZE;
+&#43;    from &#43;= CHUNKCOPY_CHUNK_SIZE;
+&#43;  }
+&#43;  return out;
+&#43;}
+&#43;
+&#43;/*
+&#43; * Like chunkcopy_core(), but avoid writing beyond of legal output.
+&#43; *
+&#43; * Accepts an additional pointer to the end of safe output.  A generic safe
+&#43; * copy would use (out &#43; len), but it&#39;s normally the case that the end of the
+&#43; * output buffer is beyond the end of the current copy, and this can still be
+&#43; * exploited.
+&#43; */
+&#43;static inline unsigned char FAR* chunkcopy_core_safe(
+&#43;    unsigned char FAR* out,
+&#43;    const unsigned char FAR* from,
+&#43;    unsigned len,
+&#43;    unsigned char FAR* limit) {
+&#43;  Assert(out &#43; len &lt;= limit, &#34;chunk copy exceeds safety limit&#34;);
+&#43;  if ((limit - out) &lt; (ptrdiff_t)CHUNKCOPY_CHUNK_SIZE) {
+&#43;    const unsigned char FAR* Z_RESTRICT rfrom = from;
+&#43;    if (len &amp; 8) {
+&#43;      Z_BUILTIN_MEMCPY(out, rfrom, 8);
+&#43;      out &#43;= 8;
+&#43;      rfrom &#43;= 8;
+&#43;    }
+&#43;    if (len &amp; 4) {
+&#43;      Z_BUILTIN_MEMCPY(out, rfrom, 4);
+&#43;      out &#43;= 4;
+&#43;      rfrom &#43;= 4;
+&#43;    }
+&#43;    if (len &amp; 2) {
+&#43;      Z_BUILTIN_MEMCPY(out, rfrom, 2);
+&#43;      out &#43;= 2;
+&#43;      rfrom &#43;= 2;
+&#43;    }
+&#43;    if (len &amp; 1) {
+&#43;      *out&#43;&#43; = *rfrom&#43;&#43;;
+&#43;    }
+&#43;    return out;
+&#43;  }
+&#43;  return chunkcopy_core(out, from, len);
+&#43;}
+&#43;
+&#43;/*
+&#43; * Perform short copies until distance can be rewritten as being at least
+&#43; * CHUNKCOPY_CHUNK_SIZE.
+&#43; *
+&#43; * Assumes it&#39;s OK to overwrite at least the first 2*CHUNKCOPY_CHUNK_SIZE
+&#43; * bytes of output even if the copy is shorter than this.  This assumption
+&#43; * holds within zlib inflate_fast(), which starts every iteration with at
+&#43; * least 258 bytes of output space available (258 being the maximum length
+&#43; * output from a single token; see inffast.c).
+&#43; */
+&#43;static inline unsigned char FAR* chunkunroll_relaxed(
+&#43;    unsigned char FAR* out,
+&#43;    unsigned FAR* dist,
+&#43;    unsigned FAR* len) {
+&#43;  const unsigned char FAR* from = out - *dist;
+&#43;  while (*dist &lt; *len &amp;&amp; *dist &lt; CHUNKCOPY_CHUNK_SIZE) {
+&#43;    storechunk(out, loadchunk(from));
+&#43;    out &#43;= *dist;
+&#43;    *len -= *dist;
+&#43;    *dist &#43;= *dist;
+&#43;  }
+&#43;  return out;
+&#43;}
+&#43;
+&#43;#if defined(INFLATE_CHUNK_SIMD_NEON)
+&#43;/*
+&#43; * v_load64_dup(): load *src as an unaligned 64-bit int and duplicate it in
+&#43; * every 64-bit component of the 128-bit result (64-bit int splat).
+&#43; */
+&#43;static inline z_vec128i_t v_load64_dup(const void* src) {
+&#43;  return vcombine_u8(vld1_u8(src), vld1_u8(src));
+&#43;}
+&#43;
+&#43;/*
+&#43; * v_load32_dup(): load *src as an unaligned 32-bit int and duplicate it in
+&#43; * every 32-bit component of the 128-bit result (32-bit int splat).
+&#43; */
+&#43;static inline z_vec128i_t v_load32_dup(const void* src) {
+&#43;  int32_t i32;
+&#43;  Z_BUILTIN_MEMCPY(&amp;i32, src, sizeof(i32));
+&#43;  return vreinterpretq_u8_s32(vdupq_n_s32(i32));
+&#43;}
+&#43;
+&#43;/*
+&#43; * v_load16_dup(): load *src as an unaligned 16-bit int and duplicate it in
+&#43; * every 16-bit component of the 128-bit result (16-bit int splat).
+&#43; */
+&#43;static inline z_vec128i_t v_load16_dup(const void* src) {
+&#43;  int16_t i16;
+&#43;  Z_BUILTIN_MEMCPY(&amp;i16, src, sizeof(i16));
+&#43;  return vreinterpretq_u8_s16(vdupq_n_s16(i16));
+&#43;}
+&#43;
+&#43;/*
+&#43; * v_load8_dup(): load the 8-bit int *src and duplicate it in every 8-bit
+&#43; * component of the 128-bit result (8-bit int splat).
+&#43; */
+&#43;static inline z_vec128i_t v_load8_dup(const void* src) {
+&#43;  return vld1q_dup_u8((const uint8_t*)src);
+&#43;}
+&#43;
+&#43;/*
+&#43; * v_store_128(): store the 128-bit vec in a memory destination (that might
+&#43; * not be 16-byte aligned) void* out.
+&#43; */
+&#43;static inline void v_store_128(void* out, const z_vec128i_t vec) {
+&#43;  vst1q_u8(out, vec);
+&#43;}
+&#43;#endif
+&#43;
+&#43;/*
+&#43; * Perform an overlapping copy which behaves as a memset() operation, but
+&#43; * supporting periods other than one, and assume that length is non-zero and
+&#43; * that it&#39;s OK to overwrite at least CHUNKCOPY_CHUNK_SIZE*3 bytes of output
+&#43; * even if the length is shorter than this.
+&#43; */
+&#43;static inline unsigned char FAR* chunkset_core(
+&#43;    unsigned char FAR* out,
+&#43;    unsigned period,
+&#43;    unsigned len) {
+&#43;  z_vec128i_t v;
+&#43;  const int bump = ((len - 1) % sizeof(v)) &#43; 1;
+&#43;
+&#43;  switch (period) {
+&#43;    case 1:
+&#43;      v = v_load8_dup(out - 1);
+&#43;      v_store_128(out, v);
+&#43;      out &#43;= bump;
+&#43;      len -= bump;
+&#43;      while (len &gt; 0) {
+&#43;        v_store_128(out, v);
+&#43;        out &#43;= sizeof(v);
+&#43;        len -= sizeof(v);
+&#43;      }
+&#43;      return out;
+&#43;    case 2:
+&#43;      v = v_load16_dup(out - 2);
+&#43;      v_store_128(out, v);
+&#43;      out &#43;= bump;
+&#43;      len -= bump;
+&#43;      if (len &gt; 0) {
+&#43;        v = v_load16_dup(out - 2);
+&#43;        do {
+&#43;          v_store_128(out, v);
+&#43;          out &#43;= sizeof(v);
+&#43;          len -= sizeof(v);
+&#43;        } while (len &gt; 0);
+&#43;      }
+&#43;      return out;
+&#43;    case 4:
+&#43;      v = v_load32_dup(out - 4);
+&#43;      v_store_128(out, v);
+&#43;      out &#43;= bump;
+&#43;      len -= bump;
+&#43;      if (len &gt; 0) {
+&#43;        v = v_load32_dup(out - 4);
+&#43;        do {
+&#43;          v_store_128(out, v);
+&#43;          out &#43;= sizeof(v);
+&#43;          len -= sizeof(v);
+&#43;        } while (len &gt; 0);
+&#43;      }
+&#43;      return out;
+&#43;    case 8:
+&#43;      v = v_load64_dup(out - 8);
+&#43;      v_store_128(out, v);
+&#43;      out &#43;= bump;
+&#43;      len -= bump;
+&#43;      if (len &gt; 0) {
+&#43;        v = v_load64_dup(out - 8);
+&#43;        do {
+&#43;          v_store_128(out, v);
+&#43;          out &#43;= sizeof(v);
+&#43;          len -= sizeof(v);
+&#43;        } while (len &gt; 0);
+&#43;      }
+&#43;      return out;
+&#43;  }
+&#43;  out = chunkunroll_relaxed(out, &amp;period, &amp;len);
+&#43;  return chunkcopy_core(out, out - period, len);
+&#43;}
+&#43;
+&#43;/*
+&#43; * Perform a memcpy-like operation, but assume that length is non-zero and that
+&#43; * it&#39;s OK to overwrite at least CHUNKCOPY_CHUNK_SIZE bytes of output even if
+&#43; * the length is shorter than this.
+&#43; *
+&#43; * Unlike chunkcopy_core() above, no guarantee is made regarding the behaviour
+&#43; * of overlapping buffers, regardless of the distance between the pointers.
+&#43; * This is reflected in the `restrict`-qualified pointers, allowing the
+&#43; * compiler to re-order loads and stores.
+&#43; */
+&#43;static inline unsigned char FAR* chunkcopy_relaxed(
+&#43;    unsigned char FAR* Z_RESTRICT out,
+&#43;    const unsigned char FAR* Z_RESTRICT from,
+&#43;    unsigned len) {
+&#43;  return chunkcopy_core(out, from, len);
+&#43;}
+&#43;
+&#43;/*
+&#43; * Like chunkcopy_relaxed(), but avoid writing beyond of legal output.
+&#43; *
+&#43; * Unlike chunkcopy_core_safe() above, no guarantee is made regarding the
+&#43; * behaviour of overlapping buffers, regardless of the distance between the
+&#43; * pointers.  This is reflected in the `restrict`-qualified pointers, allowing
+&#43; * the compiler to re-order loads and stores.
+&#43; *
+&#43; * Accepts an additional pointer to the end of safe output.  A generic safe
+&#43; * copy would use (out &#43; len), but it&#39;s normally the case that the end of the
+&#43; * output buffer is beyond the end of the current copy, and this can still be
+&#43; * exploited.
+&#43; */
+&#43;static inline unsigned char FAR* chunkcopy_safe(
+&#43;    unsigned char FAR* out,
+&#43;    const unsigned char FAR* Z_RESTRICT from,
+&#43;    unsigned len,
+&#43;    unsigned char FAR* limit) {
+&#43;  Assert(out &#43; len &lt;= limit, &#34;chunk copy exceeds safety limit&#34;);
+&#43;  return chunkcopy_core_safe(out, from, len, limit);
+&#43;}
+&#43;
+&#43;/*
+&#43; * Perform chunky copy within the same buffer, where the source and destination
+&#43; * may potentially overlap.
+&#43; *
+&#43; * Assumes that len &gt; 0 on entry, and that it&#39;s safe to write at least
+&#43; * CHUNKCOPY_CHUNK_SIZE*3 bytes to the output.
+&#43; */
+&#43;static inline unsigned char FAR* chunkcopy_lapped_relaxed(
+&#43;    unsigned char FAR* out,
+&#43;    unsigned dist,
+&#43;    unsigned len) {
+&#43;  if (dist &lt; len &amp;&amp; dist &lt; CHUNKCOPY_CHUNK_SIZE) {
+&#43;    return chunkset_core(out, dist, len);
+&#43;  }
+&#43;  return chunkcopy_core(out, out - dist, len);
+&#43;}
+&#43;
+&#43;/*
+&#43; * Behave like chunkcopy_lapped_relaxed(), but avoid writing beyond of legal
+&#43; * output.
+&#43; *
+&#43; * Accepts an additional pointer to the end of safe output.  A generic safe
+&#43; * copy would use (out &#43; len), but it&#39;s normally the case that the end of the
+&#43; * output buffer is beyond the end of the current copy, and this can still be
+&#43; * exploited.
+&#43; */
+&#43;static inline unsigned char FAR* chunkcopy_lapped_safe(
+&#43;    unsigned char FAR* out,
+&#43;    unsigned dist,
+&#43;    unsigned len,
+&#43;    unsigned char FAR* limit) {
+&#43;  Assert(out &#43; len &lt;= limit, &#34;chunk copy exceeds safety limit&#34;);
+&#43;  if ((limit - out) &lt; (ptrdiff_t)(3 * CHUNKCOPY_CHUNK_SIZE)) {
+&#43;    /* TODO(cavalcantii): try harder to optimise this */
+&#43;    while (len-- &gt; 0) {
+&#43;      *out = *(out - dist);
+&#43;      out&#43;&#43;;
+&#43;    }
+&#43;    return out;
+&#43;  }
+&#43;  return chunkcopy_lapped_relaxed(out, dist, len);
+&#43;}
+&#43;
+&#43;/*
+&#43; * The chunk-copy code above deals with writing the decoded DEFLATE data to
+&#43; * the output with SIMD methods to increase decode speed. Reading the input
+&#43; * to the DEFLATE decoder with a wide, SIMD method can also increase decode
+&#43; * speed. This option is supported on little endian machines, and reads the
+&#43; * input data in 64-bit (8 byte) chunks.
+&#43; */
+&#43;
+&#43;#ifdef INFLATE_CHUNK_READ_64LE
+&#43;/*
+&#43; * Buffer the input in a uint64_t (8 bytes) in the wide input reading case.
+&#43; */
+&#43;typedef uint64_t inflate_holder_t;
+&#43;
+&#43;/*
+&#43; * Ask the compiler to perform a wide, unaligned load of a uint64_t using a
+&#43; * machine instruction appropriate for the uint64_t type.
+&#43; */
+&#43;static inline inflate_holder_t read64le(const unsigned char FAR *in) {
+&#43;    inflate_holder_t input;
+&#43;    Z_BUILTIN_MEMCPY(&amp;input, in, sizeof(input));
+&#43;    return input;
+&#43;}
+&#43;#else
+&#43;/*
+&#43; * Otherwise, buffer the input bits using zlib&#39;s default input buffer type.
+&#43; */
+&#43;typedef unsigned long inflate_holder_t;
+&#43;
+&#43;#endif /* INFLATE_CHUNK_READ_64LE */
+&#43;
+&#43;#undef Z_STATIC_ASSERT
+&#43;#undef Z_RESTRICT
+&#43;#undef Z_BUILTIN_MEMCPY
+&#43;
+&#43;#endif /* CHUNKCOPY_H */
+diff --git a/infback.c b/infback.c
+index f0a5905..f62bb77 100644
+--- a/infback.c
+&#43;&#43;&#43; b/infback.c
+@@ -427,7 &#43;427,8 @@ int ZEXPORT inflateBack(z_stream *strm,
+ 
+         case LEN:
+             /* use inflate_fast() if we have enough input and output */
+-            if (have &gt;= 6 &amp;&amp; left &gt;= 258) {
+&#43;            if (have &gt;= INFLATE_FAST_MIN_INPUT &amp;&amp;
+&#43;                left &gt;= INFLATE_FAST_MIN_OUTPUT) {
+                 RESTORE();
+                 if (state-&gt;whave &lt; state-&gt;wsize)
+                     state-&gt;whave = state-&gt;wsize - left;
+diff --git a/inffast.c b/inffast.c
+index 5420b2c..5f196de 100644
+--- a/inffast.c
+&#43;&#43;&#43; b/inffast.c
+@@ -74,10 &#43;74,10 @@ void ZLIB_INTERNAL inflate_fast(
+     /* copy state to local variables */
+     state = (struct inflate_state *)strm-&gt;state;
+     in = strm-&gt;next_in;
+-    last = in &#43; (strm-&gt;avail_in - 5);
+&#43;    last = in &#43; (strm-&gt;avail_in - (INFLATE_FAST_MIN_INPUT - 1));
+     out = strm-&gt;next_out;
+     beg = out - (start - strm-&gt;avail_out);
+-    end = out &#43; (strm-&gt;avail_out - 257);
+&#43;    end = out &#43; (strm-&gt;avail_out - (INFLATE_FAST_MIN_OUTPUT - 1));
+     dmax = state-&gt;dmax;
+     wsize = state-&gt;wsize;
+     whave = state-&gt;whave;
+@@ -269,9 &#43;269,12 @@ void ZLIB_INTERNAL inflate_fast(
+     /* update state and return */
+     strm-&gt;next_in = in;
+     strm-&gt;next_out = out;
+-    strm-&gt;avail_in = (unsigned int)(in &lt; last ? 5 &#43; (last - in) : 5 - (in - last));
+&#43;    strm-&gt;avail_in = (unsigned int)(in &lt; last ?
+&#43;        (INFLATE_FAST_MIN_INPUT - 1) &#43; (last - in) :
+&#43;        (INFLATE_FAST_MIN_INPUT - 1) - (in - last));
+     strm-&gt;avail_out = (unsigned int)(out &lt; end ?
+-                                     257 &#43; (end - out) : 257 - (out - end));
+&#43;        (INFLATE_FAST_MIN_OUTPUT - 1) &#43; (end - out) :
+&#43;        (INFLATE_FAST_MIN_OUTPUT - 1) - (out - end));
+     state-&gt;hold = hold;
+     state-&gt;bits = bits;
+ }
+diff --git a/inffast.h b/inffast.h
+index 5d2a82e..4463d20 100644
+--- a/inffast.h
+&#43;&#43;&#43; b/inffast.h
+@@ -8,4 &#43;8,8 @@
+    subject to change. Applications should only use zlib.h.
+  */
+ 
+&#43;/* Minimum input and output needed for a fast inflate iteration. */
+&#43;#define INFLATE_FAST_MIN_INPUT 6
+&#43;#define INFLATE_FAST_MIN_OUTPUT 258
+&#43;
+ void ZLIB_INTERNAL inflate_fast(z_stream *strm, unsigned int start);
+diff --git a/inffast_chunk.c b/inffast_chunk.c
+new file mode 100644
+index 0000000..d80c9a7
+--- /dev/null
+&#43;&#43;&#43; b/inffast_chunk.c
+@@ -0,0 &#43;1,379 @@
+&#43;/* inffast_chunk.c -- fast decoding
+&#43; *
+&#43; * (C) 1995-2013 Jean-loup Gailly and Mark Adler
+&#43; *
+&#43; * This software is provided &#39;as-is&#39;, without any express or implied
+&#43; * warranty.  In no event will the authors be held liable for any damages
+&#43; * arising from the use of this software.
+&#43; *
+&#43; * Permission is granted to anyone to use this software for any purpose,
+&#43; * including commercial applications, and to alter it and redistribute it
+&#43; * freely, subject to the following restrictions:
+&#43; *
+&#43; * 1. The origin of this software must not be misrepresented; you must not
+&#43; *    claim that you wrote the original software. If you use this software
+&#43; *    in a product, an acknowledgment in the product documentation would be
+&#43; *    appreciated but is not required.
+&#43; * 2. Altered source versions must be plainly marked as such, and must not be
+&#43; *    misrepresented as being the original software.
+&#43; * 3. This notice may not be removed or altered from any source distribution.
+&#43; *
+&#43; * Jean-loup Gailly        Mark Adler
+&#43; * jloup@gzip.org          madler@alumni.caltech.edu
+&#43; *
+&#43; * Copyright (C) 1995-2017 Mark Adler
+&#43; * For conditions of distribution and use, see copyright notice in zlib.h
+&#43; */
+&#43;
+&#43;#include &#34;zutil.h&#34;
+&#43;#include &#34;inftrees.h&#34;
+&#43;#include &#34;inflate.h&#34;
+&#43;#include &#34;inffast_chunk.h&#34;
+&#43;#include &#34;chunkcopy.h&#34;
+&#43;
+&#43;#ifdef ASMINF
+&#43;#  pragma message(&#34;Assembler code may have bugs -- use at your own risk&#34;)
+&#43;#else
+&#43;
+&#43;/*
+&#43;   Decode literal, length, and distance codes and write out the resulting
+&#43;   literal and match bytes until either not enough input or output is
+&#43;   available, an end-of-block is encountered, or a data error is encountered.
+&#43;   When large enough input and output buffers are supplied to inflate(), for
+&#43;   example, a 16K input buffer and a 64K output buffer, more than 95% of the
+&#43;   inflate() execution time is spent in this routine.
+&#43;
+&#43;   Entry assumptions:
+&#43;
+&#43;        state-&gt;mode == LEN
+&#43;        strm-&gt;avail_in &gt;= INFLATE_FAST_MIN_INPUT (6 or 8 bytes)
+&#43;        strm-&gt;avail_out &gt;= INFLATE_FAST_MIN_OUTPUT (258 bytes)
+&#43;        start &gt;= strm-&gt;avail_out
+&#43;        state-&gt;bits &lt; 8
+&#43;        strm-&gt;next_out[0..strm-&gt;avail_out] does not overlap with
+&#43;              strm-&gt;next_in[0..strm-&gt;avail_in]
+&#43;        strm-&gt;state-&gt;window is allocated with an additional
+&#43;              CHUNKCOPY_CHUNK_SIZE-1 bytes of padding beyond strm-&gt;state-&gt;wsize
+&#43;
+&#43;   On return, state-&gt;mode is one of:
+&#43;
+&#43;        LEN -- ran out of enough output space or enough available input
+&#43;        TYPE -- reached end of block code, inflate() to interpret next block
+&#43;        BAD -- error in block data
+&#43;
+&#43;   Notes:
+&#43;
+&#43;    INFLATE_FAST_MIN_INPUT: 6 or 8 bytes
+&#43;
+&#43;    - The maximum input bits used by a length/distance pair is 15 bits for the
+&#43;      length code, 5 bits for the length extra, 15 bits for the distance code,
+&#43;      and 13 bits for the distance extra.  This totals 48 bits, or six bytes.
+&#43;      Therefore if strm-&gt;avail_in &gt;= 6, then there is enough input to avoid
+&#43;      checking for available input while decoding.
+&#43;
+&#43;    - The wide input data reading option reads 64 input bits at a time. Thus,
+&#43;      if strm-&gt;avail_in &gt;= 8, then there is enough input to avoid checking for
+&#43;      available input while decoding. Reading consumes the input with:
+&#43;
+&#43;          hold |= read64le(in) &lt;&lt; bits;
+&#43;          in &#43;= 6;
+&#43;          bits &#43;= 48;
+&#43;
+&#43;      reporting 6 bytes of new input because |bits| is 0..15 (2 bytes rounded
+&#43;      up, worst case) and 6 bytes is enough to decode as noted above. At exit,
+&#43;      hold &amp;= (1U &lt;&lt; bits) - 1 drops excess input to keep the invariant:
+&#43;
+&#43;          (state-&gt;hold &gt;&gt; state-&gt;bits) == 0
+&#43;
+&#43;    INFLATE_FAST_MIN_OUTPUT: 258 bytes
+&#43;    - The maximum bytes that a single length/distance pair can output is 258
+&#43;      bytes, which is the maximum length that can be coded.  inflate_fast()
+&#43;      requires strm-&gt;avail_out &gt;= 258 for each loop to avoid checking for
+&#43;      available output space while decoding.
+&#43; */
+&#43;void ZLIB_INTERNAL inflate_fast_chunk_(strm, start)
+&#43;z_streamp strm;
+&#43;unsigned start;         /* inflate()&#39;s starting value for strm-&gt;avail_out */
+&#43;{
+&#43;    struct inflate_state FAR *state;
+&#43;    z_const unsigned char FAR *in;      /* local strm-&gt;next_in */
+&#43;    z_const unsigned char FAR *last;    /* have enough input while in &lt; last */
+&#43;    unsigned char FAR *out;     /* local strm-&gt;next_out */
+&#43;    unsigned char FAR *beg;     /* inflate()&#39;s initial strm-&gt;next_out */
+&#43;    unsigned char FAR *end;     /* while out &lt; end, enough space available */
+&#43;    unsigned char FAR *limit;   /* safety limit for chunky copies */
+&#43;#ifdef INFLATE_STRICT
+&#43;    unsigned dmax;              /* maximum distance from zlib header */
+&#43;#endif
+&#43;    unsigned wsize;             /* window size or zero if not using window */
+&#43;    unsigned whave;             /* valid bytes in the window */
+&#43;    unsigned wnext;             /* window write index */
+&#43;    unsigned char FAR *window;  /* allocated sliding window, if wsize != 0 */
+&#43;    inflate_holder_t hold;      /* local strm-&gt;hold */
+&#43;    unsigned bits;              /* local strm-&gt;bits */
+&#43;    code const FAR *lcode;      /* local strm-&gt;lencode */
+&#43;    code const FAR *dcode;      /* local strm-&gt;distcode */
+&#43;    unsigned lmask;             /* mask for first level of length codes */
+&#43;    unsigned dmask;             /* mask for first level of distance codes */
+&#43;    code here;                  /* retrieved table entry */
+&#43;    unsigned op;                /* code bits, operation, extra bits, or */
+&#43;                                /*  window position, window bytes to copy */
+&#43;    unsigned len;               /* match length, unused bytes */
+&#43;    unsigned dist;              /* match distance */
+&#43;    unsigned char FAR *from;    /* where to copy match from */
+&#43;
+&#43;    /* copy state to local variables */
+&#43;    state = (struct inflate_state FAR *)strm-&gt;state;
+&#43;    in = strm-&gt;next_in;
+&#43;    last = in &#43; (strm-&gt;avail_in - (INFLATE_FAST_MIN_INPUT - 1));
+&#43;    out = strm-&gt;next_out;
+&#43;    beg = out - (start - strm-&gt;avail_out);
+&#43;    end = out &#43; (strm-&gt;avail_out - (INFLATE_FAST_MIN_OUTPUT - 1));
+&#43;    limit = out &#43; strm-&gt;avail_out;
+&#43;#ifdef INFLATE_STRICT
+&#43;    dmax = state-&gt;dmax;
+&#43;#endif
+&#43;    wsize = state-&gt;wsize;
+&#43;    whave = state-&gt;whave;
+&#43;    wnext = (state-&gt;wnext == 0 &amp;&amp; whave &gt;= wsize) ? wsize : state-&gt;wnext;
+&#43;    window = state-&gt;window;
+&#43;    hold = state-&gt;hold;
+&#43;    bits = state-&gt;bits;
+&#43;    lcode = state-&gt;lencode;
+&#43;    dcode = state-&gt;distcode;
+&#43;    lmask = (1U &lt;&lt; state-&gt;lenbits) - 1;
+&#43;    dmask = (1U &lt;&lt; state-&gt;distbits) - 1;
+&#43;
+&#43;    /* decode literals and length/distances until end-of-block or not enough
+&#43;       input data or output space */
+&#43;    do {
+&#43;        if (bits &lt; 15) {
+&#43;#ifdef INFLATE_CHUNK_READ_64LE
+&#43;            hold |= read64le(in) &lt;&lt; bits;
+&#43;            in &#43;= 6;
+&#43;            bits &#43;= 48;
+&#43;#else
+&#43;            hold &#43;= (unsigned long)(*in&#43;&#43;) &lt;&lt; bits;
+&#43;            bits &#43;= 8;
+&#43;            hold &#43;= (unsigned long)(*in&#43;&#43;) &lt;&lt; bits;
+&#43;            bits &#43;= 8;
+&#43;#endif
+&#43;        }
+&#43;        here = lcode[hold &amp; lmask];
+&#43;      dolen:
+&#43;        op = (unsigned)(here.bits);
+&#43;        hold &gt;&gt;= op;
+&#43;        bits -= op;
+&#43;        op = (unsigned)(here.op);
+&#43;        if (op == 0) {                          /* literal */
+&#43;            Tracevv((stderr, here.val &gt;= 0x20 &amp;&amp; here.val &lt; 0x7f ?
+&#43;                    &#34;inflate:         literal &#39;%c&#39;\n&#34; :
+&#43;                    &#34;inflate:         literal 0x%02x\n&#34;, here.val));
+&#43;            *out&#43;&#43; = (unsigned char)(here.val);
+&#43;        }
+&#43;        else if (op &amp; 16) {                     /* length base */
+&#43;            len = (unsigned)(here.val);
+&#43;            op &amp;= 15;                           /* number of extra bits */
+&#43;            if (op) {
+&#43;                if (bits &lt; op) {
+&#43;#ifdef INFLATE_CHUNK_READ_64LE
+&#43;                    hold |= read64le(in) &lt;&lt; bits;
+&#43;                    in &#43;= 6;
+&#43;                    bits &#43;= 48;
+&#43;#else
+&#43;                    hold &#43;= (unsigned long)(*in&#43;&#43;) &lt;&lt; bits;
+&#43;                    bits &#43;= 8;
+&#43;#endif
+&#43;                }
+&#43;                len &#43;= (unsigned)hold &amp; ((1U &lt;&lt; op) - 1);
+&#43;                hold &gt;&gt;= op;
+&#43;                bits -= op;
+&#43;            }
+&#43;            Tracevv((stderr, &#34;inflate:         length %u\n&#34;, len));
+&#43;            if (bits &lt; 15) {
+&#43;#ifdef INFLATE_CHUNK_READ_64LE
+&#43;                hold |= read64le(in) &lt;&lt; bits;
+&#43;                in &#43;= 6;
+&#43;                bits &#43;= 48;
+&#43;#else
+&#43;                hold &#43;= (unsigned long)(*in&#43;&#43;) &lt;&lt; bits;
+&#43;                bits &#43;= 8;
+&#43;                hold &#43;= (unsigned long)(*in&#43;&#43;) &lt;&lt; bits;
+&#43;                bits &#43;= 8;
+&#43;#endif
+&#43;            }
+&#43;            here = dcode[hold &amp; dmask];
+&#43;          dodist:
+&#43;            op = (unsigned)(here.bits);
+&#43;            hold &gt;&gt;= op;
+&#43;            bits -= op;
+&#43;            op = (unsigned)(here.op);
+&#43;            if (op &amp; 16) {                      /* distance base */
+&#43;                dist = (unsigned)(here.val);
+&#43;                op &amp;= 15;                       /* number of extra bits */
+&#43;                if (bits &lt; op) {
+&#43;#ifdef INFLATE_CHUNK_READ_64LE
+&#43;                    hold |= read64le(in) &lt;&lt; bits;
+&#43;                    in &#43;= 6;
+&#43;                    bits &#43;= 48;
+&#43;#else
+&#43;                    hold &#43;= (unsigned long)(*in&#43;&#43;) &lt;&lt; bits;
+&#43;                    bits &#43;= 8;
+&#43;                    if (bits &lt; op) {
+&#43;                        hold &#43;= (unsigned long)(*in&#43;&#43;) &lt;&lt; bits;
+&#43;                        bits &#43;= 8;
+&#43;                    }
+&#43;#endif
+&#43;                }
+&#43;                dist &#43;= (unsigned)hold &amp; ((1U &lt;&lt; op) - 1);
+&#43;#ifdef INFLATE_STRICT
+&#43;                if (dist &gt; dmax) {
+&#43;                    strm-&gt;msg = (char *)&#34;invalid distance too far back&#34;;
+&#43;                    state-&gt;mode = BAD;
+&#43;                    break;
+&#43;                }
+&#43;#endif
+&#43;                hold &gt;&gt;= op;
+&#43;                bits -= op;
+&#43;                Tracevv((stderr, &#34;inflate:         distance %u\n&#34;, dist));
+&#43;                op = (unsigned)(out - beg);     /* max distance in output */
+&#43;                if (dist &gt; op) {                /* see if copy from window */
+&#43;                    op = dist - op;             /* distance back in window */
+&#43;                    if (op &gt; whave) {
+&#43;                        if (state-&gt;sane) {
+&#43;                            strm-&gt;msg =
+&#43;                                (char *)&#34;invalid distance too far back&#34;;
+&#43;                            state-&gt;mode = BAD;
+&#43;                            break;
+&#43;                        }
+&#43;#ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
+&#43;                        if (len &lt;= op - whave) {
+&#43;                            do {
+&#43;                                *out&#43;&#43; = 0;
+&#43;                            } while (--len);
+&#43;                            continue;
+&#43;                        }
+&#43;                        len -= op - whave;
+&#43;                        do {
+&#43;                            *out&#43;&#43; = 0;
+&#43;                        } while (--op &gt; whave);
+&#43;                        if (op == 0) {
+&#43;                            from = out - dist;
+&#43;                            do {
+&#43;                                *out&#43;&#43; = *from&#43;&#43;;
+&#43;                            } while (--len);
+&#43;                            continue;
+&#43;                        }
+&#43;#endif
+&#43;                    }
+&#43;                    from = window;
+&#43;                    if (wnext &gt;= op) {          /* contiguous in window */
+&#43;                        from &#43;= wnext - op;
+&#43;                    }
+&#43;                    else {                      /* wrap around window */
+&#43;                        op -= wnext;
+&#43;                        from &#43;= wsize - op;
+&#43;                        if (op &lt; len) {         /* some from end of window */
+&#43;                            len -= op;
+&#43;                            out = chunkcopy_safe(out, from, op, limit);
+&#43;                            from = window;      /* more from start of window */
+&#43;                            op = wnext;
+&#43;                            /* This (rare) case can create a situation where
+&#43;                               the first chunkcopy below must be checked.
+&#43;                             */
+&#43;                        }
+&#43;                    }
+&#43;                    if (op &lt; len) {             /* still need some from output */
+&#43;                        out = chunkcopy_safe(out, from, op, limit);
+&#43;                        len -= op;
+&#43;                        /* When dist is small the amount of data that can be
+&#43;                           copied from the window is also small, and progress
+&#43;                           towards the dangerous end of the output buffer is
+&#43;                           also small.  This means that for trivial memsets and
+&#43;                           for chunkunroll_relaxed() a safety check is
+&#43;                           unnecessary.  However, these conditions may not be
+&#43;                           entered at all, and in that case it&#39;s possible that
+&#43;                           the main copy is near the end.
+&#43;                          */
+&#43;                        out = chunkunroll_relaxed(out, &amp;dist, &amp;len);
+&#43;                        out = chunkcopy_safe(out, out - dist, len, limit);
+&#43;                    } else {
+&#43;                        /* from points to window, so there is no risk of
+&#43;                           overlapping pointers requiring memset-like behaviour
+&#43;                         */
+&#43;                        out = chunkcopy_safe(out, from, len, limit);
+&#43;                    }
+&#43;                }
+&#43;                else {
+&#43;                    /* Whole reference is in range of current output.  No
+&#43;                       range checks are necessary because we start with room
+&#43;                       for at least 258 bytes of output, so unroll and roundoff
+&#43;                       operations can write beyond `out&#43;len` so long as they
+&#43;                       stay within 258 bytes of `out`.
+&#43;                     */
+&#43;                    out = chunkcopy_lapped_relaxed(out, dist, len);
+&#43;                }
+&#43;            }
+&#43;            else if ((op &amp; 64) == 0) {          /* 2nd level distance code */
+&#43;                here = dcode[here.val &#43; (hold &amp; ((1U &lt;&lt; op) - 1))];
+&#43;                goto dodist;
+&#43;            }
+&#43;            else {
+&#43;                strm-&gt;msg = (char *)&#34;invalid distance code&#34;;
+&#43;                state-&gt;mode = BAD;
+&#43;                break;
+&#43;            }
+&#43;        }
+&#43;        else if ((op &amp; 64) == 0) {              /* 2nd level length code */
+&#43;            here = lcode[here.val &#43; (hold &amp; ((1U &lt;&lt; op) - 1))];
+&#43;            goto dolen;
+&#43;        }
+&#43;        else if (op &amp; 32) {                     /* end-of-block */
+&#43;            Tracevv((stderr, &#34;inflate:         end of block\n&#34;));
+&#43;            state-&gt;mode = TYPE;
+&#43;            break;
+&#43;        }
+&#43;        else {
+&#43;            strm-&gt;msg = (char *)&#34;invalid literal/length code&#34;;
+&#43;            state-&gt;mode = BAD;
+&#43;            break;
+&#43;        }
+&#43;    } while (in &lt; last &amp;&amp; out &lt; end);
+&#43;
+&#43;    /* return unused bytes (on entry, bits &lt; 8, so in won&#39;t go too far back) */
+&#43;    len = bits &gt;&gt; 3;
+&#43;    in -= len;
+&#43;    bits -= len &lt;&lt; 3;
+&#43;    hold &amp;= (1U &lt;&lt; bits) - 1;
+&#43;
+&#43;    /* update state and return */
+&#43;    strm-&gt;next_in = in;
+&#43;    strm-&gt;next_out = out;
+&#43;    strm-&gt;avail_in = (unsigned)(in &lt; last ?
+&#43;        (INFLATE_FAST_MIN_INPUT - 1) &#43; (last - in) :
+&#43;        (INFLATE_FAST_MIN_INPUT - 1) - (in - last));
+&#43;    strm-&gt;avail_out = (unsigned)(out &lt; end ?
+&#43;        (INFLATE_FAST_MIN_OUTPUT - 1) &#43; (end - out) :
+&#43;        (INFLATE_FAST_MIN_OUTPUT - 1) - (out - end));
+&#43;    state-&gt;hold = hold;
+&#43;    state-&gt;bits = bits;
+&#43;
+&#43;    Assert((state-&gt;hold &gt;&gt; state-&gt;bits) == 0, &#34;invalid input data state&#34;);
+&#43;    return;
+&#43;}
+&#43;
+&#43;/*
+&#43;   inflate_fast() speedups that turned out slower (on a PowerPC G3 750CXe):
+&#43;   - Using bit fields for code structure
+&#43;   - Different op definition to avoid &amp; for extra bits (do &amp; for table bits)
+&#43;   - Three separate decoding do-loops for direct, window, and wnext == 0
+&#43;   - Special case for distance &gt; 1 copies to do overlapped load and store copy
+&#43;   - Explicit branch predictions (based on measured branch probabilities)
+&#43;   - Deferring match copy and interspersed it with decoding subsequent codes
+&#43;   - Swapping literal/length else
+&#43;   - Swapping window/direct else
+&#43;   - Larger unrolled copy loops (three is about right)
+&#43;   - Moving len -= 3 statement into middle of loop
+&#43; */
+&#43;
+&#43;#endif /* !ASMINF */
+diff --git a/inffast_chunk.h b/inffast_chunk.h
+new file mode 100644
+index 0000000..de6aa0d
+--- /dev/null
+&#43;&#43;&#43; b/inffast_chunk.h
+@@ -0,0 &#43;1,48 @@
+&#43;/* inffast_chunk.h -- header to use inffast_chunk.c
+&#43; *
+&#43; * (C) 1995-2013 Jean-loup Gailly and Mark Adler
+&#43; *
+&#43; * This software is provided &#39;as-is&#39;, without any express or implied
+&#43; * warranty.  In no event will the authors be held liable for any damages
+&#43; * arising from the use of this software.
+&#43; *
+&#43; * Permission is granted to anyone to use this software for any purpose,
+&#43; * including commercial applications, and to alter it and redistribute it
+&#43; * freely, subject to the following restrictions:
+&#43; *
+&#43; * 1. The origin of this software must not be misrepresented; you must not
+&#43; *    claim that you wrote the original software. If you use this software
+&#43; *    in a product, an acknowledgment in the product documentation would be
+&#43; *    appreciated but is not required.
+&#43; * 2. Altered source versions must be plainly marked as such, and must not be
+&#43; *    misrepresented as being the original software.
+&#43; * 3. This notice may not be removed or altered from any source distribution.
+&#43; *
+&#43; * Jean-loup Gailly        Mark Adler
+&#43; * jloup@gzip.org          madler@alumni.caltech.edu
+&#43; *
+&#43; * Copyright (C) 1995-2003, 2010 Mark Adler
+&#43; * Copyright (C) 2017 ARM, Inc.
+&#43; * For conditions of distribution and use, see copyright notice in zlib.h
+&#43; */
+&#43;
+&#43;/* WARNING: this file should *not* be used by applications. It is
+&#43;   part of the implementation of the compression library and is
+&#43;   subject to change. Applications should only use zlib.h.
+&#43; */
+&#43;
+&#43;#include &#34;inffast.h&#34;
+&#43;
+&#43;/* INFLATE_FAST_MIN_INPUT: the minimum number of input bytes needed so that
+&#43;   we can safely call inflate_fast() with only one up-front bounds check. One
+&#43;   length/distance code pair (15 bits for the length code, 5 bits for length
+&#43;   extra, 15 bits for the distance code, 13 bits for distance extra) requires
+&#43;   reading up to 48 input bits (6 bytes). The wide input data reading option
+&#43;   requires a little endian machine, and reads 64 input bits (8 bytes).
+&#43;*/
+&#43;#ifdef INFLATE_CHUNK_READ_64LE
+&#43;#undef INFLATE_FAST_MIN_INPUT
+&#43;#define INFLATE_FAST_MIN_INPUT 8
+&#43;#endif
+&#43;
+&#43;void ZLIB_INTERNAL inflate_fast_chunk_ OF((z_streamp strm, unsigned start));
+diff --git a/inflate.c b/inflate.c
+index 33b66c8..626488c 100644
+--- a/inflate.c
+&#43;&#43;&#43; b/inflate.c
+@@ -83,7 &#43;83,12 @@
+ #include &#34;zutil.h&#34;
+ #include &#34;inftrees.h&#34;
+ #include &#34;inflate.h&#34;
+&#43;#ifdef INFLATE_CHUNK_SIMD_NEON
+&#43;#include &#34;inffast_chunk.h&#34;
+&#43;#include &#34;chunkcopy.h&#34;
+&#43;#else
+ #include &#34;inffast.h&#34;
+&#43;#endif
+ 
+ /* function prototypes */
+ static void fixedtables(struct inflate_state *state);
+@@ -260,9 &#43;265,16 @@ static int updatewindow(z_stream *strm,
+ 
+     /* if it hasn&#39;t been done already, allocate space for the window */
+     if (state-&gt;window == NULL) {
+&#43;#ifdef INFLATE_CHUNK_SIMD_NEON
+&#43;        unsigned int wsize = 1U &lt;&lt; state-&gt;wbits;
+&#43;        state-&gt;window = (unsigned char *)
+&#43;                        z_stream_alloc(strm, wsize &#43; CHUNKCOPY_CHUNK_SIZE);
+&#43;        if (state-&gt;window == NULL) return 1;
+&#43;#else
+         state-&gt;window = (unsigned char *)
+                         z_stream_alloc(strm, 1U &lt;&lt; state-&gt;wbits);
+         if (state-&gt;window == NULL) return 1;
+&#43;#endif
+     }
+ 
+     /* if window not in use yet, initialize */
+@@ -876,9 &#43;888,14 @@ int ZEXPORT inflate(z_stream *strm,
+         case LEN_:
+             state-&gt;mode = LEN;
+         case LEN:
+-            if (have &gt;= 6 &amp;&amp; left &gt;= 258) {
+&#43;            if (have &gt;= INFLATE_FAST_MIN_INPUT &amp;&amp;
+&#43;                left &gt;= INFLATE_FAST_MIN_OUTPUT) {
+                 RESTORE();
+&#43;#ifdef INFLATE_CHUNK_SIMD_NEON
+&#43;                inflate_fast_chunk_(strm, out);
+&#43;#else
+                 inflate_fast(strm, out);
+&#43;#endif
+                 LOAD();
+                 if (state-&gt;mode == TYPE)
+                     state-&gt;back = -1;
+@@ -994,6 &#43;1011,18 @@ int ZEXPORT inflate(z_stream *strm,
+                 else
+                     from = state-&gt;window &#43; (state-&gt;wnext - copy);
+                 if (copy &gt; state-&gt;length) copy = state-&gt;length;
+&#43;#ifdef INFLATE_CHUNK_SIMD_NEON
+&#43;                if (copy &gt; left) copy = left;
+&#43;                put = chunkcopy_safe(put, from, copy, put &#43; left);
+&#43;            }
+&#43;            else {                              /* copy from output */
+&#43;                copy = state-&gt;length;
+&#43;                if (copy &gt; left) copy = left;
+&#43;                put = chunkcopy_lapped_safe(put, state-&gt;offset, copy, put &#43; left);
+&#43;            }
+&#43;            left -= copy;
+&#43;            state-&gt;length -= copy;
+&#43;#else
+             }
+             else {                              /* copy from output */
+                 from = put - state-&gt;offset;
+@@ -1005,6 &#43;1034,7 @@ int ZEXPORT inflate(z_stream *strm,
+             do {
+                 *put&#43;&#43; = *from&#43;&#43;;
+             } while (--copy);
+&#43;#endif
+             if (state-&gt;length == 0) state-&gt;mode = LEN;
+             break;
+         case LIT:
+@@ -1064,6 &#43;1094,12 @@ int ZEXPORT inflate(z_stream *strm,
+        Note: a memory error from inflate() is non-recoverable.
+      */
+   inf_leave:
+&#43;#ifdef INFLATE_CHUNK_SIMD_NEON
+&#43;    if (left &gt;= CHUNKCOPY_CHUNK_SIZE)
+&#43;        memset(put, 0x55, CHUNKCOPY_CHUNK_SIZE);
+&#43;    else
+&#43;        memset(put, 0x55, left);
+&#43;#endif
+     RESTORE();
+     if (state-&gt;wsize || (out != strm-&gt;avail_out &amp;&amp; state-&gt;mode &lt; BAD &amp;&amp;
+             (state-&gt;mode &lt; CHECK || flush != Z_FINISH)))
+-- 
+2.55.0
+
+</pre>
+		</div>
+		
+	</div>
+</div>
+
+	</main>
+
+	<footer>
+		
+		
+		dérive linux ports - Source: <a href="https://codeberg.org/derivelinux/ports">codeberg.org/derivelinux/ports</a><br/>
+		derive is public domain software. all software listed is under it's respective license.
+		<div id="theme-switcher" class="theme-switcher" hidden aria-live="polite"></div>
+	</footer>
+</body>
+</html>
